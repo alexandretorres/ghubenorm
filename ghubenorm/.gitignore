@@ -1,0 +1,9 @@
+build/
+libs/
+trash/
+repos/
+target/
+.settings/
+.classpath
+oauth.properties
+out.rb
