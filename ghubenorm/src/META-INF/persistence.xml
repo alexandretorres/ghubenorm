@@ -7,7 +7,7 @@
 			<property name="hibernate.connection.url" value="jdbc:postgresql://localhost:5432/posdoc"/>
 			<property name="hibernate.connection.driver_class" value="org.postgresql.Driver"/>
 			<property name="hibernate.connection.username" value="pdoc"/>
-			<property name="hibernate.connection.password" value="pdoc"/>
+			<!-- <property name="hibernate.connection.password" value="**DO NOT PUT A PASSWORD HERE**"/>  -->
 			<property name="hibernate.hbm2ddl.auto" value="update"/> 
 			<!--<property name="hibernate.hbm2ddl.auto" value="create-drop"/> -->
 			

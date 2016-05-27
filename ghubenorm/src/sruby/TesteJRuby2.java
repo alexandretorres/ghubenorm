@@ -7,6 +7,7 @@ import org.jrubyparser.parser.ParserConfiguration;
 import org.jrubyparser.rewriter.ReWriteVisitor;
 import org.jrubyparser.util.NoopVisitor;
 
+import gitget.Auth;
 import model.Repo;
 
 import java.io.File;
@@ -15,6 +16,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -105,9 +108,12 @@ public class TesteJRuby2 {
 		walkTime+= (System.currentTimeMillis()-initTime);
 	}
 	private static void testeDB() {
-		EntityManagerFactory emf = Persistence.createEntityManagerFactory("gitenorm");
+		Map<String,String> props = new HashMap<String,String>();
+		props.put("hibernate.connection.password", Auth.getProperty("hibernate.connection.password"));
+		EntityManagerFactory emf = Persistence.createEntityManagerFactory("gitenorm",props);
+		
         EntityManager em = emf.createEntityManager();
- 
+
         try {
             em.getTransaction().begin();
              
