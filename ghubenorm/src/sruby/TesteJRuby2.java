@@ -7,6 +7,7 @@ import org.jrubyparser.parser.ParserConfiguration;
 import org.jrubyparser.rewriter.ReWriteVisitor;
 import org.jrubyparser.util.NoopVisitor;
 
+import db.DAO;
 import gitget.Auth;
 import model.Repo;
 
@@ -125,6 +126,21 @@ public class TesteJRuby2 {
 		walkTime+= (System.currentTimeMillis()-initTime);
 	}
 	private static void testeDB() {
+		DAO<Repo> dao = DAO.getInstance(Repo.class);
+		try  {
+			dao.beginTransaction();
+			Repo repo = new Repo();
+            repo.setName("abc123");
+            dao.persit(repo);
+            dao.find(repo.getId());
+			dao.commitAndCloseTransaction();
+		} catch (Exception e) {
+			e.printStackTrace();
+			dao.rollbackAndCloseTransaction();	    
+	    }
+		/*
+		
+		
 		Map<String,String> props = new HashMap<String,String>();
 		props.put("hibernate.connection.password", Auth.getProperty("hibernate.connection.password"));
 		EntityManagerFactory emf = Persistence.createEntityManagerFactory("gitenorm",props);
@@ -148,7 +164,7 @@ public class TesteJRuby2 {
         }
         finally{
             emf.close();
-        }
+        }*/
 	}
 
 }
