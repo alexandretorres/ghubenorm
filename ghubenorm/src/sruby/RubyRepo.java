@@ -19,6 +19,7 @@ import org.jrubyparser.ast.ClassNode;
 import model.MAssociation;
 import model.MAttributeOverride;
 import model.MClass;
+import model.MColumn;
 import model.MColumnDefinition;
 import model.MJoinColumn;
 import model.MOverride;
@@ -84,6 +85,14 @@ public class RubyRepo {
 		subclasses.clear();
 		for (LateVisitor v:visitors) {
 			v.exec();
+		}
+	}
+	public void listTables() {
+		for (MTable t:tables) {
+			System.out.println("Table "+t.getName());
+			for (MColumn c:t.getColumns()) {
+				System.out.println("	"+c.getName()+":"+c.getColummnDefinition());
+			}
 		}
 	}
 	public void print() {

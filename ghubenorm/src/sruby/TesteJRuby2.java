@@ -15,6 +15,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,22 @@ public class TesteJRuby2 {
 	static long parseTime=0;
 	static long walkTime=0;
 	static int fileCnt=0;
+	
+	public static RubyRepo parseSchema(Reader in) {
+		try {
+			RubyRepo repo = new RubyRepo();
+			Parser rubyParser = new Parser();
+			CompatVersion version = CompatVersion.RUBY2_0;
+	        ParserConfiguration config = new ParserConfiguration(0, version);
+	        Node n = rubyParser.parse("", in, config);
+			SchemaVisitor sv = new SchemaVisitor(repo);
+	        n.accept(sv);  
+	        return repo;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return null;
+		}
+	}
 	public static void main(String[] args)  {
 		Node n=null;
 		try {

@@ -13,6 +13,13 @@ public class Repo {
 	private String name;
 	private String url;
 	private Language language;
+	/**
+	 * This is the internal path to the "base" file that defines the repository. For ruby it is the schema.db file,
+	 * for java it may be the presistence.xml. It is used to differentiate what portion of the repository is 
+	 * under analysis. Notice that a repository MAY have more than one "database", in distinct source directories. 
+	 * Sometimes these will be just "test" databases. 
+	 */
+	private String configPath;
 	
 	public int getId() {
 		return id;
@@ -37,6 +44,12 @@ public class Repo {
 	}
 	public void setLanguage(Language language) {
 		this.language = language;
+	}
+	public String getConfigPath() {
+		return configPath;
+	}
+	public void setConfigPath(String configPath) {
+		this.configPath = configPath;
 	}
 	
 }
