@@ -7,7 +7,11 @@ import org.jrubyparser.parser.ParserConfiguration;
 import org.jrubyparser.rewriter.ReWriteVisitor;
 import org.jrubyparser.util.NoopVisitor;
 
-import db.DAO;
+import dao.ConfigDAO;
+import dao.DAOInterface;
+import db.daos.RepoDAO;
+
+import db.jpa.JPA_DAO;
 import gitget.Auth;
 import model.Repo;
 
@@ -112,6 +116,7 @@ public class TesteJRuby2 {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
+		ConfigDAO.getConfig().finish();
 	}
 	public static void read(RubyVisitor v ,RubyRepo repo,Parser rubyParser,ParserConfiguration config,File f) throws Exception {
 		long initTime;
@@ -125,18 +130,24 @@ public class TesteJRuby2 {
 		n.accept(v);
 		walkTime+= (System.currentTimeMillis()-initTime);
 	}
-	private static void testeDB() {
-		DAO<Repo> dao = DAO.getInstance(Repo.class);
+	private static void testeDB() {	
+		ConfigDAO.config(JPA_DAO.instance);
+		RepoDAO dao = ConfigDAO.getDAO(Repo.class);
+		//DAOInterface<Repo> dao = ConfigDAO.getDAO(Repo.class);
 		try  {
 			dao.beginTransaction();
 			Repo repo = new Repo();
             repo.setName("abc123");
+            repo.setUrl("http");
             dao.persit(repo);
             dao.find(repo.getId());
+            System.out.println(dao.findByURL("http"));
 			dao.commitAndCloseTransaction();
 		} catch (Exception e) {
 			e.printStackTrace();
 			dao.rollbackAndCloseTransaction();	    
+	    } finally {
+	    	//DAO.finish();
 	    }
 		/*
 		
@@ -166,5 +177,6 @@ public class TesteJRuby2 {
             emf.close();
         }*/
 	}
+	
 
 }
