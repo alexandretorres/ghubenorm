@@ -3,7 +3,6 @@ package db.jpa;
 import javax.persistence.MappedSuperclass;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-
 @MappedSuperclass
 @NamedQueries({
 	@NamedQuery(

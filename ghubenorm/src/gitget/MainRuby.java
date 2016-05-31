@@ -1,6 +1,8 @@
 package gitget;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.logging.Logger;
 
@@ -11,6 +13,10 @@ import javax.json.JsonReader;
 
 import model.Language;
 import model.Repo;
+import sruby.RubyRepo;
+import sruby.RubyRepoLoader;
+import sruby.TesteJRuby2;
+
 import static gitget.Log.LOG;
 
 
@@ -51,7 +57,7 @@ class RubyCrawler implements Runnable {
 	static GitHubCaller gh = GitHubCaller.instance;
 	public static final long MAX_REPOS=500;
 	// per_page max é de 100 (mais que isso ele considera como 100)
-	
+	static RubyRepoLoader loader = new RubyRepoLoader();
 	
 	@Override
 	public void run() {			
@@ -136,6 +142,7 @@ class RubyCrawler implements Runnable {
 					}
 					if (repo.getConfigPath()!=null) {
 						LOG.info(" dbPath:"+fullName+"/raw/master/"+repo.getConfigPath());
+						loadRepo(repo);
 					} else {
 						LOG.warning(" no suitable dbPath for "+fullName);
 					}
@@ -144,4 +151,48 @@ class RubyCrawler implements Runnable {
 		} while(false);
 	}
 	
+	private static void loadRepo(Repo repo) {
+		try {
+			RubyRepo rrepo = loader.setRepo(repo);
+			
+			loadSchemaDb(repo);
+			//  /repos/:owner/:repo/contents/:path
+			URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"
+					+ "?access_token="+oauth);
+			JsonReader rdr = gh.callApi(url);
+			JsonArray results = rdr.readArray();
+			for (JsonObject result : results.getValuesAs(JsonObject.class)) {
+				String type = result.getString("type");
+				if (type.equals("file")) {
+					String fpath = result.getString("download_url");
+					if (fpath.endsWith(".rb")) {
+						URL furl = new URL(fpath);
+						
+						//TesteJRuby2.parseFile(rrepo, in);
+						loader.visitFile(furl);
+						//in.close();
+						
+					}
+				}				
+			}
+			
+			loader.solveRefs();
+			rrepo.print();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+	private static void loadSchemaDb(Repo repo) throws Exception {
+		URL url = new URL("https://github.com/"+repo.getName()+ "/raw/master/"+repo.getConfigPath());
+		
+		//InputStream is = url.openStream();
+		
+		loader.visitSchema(url);
+		//RubyRepo rrepo = TesteJRuby2.parseSchema(repo,in);
+		
+		
+		
+				//String model_url = url_name.substring(0,url_name.lastIndexOf("/"));
+		//model_url = model_url+"/../app/models/";
+	}
 }

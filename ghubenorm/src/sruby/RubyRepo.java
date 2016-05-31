@@ -25,8 +25,10 @@ import model.MJoinColumn;
 import model.MOverride;
 import model.MProperty;
 import model.MTable;
+import model.Repo;
 
 public class RubyRepo {
+	private Repo repo;
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
 	Set<MClass> classes = new HashSet<MClass>();
 	Set<MTable> tables = new HashSet<MTable>();
@@ -34,7 +36,12 @@ public class RubyRepo {
 	 * Superclass-ClassCode: subclasses waiting for a class definition 
 	 */
 	Map<String,List<ClassNode>> subclasses = new HashMap<String,List<ClassNode>>();
-	
+	public RubyRepo(Repo repo) {
+		this.repo=repo;
+	}
+	public RubyRepo() {
+		
+	}
 	public MTable getTable(String name) {
 		Optional<MTable> ret = tables.stream().filter(tab->tab.getName().equalsIgnoreCase(name)).findFirst();
 		return ret.orElse(null);
@@ -182,6 +189,12 @@ public class RubyRepo {
 		}
 		
 		//System.out.println(sw.getBuffer());
+	}
+	public Repo getRepo() {
+		return repo;
+	}
+	public void setRepo(Repo repo) {
+		this.repo = repo;
 	}
 	
 }

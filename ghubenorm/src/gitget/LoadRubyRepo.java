@@ -6,23 +6,32 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URL;
 
+import model.Repo;
 import sruby.RubyRepo;
+import sruby.RubyRepoLoader;
 import sruby.TesteJRuby2;
 
 public class LoadRubyRepo {
 
 	public static void main(String[] args) {
-		String url_name="https://github.com/gitlabhq/gitlabhq/raw/85495c8c85533e2d4156231fd2535270afffef5a/db/schema.rb";
-		
+		//String url_name="https://github.com/gitlabhq/gitlabhq/raw/85495c8c85533e2d4156231fd2535270afffef5a/db/schema.rb";
+		String url_name="https://github.com/gitlabhq/gitlabhq/raw/master/db/schema.rb";
 		try {
 			URL url = new URL(url_name);
 			
 			//InputStream is = url.openStream();
-			BufferedReader in = new BufferedReader(
-			        new InputStreamReader(url.openStream()));
-			RubyRepo repo = TesteJRuby2.parseSchema(in);
+			
+			RubyRepoLoader loader = new RubyRepoLoader();
+			
+			RubyRepo repo =loader.setRepo(new Repo());
+			loader.visitSchema(url);
 			repo.listTables();
-			in.close();
+			
+			
+			String model_url = url_name.substring(0,url_name.lastIndexOf("/"));
+			model_url = model_url+"/../app/models/";
+			///repos/:owner/:repo/contents/:path
+		
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

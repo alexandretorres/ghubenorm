@@ -19,7 +19,7 @@ public class JPA_DAO extends ConfigJPA {
 	}	
 	@Override
 	public void setup() {
-		//new RepoDaoImpl();
+		new RepoDaoImpl();
 	}
 	
 }
