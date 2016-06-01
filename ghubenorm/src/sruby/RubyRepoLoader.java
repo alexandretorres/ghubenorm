@@ -8,7 +8,10 @@ import java.net.URL;
 import org.jrubyparser.CompatVersion;
 import org.jrubyparser.Parser;
 import org.jrubyparser.ast.Node;
+import org.jrubyparser.lexer.SyntaxException;
 import org.jrubyparser.parser.ParserConfiguration;
+
+import gitget.Log;
 
 import static gitget.Log.LOG;
 import model.Repo;
@@ -50,6 +53,10 @@ public class RubyRepoLoader {
 			Node n = rubyParser.parse("", in, config);		
 	        n.accept(fileVisitor); 
 	        return n;
+		} catch (SyntaxException sex) {
+			Log.LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getPosition());			
+			sex.printStackTrace();
+			return null;
 		} catch (Exception ex) {	
 			LOG.warning("could not visit file "+url);
 			ex.printStackTrace();

@@ -1,6 +1,7 @@
 package gitget;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -38,11 +39,14 @@ class GitHubCaller {
 			JsonReader rdr = Json.createReader(is);
 			tries=0;
 			return rdr;
+		} catch (FileNotFoundException fex) {
+			LOG.info("File not found:"+url);
+			return null;
 		} catch (Exception ex) {
 			tries++;
 			try {
-				LOG.info("Sleeping for one minute..."+tries);
-				Thread.sleep(60000);
+				LOG.info("Sleeping for half a minute..."+tries);
+				Thread.sleep(30000);
 				if (tries<=MAX_TRIES)
 					return callApi(url);
 			} catch (Exception tex) {
@@ -136,9 +140,7 @@ class RubyCrawler implements Runnable {
 						}else 
 							LOG.info(" Rejected:"+fullName+"/raw/master/"+dbpath);
 						
-						//JsonObject jrepo = result.getJsonObject("repository");
 						
-						//System.out.println(result);
 					}
 					if (repo.getConfigPath()!=null) {
 						LOG.info(" dbPath:"+fullName+"/raw/master/"+repo.getConfigPath());
@@ -153,25 +155,25 @@ class RubyCrawler implements Runnable {
 	
 	private static void loadRepo(Repo repo) {
 		try {
-			RubyRepo rrepo = loader.setRepo(repo);
 			
-			loadSchemaDb(repo);
 			//  /repos/:owner/:repo/contents/:path
 			URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"
 					+ "?access_token="+oauth);
 			JsonReader rdr = gh.callApi(url);
+			if (rdr==null) { //File not Found
+				return;
+			}
+			RubyRepo rrepo = loader.setRepo(repo);			
+			loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/master/"+repo.getConfigPath()));	
+					
 			JsonArray results = rdr.readArray();
 			for (JsonObject result : results.getValuesAs(JsonObject.class)) {
 				String type = result.getString("type");
 				if (type.equals("file")) {
 					String fpath = result.getString("download_url");
 					if (fpath.endsWith(".rb")) {
-						URL furl = new URL(fpath);
-						
-						//TesteJRuby2.parseFile(rrepo, in);
-						loader.visitFile(furl);
-						//in.close();
-						
+						URL furl = new URL(fpath);						
+						loader.visitFile(furl);						
 					}
 				}				
 			}
@@ -182,17 +184,5 @@ class RubyCrawler implements Runnable {
 			ex.printStackTrace();
 		}
 	}
-	private static void loadSchemaDb(Repo repo) throws Exception {
-		URL url = new URL("https://github.com/"+repo.getName()+ "/raw/master/"+repo.getConfigPath());
-		
-		//InputStream is = url.openStream();
-		
-		loader.visitSchema(url);
-		//RubyRepo rrepo = TesteJRuby2.parseSchema(repo,in);
-		
-		
-		
-				//String model_url = url_name.substring(0,url_name.lastIndexOf("/"));
-		//model_url = model_url+"/../app/models/";
-	}
+	
 }

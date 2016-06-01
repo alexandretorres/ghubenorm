@@ -3,6 +3,7 @@ import org.jrubyparser.CompatVersion;
 import org.jrubyparser.NodeVisitor;
 import org.jrubyparser.Parser;
 import org.jrubyparser.ast.*;
+import org.jrubyparser.lexer.SyntaxException;
 import org.jrubyparser.parser.ParserConfiguration;
 import org.jrubyparser.rewriter.ReWriteVisitor;
 import org.jrubyparser.util.NoopVisitor;
@@ -13,6 +14,7 @@ import db.daos.RepoDAO;
 
 import db.jpa.JPA_DAO;
 import gitget.Auth;
+import gitget.Log;
 import model.Repo;
 
 import java.io.File;
@@ -39,7 +41,7 @@ public class TesteJRuby2 {
 	public static void main(String[] args)  {
 		Node n=null;
 		try {
-			testeDB();
+			//testeDB();
 			
 			long initTime =0; 
 			long endTime=0;
@@ -61,7 +63,9 @@ public class TesteJRuby2 {
 			//ps-deathstar-master
 			//in = new FileReader("repos/chroma32-master/db/schema.rb");
 			//in = new FileReader("repos/ps-deathstar-master/db/schema.rb");
-			in = new FileReader("repos/promoweb-master/db/schema.rb");
+			//in = new FileReader("repos/promoweb-master/db/schema.rb");
+			in = new FileReader("repos/gitlabhq-master/db/schema.rb");
+			
 			fileCnt++;
 			n = rubyParser.parse("", in, config);
 			parseTime+= (System.currentTimeMillis()-initTime);
@@ -73,12 +77,19 @@ public class TesteJRuby2 {
 	        //
 	        //File baseFile = new File("repos/chroma32-master/app/models/");//
 	        //File baseFile = new File("repos/ps-deathstar-master/app/models/");//
-	        File baseFile = new File("repos/promoweb-master/app/models/");//
+	        //File baseFile = new File("repos/promoweb-master/app/models/");//
+	        File baseFile = new File("repos/gitlabhq-master/app/models/");//
 	        
 	        RubyVisitor v = new RubyVisitor(repo);
 	        for (File f:baseFile.listFiles()) {
 	        	if (f.isFile()) {
-	        		read(v,repo,rubyParser,config,f);
+	        		try {
+	        			read(v,repo,rubyParser,config,f);
+	        		} catch (SyntaxException ex) {
+	        			Log.LOG.warning("Syntax exception on file "+f.getName()+" position "+ex.getPosition());
+	        	
+	        			ex.printStackTrace();
+	        		}
 	        		fileCnt++;
 	        	}
 	        }	
