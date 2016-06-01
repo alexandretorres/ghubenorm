@@ -14,7 +14,18 @@ public abstract class ConfigDAO {
 		return config.findDAOInstance(cl);
 	}
 	public abstract <X extends Object,T extends DAOInterface<X>> T findDAOInstance(Class<X> cl);
-	public abstract void finish();
+	/**
+	 * Release resources specific of the implementation, such as EntityManagers
+	 */
+	protected abstract void doFinish();
 	public abstract void setup();
+	/**
+	 * Release resources specific of the implementation, such as EntityManagers,
+	 * by calling doFinish at the config
+	 */
+	public static void finish() {
+		if (config!=null)
+			config.doFinish();
+	}
 	
 }

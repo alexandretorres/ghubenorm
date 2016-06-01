@@ -1,35 +1,29 @@
 package sruby;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Iterator;
-import java.util.stream.Stream;
+import java.util.Arrays;
+import java.util.List;
 
-import org.jrubyparser.ast.*;
-import org.jrubyparser.rewriter.DefaultFormatHelper;
-import org.jrubyparser.rewriter.ReWriteVisitor;
-import org.jrubyparser.rewriter.utils.ReWriterContext;
+import org.jruby.ast.AttrAssignNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.EvStrNode;
+import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FloatNode;
+import org.jruby.ast.HashNode;
+import org.jruby.ast.KeywordArgNode;
+import org.jruby.ast.ListNode;
+import org.jruby.ast.LiteralNode;
+import org.jruby.ast.NewlineNode;
+import org.jruby.ast.NilNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.RationalNode;
+import org.jruby.ast.StrNode;
+import org.jruby.ast.SymbolNode;
+import org.jruby.ast.types.INameNode;
+import org.jruby.util.KeyValuePair;
 
 import com.google.common.base.CharMatcher;
+
 public class Helper {
-	private static ReWriteVisitor visitor;
 	
-	/**
-	 * return the visitor, with lazy instantiation, but without setting the output. Use getConfig.setOutput
-	 * @return
-	 */
-	private static ReWriteVisitor getVisitor() {		
-		if (visitor==null) {			
-			visitor = new ReWriteVisitor( new ReWriterContext((PrintWriter)null, "", new DefaultFormatHelper()));			
-		}
-		return visitor;
-	}
-	private static String visit(Node n) {
-		StringWriter sw = new StringWriter();
-		ReWriteVisitor v=getVisitor();
-		v.getConfig().setOutput(new PrintWriter(sw));
-		n.accept(v);
-		return sw.toString();
-	}
 	static public boolean in(Object a[],Object o) {
 		for (Object i:a){
 			if (i.equals(o))
@@ -49,10 +43,10 @@ public class Helper {
 			return ((SymbolNode)node).getName();	
 		} else if (node instanceof NilNode) {
 			return null;
-		} else if (node instanceof BareKeywordNode) {
-			return ((BareKeywordNode)node).getName();	
+		} else if (node instanceof KeywordArgNode) {
+			return ((KeywordArgNode)node).toString();	
 		} else if (node instanceof StrNode) {			
-			String s = ((StrNode) node).getValue();
+			String s = ((StrNode) node).getValue().toString();
 			CharMatcher matcher = CharMatcher.is('"');
 			s = matcher.trimFrom(s);
 			return s;
@@ -60,14 +54,15 @@ public class Helper {
 			return ""+((FixnumNode)node).getValue();
 		} else if (node instanceof ListNode) {
 			ListNode lst = (ListNode) node;
-			if (lst.childNodes().size()==1)
-				return getValue(lst.childNodes().get(0));
+			if (lst.children().length==1)
+				return getValue(lst.children()[0]);
 			else {
 				//visitor keeps " and [...
 				//return visit(node);
 				
 				try {
-					String ret = lst.childNodes().stream().
+					List<Node> children = Arrays.asList(lst.children());
+					String ret = children.stream().
 							map(n->getValue(n)).
 							reduce(null,(a, b) -> (a==null ? b : a+","+ b) );
 					return ret;
@@ -78,24 +73,55 @@ public class Helper {
 			}		
 		} else if (node instanceof CallNode) {
 			CallNode cn = (CallNode) node;
-			return getValue(cn.getReceiver())+"."+cn.getName();
+			return getValue(cn.getReceiverNode())+"."+cn.getName();
 		
 		} else if (node instanceof EvStrNode) {			//This is a guess
 			return "#"+getValue(((EvStrNode)node).getBody()); 
 		} else if (node instanceof NewlineNode) {
 			NewlineNode nn = (NewlineNode) node;			
 			return "{"+getValue( nn.getNextNode())+"}"; 
-		} else if (node instanceof NamedNode) {
-			NamedNode nn = (NamedNode) node;
-			return nn.getLexicalName();
-		} else {//if (node instanceof FixnumNode) {
-			return visit(node);
-			//System.out.println("baaaa");
+		} else if (node instanceof LiteralNode) { 
+			LiteralNode nn = (LiteralNode) node;
+			return nn.getName();  
+		} else if (node instanceof INameNode) {
+			return ((INameNode) node).getName();
+		} else if (node instanceof HashNode) {// this is not correct. GetName strips a lot of info. 
+			HashNode hn = (HashNode) node; 
+			StringBuffer ret = new StringBuffer();
+			if (hn.getPairs().size()>1)
+				ret.append("{");
+			boolean first=true;
+			for (KeyValuePair<Node, Node> pair:hn.getPairs()) {	
+				if (first) {
+					first=false;
+				} else {
+					ret.append(",");
+				}
+				ret.append(getValue(pair.getKey()));  //This does not GENERATE code...
+				ret.append("=>");
+				ret.append(getValue(pair.getValue()));
+				
+			}
+			if (hn.getPairs().size()>1)
+				ret.append("{");
+			return ret.toString();
+		} else if (node instanceof FloatNode) {
+			return Double.toString(((FloatNode)node).getValue());
+		} else if (node instanceof RationalNode) {
+			RationalNode rn = (RationalNode) node;
+			StringBuffer buf = new StringBuffer();
+			buf.append(rn.getNumerator());
+			buf.append("/");
+			buf.append(rn.getDenominator());	
+			return buf.toString();
+		} else {
+			return "";  //visit(node);
+			
 		}		
 		//return visit(node);
 	}
-	static public <T> T getHashArgument(ListNode args,String name,Class<T> cl) {
-		String res = getHashArgument(args, name);
+	static public <T> T getHashArgument(List<KeyValuePair<Node, Node>> list,String name,Class<T> cl) {
+		String res = getHashArgument(list, name);
 		if (res==null)
 			return null;
 		
@@ -105,22 +131,14 @@ public class Helper {
 			return (T)(Boolean) res.equals("true");
 		return null;
 	}
-	static public String getHashArgument(ListNode args,String name) {
-		
-		Iterator<Node> it = args.childNodes().iterator();
-		while (it.hasNext()) {
-			String key = getName(it.next());
-			Node value = it.next();
+	static public String getHashArgument(List<KeyValuePair<Node, Node>> list,String name) {
+		for (KeyValuePair<Node, Node> pair:list) {
+			String key = getName(pair.getKey());
 			if (name.equals(key)) {
-				return getValue(value);
+				return getValue(pair.getValue());
 			}
-			
-					
 		}
-		/*
-		for (Node n:args.childNodes()) {
-			
-		}*/
+		
 		return null;
 	}
 	static boolean keepScope(Node c) {

@@ -26,7 +26,7 @@ public abstract class ConfigJPA extends ConfigDAO {
 		return DAO.getInstance(cl);
 	}*/
 	@Override
-	public void finish() {
+	protected void doFinish() {
 		DAO.finish();		
 	}
 }

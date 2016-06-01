@@ -7,42 +7,42 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
-import org.jrubyparser.ast.AssignableNode;
-import org.jrubyparser.ast.AttrAssignNode;
-import org.jrubyparser.ast.CallNode;
-import org.jrubyparser.ast.ClassNode;
-import org.jrubyparser.ast.Colon2Node;
-import org.jrubyparser.ast.FCallNode;
-import org.jrubyparser.ast.INameNode;
-import org.jrubyparser.ast.Node;
-import org.jrubyparser.ast.SelfNode;
-import org.jrubyparser.util.NoopVisitor;
+import org.jruby.ast.AttrAssignNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.ClassNode;
+import org.jruby.ast.Colon2Node;
+import org.jruby.ast.FCallNode;
+import org.jruby.ast.Node;
+import org.jruby.ast.SelfNode;
+import org.jruby.ast.types.INameNode;
+import org.jruby.ast.visitor.AbstractNodeVisitor;
 
 import model.MClass;
 import model.MColumnDefinition;
 import model.MColumnMapping;
 import model.MProperty;
 import model.MTable;
-import sjava.CompilationUnit;
+
 /**
  * Visitor that processes ruby files, identifying active record definitions. Notice that
  * this could be a lot simpler if the aim were just to COUNT occurrences. Think about that.
  * @author torres
  *
  */
-public class RubyVisitor extends NoopVisitor {
-	Stack stack = new Stack();
-	
+public class RubyVisitor extends AbstractNodeVisitor<Object> {
+	Stack<Object> stack = new Stack<Object>();
+	private RubyRepo repo;
 	public void reset() {
 		stack.removeAll(stack);
 	}
-	private RubyRepo repo;
+	
 	public RubyVisitor(RubyRepo repo){
 		this.repo=repo;
 	}
 	@Override
-	protected Object visit(Node parent) {		
-		return super.visit(parent);
+	protected Object defaultVisit(Node node) {		
+		visitChildren(node);
+		return null;
 	}
 	private String decodeName(INameNode n) {
 		String name = n.getName();
@@ -63,10 +63,10 @@ public class RubyVisitor extends NoopVisitor {
 		clazz.setSuperClass(superclazz);
 		//self.table_name
 		if (isPersistent) {			
-			AttrAssignNode abstrN = Helper.findAttrAssignNode(n.getBody(), "abstract_class");
+			AttrAssignNode abstrN = Helper.findAttrAssignNode(n.getBodyNode(), "abstract_class");
 			boolean abstr=false;
-			if (abstrN!=null && abstrN.getReceiver() instanceof SelfNode) {				
-				abstr=Helper.getValue(abstrN.getArgs()).equals("true");
+			if (abstrN!=null && abstrN.getReceiverNode() instanceof SelfNode) {				
+				abstr=Helper.getValue(abstrN.getArgsNode()).equals("true");
 			}
 			clazz.setAbstract(abstr);
 			
@@ -74,10 +74,10 @@ public class RubyVisitor extends NoopVisitor {
 			clazz.setPersistent();	
 			if (clazz.isFirstConcretePersistent()) {
 				
-				AttrAssignNode an = Helper.findAttrAssignNode(n.getBody(), "table_name");		
+				AttrAssignNode an = Helper.findAttrAssignNode(n.getBodyNode(), "table_name");		
 				String tabname = NounInflector.getInstance().tableize(name);
-				if (an!=null && an.getReceiver() instanceof SelfNode) {				
-					tabname=Helper.getValue(an.getArgs());
+				if (an!=null && an.getReceiverNode() instanceof SelfNode) {				
+					tabname=Helper.getValue(an.getArgsNode());
 				}
 				MTable tab = repo.getTable(tabname);
 				if (tab==null)
@@ -123,8 +123,8 @@ public class RubyVisitor extends NoopVisitor {
 		String name = n.getCPath().getName();
 		String sname="";
 		
-		if (n.getSuper() instanceof INameNode) {
-			INameNode sup = (INameNode) n.getSuper();
+		if (n.getSuperNode() instanceof INameNode) {
+			INameNode sup = (INameNode) n.getSuperNode();
 			//String lexname = sup.getLexicalName();
 			sname = decodeName(sup); 			
 		}
@@ -169,7 +169,7 @@ public class RubyVisitor extends NoopVisitor {
 					repo.visitors.push(new VisitComposedOf(repo,clazz,n));
 					break;
 				case "attr_reader": case "attr_writer": case "attr_accessor":
-					for (Node cn:n.getArgs().childNodes()) {
+					for (Node cn:n.getArgsNode().childNodes()) {
 						String propName = Helper.getValue(cn);
 						clazz.newProperty().setName(propName);
 					}
@@ -187,12 +187,12 @@ public class RubyVisitor extends NoopVisitor {
 	public Object visitCallNode(CallNode n) {
 		
 		//System.out.println("call node:"+n.getName());
-		if (!stack.isEmpty() && stack.peek() instanceof MClass && n.getReceiver() instanceof SelfNode) {
+		if (!stack.isEmpty() && stack.peek() instanceof MClass && n.getReceiverNode() instanceof SelfNode) {
 			MClass clazz = (MClass) stack.peek();
 			switch (n.getName()) {
 			case "primary_key":
 			case "primary_keys":				
-				String pk_value=Helper.getValue(n.getArgs());				
+				String pk_value=Helper.getValue(n.getArgsNode());				
 				String[] pks = pk_value.split(",");
 				for (String pk:pks) {
 					MProperty pkProp = null;

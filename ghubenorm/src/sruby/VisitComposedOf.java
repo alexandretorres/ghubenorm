@@ -2,10 +2,8 @@ package sruby;
 
 import java.util.Iterator;
 
-import org.jrubyparser.ast.ArrayNode;
-import org.jrubyparser.ast.HashNode;
-import org.jrubyparser.ast.IArgumentNode;
-import org.jrubyparser.ast.Node;
+import org.jruby.ast.*;
+import org.jruby.util.KeyValuePair;
 
 import model.MAssociationDef;
 import model.MAttributeOverride;
@@ -34,7 +32,7 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 			return null;
 		//Only Tables sources on activerec. ruby
 		MTable tab = (MTable) clazz.getPersistence().getSource();
-		Iterator<Node> it = node.getArgs().childNodes().iterator();
+		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
 		Node nameNode = it.next();
 		String pname = Helper.getValue(nameNode);
 		String typeName = pname;
@@ -97,15 +95,11 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 	private void visitArg(MProperty prop,Node arg) {
 		if (arg instanceof HashNode) {
 			HashNode hn = (HashNode) arg;
-			for (Iterator<Node> it=hn.getListNode().childNodes().iterator();it.hasNext();) {
-				String value =null;
-				String name=Helper.getName(it.next());
-				Node valueNode = null;
-				if (it.hasNext()) {
-					valueNode=it.next();
-					value = Helper.getValue(valueNode);
-					
-				}
+			for (KeyValuePair<Node, Node> pair:hn.getPairs()) {				
+				String name=Helper.getName(pair.getKey());
+				Node valueNode = pair.getValue();					
+				String value = Helper.getValue(valueNode);
+		
 				MAssociationDef def=null;
 				switch (name.toLowerCase()) {
 					case "mapping": 

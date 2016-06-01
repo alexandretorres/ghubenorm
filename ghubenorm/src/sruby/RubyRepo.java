@@ -13,8 +13,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Stream;
 
-import org.jrubyparser.ast.ClassNode;
-
+import org.jruby.ast.ClassNode;
 
 import model.MAssociation;
 import model.MAttributeOverride;
