@@ -27,6 +27,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			{"string","integer","datetime","boolean","decimal","binary"};
 	Stack<Object> stack = new Stack<Object>();
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
+	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
 	public SchemaVisitor(RubyRepo repo){
 		this.repo=repo;
 	}
@@ -50,23 +51,8 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 	 * Faz sentido isso?
 	 */
 	@Override
-	public Object visitClassNode(ClassNode n) {
-		Object ret=null;
-		String name = n.getCPath().getName();
-		/*
-		String sname="";
-		
-		if (n.getSuperNode() instanceof INameNode) {
-			INameNode sup = (INameNode) n.getSuperNode();
-			//String lexname = sup.getLexicalName();
-			sname = decodeName(sup); 
-		}*/
-		
-		MClass clazz = MClass.newMClass().setName(name);
-		ret = clazz;	
-		
-		super.visitClassNode(n);
-		return ret;
+	public Object visitClassNode(ClassNode n) {		
+		return null;
 	}
 	@Override
 	/**
@@ -83,7 +69,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			Node nod = it.next();
 			String tabname = Helper.getValue(nod);
 			if (tabname!=null && tabname.length()>0) {							
-				table = daoMTable.persit(MTable.newMTable(tabname));		
+				table = daoMTable.persit(MTable.newMTable(repo.getRepo(),tabname));		
 				repo.getTables().add(table);
 			}
 			if (table!=null)
@@ -124,7 +110,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		}
 		MColumn ret=null;
 		if (it.hasNext()) {
-			ret=tab.addColumn().setName(Helper.getValue(it.next()));
+			ret= daoColumn.persit(tab.addColumn().setName(Helper.getValue(it.next())));
 		} else {
 			return null;
 		}

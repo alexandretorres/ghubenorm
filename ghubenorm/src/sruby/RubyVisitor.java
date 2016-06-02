@@ -65,7 +65,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		
 		
 		String name = n.getCPath().getName();
-		MClass clazz = daoMClass.persit(MClass.newMClass().setName(name));
+		MClass clazz = daoMClass.persit(MClass.newMClass(repo.getRepo()).setName(name));
 		stack.push(clazz);
 		repo.getClasses().add(clazz);
 		clazz.setSuperClass(superclazz);
@@ -89,7 +89,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 				}
 				MTable tab = repo.getTable(tabname);
 				if (tab==null)
-					tab=daoMTable.persit(clazz.getPersistence().newTableSource(tabname));
+					tab=daoMTable.persit(clazz.newTableSource(tabname));
 				else
 					clazz.getPersistence().setDataSource(tab);
 				// add properties from the "class"

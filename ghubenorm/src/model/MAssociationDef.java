@@ -68,7 +68,7 @@ public class MAssociationDef {
 		return this;
 	}
 	public MJoinColumn newJoingColumn(MColumnDefinition coldef) {
-		MJoinColumn jc = MJoinColumn.newMJoinColumn(coldef);
+		MJoinColumn jc = MJoinColumn.newMJoinColumn(this,coldef);		
 		joinColumns.add(jc);
 		return jc;
 	}

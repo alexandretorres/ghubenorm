@@ -20,6 +20,7 @@ public class DAO<C> implements DAOInterface<C>{
 	static {
 		Map<String,String> props = new HashMap<String,String>();
 		props.put("hibernate.connection.password", Auth.getProperty("hibernate.connection.password"));
+		props.put("hibernate.show_sql", "false");
 		emf = Persistence.createEntityManagerFactory("gitenorm",props);
 	}
 	

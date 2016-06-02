@@ -13,19 +13,17 @@ public class MTable extends MDataSource {
 	private String name;
 	private String catalog;
 	private String schema;
-	@ManyToOne
+	@ManyToOne(optional=false)
 	private Repo repo;
 	@OneToMany(mappedBy="table",cascade=CascadeType.PERSIST)
 	private List<MColumn> columns=new ArrayList<MColumn>();
 	
-	public static MTable newMTable(String name) {
-		return new MTable( name);
-	}
-	
-	protected MTable() {
-		
-	}
-	private MTable(String name) {
+	public static MTable newMTable(Repo repo,String name) {
+		return new MTable(repo, name);
+	}	
+	protected MTable() { }
+	private MTable(Repo repo,String name) {
+		this.repo=repo;
 		this.name=name;
 	}
 	protected Repo getRepo() {

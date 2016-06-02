@@ -1,14 +1,15 @@
 package model;
 
+import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
 
 @Embeddable
-public class MPersistent {
-	
-	@OneToOne
+public class MPersistent {	
+	private boolean persistent=false;
+	@OneToOne(optional=true)
 	private MDataSource source;
 	
 	protected MPersistent() {
@@ -18,15 +19,19 @@ public class MPersistent {
 	public MPersistent setDataSource(MDataSource ds) {
 		this.source=ds;
 		return this;
-	}
+	}	
 	
-	public MTable newTableSource(String name) {
-		MTable t= MTable.newMTable(name);
-		source=t;
-		return t;
-	}
 	public MDataSource getSource() {
 		return source;
+	}
+
+	protected boolean isPersistent() {
+		return persistent;
+	}
+
+	protected MPersistent setPersistent(boolean persistent) {
+		this.persistent = persistent;
+		return this;
 	}
 	
 }

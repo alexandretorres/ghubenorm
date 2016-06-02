@@ -123,6 +123,7 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 	private IArgumentNode node;
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
+	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
 	public VisitBelongsTo(RubyRepo repo,MClass clazz,IArgumentNode node) {
 		this.repo=repo;
 		this.clazz = clazz;
@@ -231,15 +232,15 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 						
 						MTable source = (MTable) k.orElseGet(()->
 							daoMTable.persit(
-							parent.setPersistent().newTableSource(								
+							parent.newTableSource(								
 										NounInflector.getInstance().tableize(parent.getName())
 								)));
 						
 						for (String fk:fks) {
 							MJoinColumn jc = def.findJoinColumn(fk);
 							MColumn col = source.findColumn(fk);
-							if (col==null) {
-								col = source.addColumn().setName(fk);
+							if (col==null) {								
+								col =  daoColumn.persit(source.addColumn().setName(fk));
 							} else {
 								//remove property
 								MProperty delProp = clazz.getProperties().stream().
@@ -252,6 +253,7 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 							}
 							if (jc==null) {
 								jc=def.newJoingColumn(col);
+							
 							}							
 						}
 						

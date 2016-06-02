@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
 
@@ -159,7 +160,7 @@ class RubyCrawler implements Runnable {
 		//} while(false);
 	}
 	
-	private  void loadRepo(Repo repo) {
+	private void loadRepo(Repo repo) {
 		try {			
 			//  /repos/:owner/:repo/contents/:path
 			URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"
@@ -185,8 +186,8 @@ class RubyCrawler implements Runnable {
 			
 			loader.solveRefs();
 			rrepo.print();
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
 		}
 	}
 	

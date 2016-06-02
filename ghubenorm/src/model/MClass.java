@@ -21,10 +21,10 @@ public class MClass {
 	private String name;
 	private String packageName;
 	private boolean isAbstract=false;
-	@ManyToOne
+	@ManyToOne(optional=false)
 	private Repo repo;
 	@Embedded
-	private MPersistent persistence=null;
+	private MPersistent persistence=new MPersistent();
 	@ManyToOne(cascade=CascadeType.PERSIST)
 	private MClass superClass;
 	@OneToMany(mappedBy="parent",cascade=CascadeType.PERSIST)
@@ -34,12 +34,14 @@ public class MClass {
 	@OneToMany(mappedBy="superClass")
 	private Set<MClass> specializations=new HashSet<MClass>();
 	
-	public static MClass newMClass() {
-		return new MClass();
+	public static MClass newMClass(Repo repo) {
+		return new MClass(repo);
 	}
-	protected MClass() {
-		
+	protected MClass(Repo repo) {
+		this.repo=repo;
 	}	
+	protected MClass() {
+	}
 	public int getId() { return id;	}
 	public void setId(int id) {	this.id = id;	}
 	protected Repo getRepo() {
@@ -72,13 +74,21 @@ public class MClass {
 		this.isAbstract = isAbstract;
 		return this;
 	}
+	public MTable newTableSource(String name) {
+		MTable t= MTable.newMTable(repo,name);
+		persistence = setPersistent();
+		persistence.setPersistent(true).setDataSource(t);		
+		return t;
+	}
 	public MPersistent setPersistent() {
 		if (persistence==null)
 			persistence = new MPersistent();
+		persistence.setPersistent(true);
 		return persistence;
 	}
 	public MClass unsetPersistent() {
-		persistence=null;
+		persistence.setDataSource(null);
+		persistence.setPersistent(false);
 		return this;
 	}
 	public MPersistent getPersistence() {

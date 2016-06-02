@@ -18,10 +18,11 @@ public class MJoinColumn {
 	private MColumnDefinition inverse;
 	
 	protected MJoinColumn() {}
-	public static MJoinColumn newMJoinColumn(MColumnDefinition column) {
-		return new MJoinColumn(column);
+	public static MJoinColumn newMJoinColumn(MAssociationDef adef,MColumnDefinition column) {
+		return new MJoinColumn(adef,column);
 	}
-	private MJoinColumn(MColumnDefinition column) {
+	private MJoinColumn(MAssociationDef adef,MColumnDefinition column) {
+		this.associationDef = adef;
 		this.column = column;
 	}
 	public int getId() {
@@ -41,7 +42,7 @@ public class MJoinColumn {
 	}
 	public void setInverse(MColumnDefinition inverse) {
 		this.inverse = inverse;
-	}
+	}	
 	public MColumnDefinition getColumnForProperty(MProperty p) {
 		if (p==null)
 			return null;
