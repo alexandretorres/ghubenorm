@@ -5,24 +5,39 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
+@Entity
 public class MClass {
-
+	@Id
+	private int id;
 	private String name;
 	private String packageName;
 	private boolean isAbstract=false;
+	@Embedded
 	private MPersistent persistence=null;
+	@ManyToOne(cascade=CascadeType.PERSIST)
 	private MClass superClass;
+	@OneToMany(mappedBy="parent",cascade=CascadeType.PERSIST)
 	private List<MProperty> properties = new ArrayList<MProperty>();
+	@OneToMany(mappedBy="clazz",cascade=CascadeType.ALL)
 	private Set<MOverride> overrides = new HashSet<MOverride>();
+	@OneToMany(mappedBy="superClass")
 	private Set<MClass> specializations=new HashSet<MClass>();
 	
 	public static MClass newMClass() {
 		return new MClass();
 	}
-	private MClass() {
+	protected MClass() {
 		
-	}
-	
+	}	
+	public int getId() { return id;	}
+	public void setId(int id) {	this.id = id;	}
 	public String getName() {
 		return name;
 	}

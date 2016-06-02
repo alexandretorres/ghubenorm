@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 
 import org.jruby.ast.ClassNode;
 
+import model.Language;
 import model.MAssociation;
 import model.MAttributeOverride;
 import model.MClass;
@@ -29,8 +30,7 @@ import model.Repo;
 public class RubyRepo {
 	private Repo repo;
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
-	Set<MClass> classes = new HashSet<MClass>();
-	Set<MTable> tables = new HashSet<MTable>();
+	
 	/**
 	 * Superclass-ClassCode: subclasses waiting for a class definition 
 	 */
@@ -39,18 +39,25 @@ public class RubyRepo {
 		this.repo=repo;
 	}
 	public RubyRepo() {
-		
+		repo = new Repo(Language.RUBY);
+	}
+	
+	public Set<MClass> getClasses() {
+		return repo.getClasses();
+	}
+	public Set<MTable> getTables() {
+		return repo.getTables();
 	}
 	public MTable getTable(String name) {
-		Optional<MTable> ret = tables.stream().filter(tab->tab.getName().equalsIgnoreCase(name)).findFirst();
+		Optional<MTable> ret = getTables().stream().filter(tab->tab.getName().equalsIgnoreCase(name)).findFirst();
 		return ret.orElse(null);
 	}
 	public MClass getClazz(String name) {
-		Optional<MClass> ret = classes.stream().filter(cl->cl.getName().equalsIgnoreCase(name)).findFirst();
+		Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(name)).findFirst();
 		return ret.orElse(null);
 	}
 	public MClass getClazzFromUnderscore(String underscore_name) {
-		Optional<MClass> ret = classes.stream().filter(
+		Optional<MClass> ret = getClasses().stream().filter(
 				cl->NounInflector.getInstance().underscore(cl.getName()).equalsIgnoreCase(underscore_name)).
 				findFirst();
 		return ret.orElse(null);
@@ -94,7 +101,7 @@ public class RubyRepo {
 		}
 	}
 	public void listTables() {
-		for (MTable t:tables) {
+		for (MTable t:getTables()) {
 			System.out.println("Table "+t.getName());
 			for (MColumn c:t.getColumns()) {
 				System.out.println("	"+c.getName()+":"+c.getColummnDefinition());
@@ -106,7 +113,7 @@ public class RubyRepo {
 		StringWriter sw =new StringWriter();
 		//PrintWriter pw = new PrintWriter(sw);
 		PrintWriter pw =new PrintWriter(System.out);
-		for (MClass cl:classes) {
+		for (MClass cl:getClasses()) {
 			pw.println("=====================================");
 			pw.print((cl.getPackageName()==null ? "" : cl.getPackageName()+".")+cl.getName());
 			if (cl.getSuperClass()!=null) {

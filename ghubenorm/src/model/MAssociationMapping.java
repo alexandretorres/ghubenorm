@@ -1,15 +1,24 @@
 package model;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
+
+@Embeddable
 public class MAssociationMapping {
+	@OneToOne
 	private MAssociationDef value;
-	private MProperty property;
 	
+	
+	protected MAssociationMapping() {}
 	public static MAssociationMapping newMAssociationMapping(MAssociationDef def) {
 		return new MAssociationMapping(def);
 	}
 	private MAssociationMapping(MAssociationDef def) {
 		value=def;
 	}
+	
 	public MAssociationDef getValue() {
 		return value;
 	}
@@ -17,11 +26,6 @@ public class MAssociationMapping {
 	public void setValue(MAssociationDef value) {
 		this.value = value;
 	}
-	public MProperty getProperty() {
-		return property;
-	}
-	public void setProperty(MProperty property) {
-		this.property = property;
-	}
+	
 	
 }

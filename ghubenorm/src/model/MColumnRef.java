@@ -1,9 +1,14 @@
 package model;
 
-public class MColumnRef extends MColumnDefinition { 
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 
+@Entity
+public class MColumnRef extends MColumnDefinition { 
+	@ManyToOne
 	private MColumn column;
 	
+	protected MColumnRef() {}
 	public static MColumnRef newMColumnRef(MColumn column) {
 		return new MColumnRef(column);
 	}

@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URL;
 
+import model.Language;
 import model.Repo;
 import sruby.RubyRepo;
 import sruby.RubyRepoLoader;
@@ -23,7 +24,7 @@ public class LoadRubyRepo {
 			
 			RubyRepoLoader loader = new RubyRepoLoader();
 			
-			RubyRepo repo =loader.setRepo(new Repo());
+			RubyRepo repo =loader.setRepo(new Repo(Language.RUBY));
 			loader.visitSchema(url);
 			repo.listTables();
 			

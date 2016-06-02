@@ -2,10 +2,16 @@ package model;
 
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
  
 
 @Entity
@@ -17,7 +23,7 @@ public class Repo {
 	private int id;
 	private String name;
 	private String url;
-	private Language language;
+	private Language language;	
 	/**
 	 * This is the internal path to the "base" file that defines the repository. For ruby it is the schema.db file,
 	 * for java it may be the presistence.xml. It is used to differentiate what portion of the repository is 
@@ -26,6 +32,15 @@ public class Repo {
 	 */
 	private String configPath;
 	
+	@OneToMany(cascade=CascadeType.ALL)
+	Set<MClass> classes = new HashSet<MClass>();
+	@OneToMany(cascade=CascadeType.PERSIST)
+	Set<MTable> tables = new HashSet<MTable>();
+	
+	protected Repo() {}
+	public Repo(Language lang) {
+		this.language=lang;
+	}
 	public int getId() {
 		return id;
 	}
@@ -55,6 +70,18 @@ public class Repo {
 	}
 	public void setConfigPath(String configPath) {
 		this.configPath = configPath;
+	}
+	public Set<MClass> getClasses() {
+		return classes;
+	}
+	protected void setClasses(Set<MClass> classes) {
+		this.classes = classes;
+	}
+	public Set<MTable> getTables() {
+		return tables;
+	}
+	protected void setTables(Set<MTable> tables) {
+		this.tables = tables;
 	}
 	
 }

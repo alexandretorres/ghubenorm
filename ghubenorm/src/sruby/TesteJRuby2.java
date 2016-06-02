@@ -8,6 +8,7 @@ import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
 import gitget.Auth;
 import gitget.Log;
+import model.Language;
 import model.Repo;
 
 import java.io.File;
@@ -93,7 +94,7 @@ public class TesteJRuby2 {
 		//DAOInterface<Repo> dao = ConfigDAO.getDAO(Repo.class);
 		try  {
 			dao.beginTransaction();
-			Repo repo = new Repo();
+			Repo repo = new Repo(Language.RUBY);
             repo.setName("abc123");
             repo.setUrl("http");
             dao.persit(repo);

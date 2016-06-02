@@ -1,8 +1,15 @@
 package model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.Transient;
+
+@Entity
 public class MColumn extends MColumnDefinition{
-	public static final int DEFAULT_LENGTH = 255;
-	public static final int DEFAULT_SCALE = 0;
+	@Transient public static final int DEFAULT_LENGTH = 255;	
+	@Transient public static final int DEFAULT_SCALE = 0;	
 	private String name;
 	private boolean nullable;
 	private boolean insertable;
@@ -11,19 +18,21 @@ public class MColumn extends MColumnDefinition{
 	private int length;
 	private int precision;
 	private int scale;
+	@Column(name="isUnique")
 	private boolean unique;
+	@ManyToOne(optional=false)
 	private MTable table;
 	/**
 	 * This property was not included on the original ENORM
 	 */
 	private String defaulValue;
 	
+	
 	public static MColumn newMColumn() {
 		return new MColumn();
 	}
-	private MColumn() {
-		
-	}
+	protected MColumn() {}
+	
 	public String getName() {
 		return name;
 	}

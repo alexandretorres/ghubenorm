@@ -1,14 +1,21 @@
 package model;
 
-public class MAssociation {
-	
-	private MProperty from;
-	private MProperty to;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
 
-	
+@Entity
+public class MAssociation {
+	@Id
+	private int id;
+	@OneToOne(mappedBy="association")
+	private MProperty from;
+	@OneToOne
+	private MProperty to;	
 	private boolean navigableFrom;
 	private boolean navigableTo;
 	
+	protected MAssociation() {}
 	public static MAssociation newMAssociation(MProperty from) {
 		return new MAssociation(from);
 	}
@@ -29,6 +36,8 @@ public class MAssociation {
 		
 		from.setAssociation(this);		
 	}
+	public int getId() { return id;	}
+	public void setId(int id) {	this.id = id;	}
 	public MProperty getFrom() {
 		return from;
 	}

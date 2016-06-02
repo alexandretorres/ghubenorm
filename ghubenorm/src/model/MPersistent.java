@@ -1,10 +1,20 @@
 package model;
 
+import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
+
+@Embeddable
 public class MPersistent {
+	
+	@OneToOne
 	private MDataSource source;
-	MPersistent() {
+	
+	protected MPersistent() {
 		
 	}
+	
 	public MPersistent setDataSource(MDataSource ds) {
 		this.source=ds;
 		return this;

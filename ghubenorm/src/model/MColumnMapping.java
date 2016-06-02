@@ -1,9 +1,17 @@
 package model;
 
-public class MColumnMapping {
+import javax.persistence.Embeddable;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.OneToOne;
 
-	MProperty property;
+@Embeddable
+public class MColumnMapping {
+	
+	@OneToOne	
 	MColumnDefinition columnDefinition;
+	
+	protected MColumnMapping() {}
 	public static MColumnMapping newMColumnMapping(MColumnDefinition columnDefinition) {
 		return new MColumnMapping( columnDefinition);
 	}
@@ -12,12 +20,7 @@ public class MColumnMapping {
 	
 		this.columnDefinition = columnDefinition;
 	}
-	public MProperty getProperty() {
-		return property;
-	}
-	public void setProperty(MProperty property) {
-		this.property = property;
-	}
+	
 	public MColumnDefinition getColumnDefinition() {
 		return columnDefinition;
 	}

@@ -59,7 +59,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		String name = n.getCPath().getName();
 		MClass clazz = MClass.newMClass().setName(name);
 		stack.push(clazz);
-		repo.classes.add(clazz);
+		repo.getClasses().add(clazz);
 		clazz.setSuperClass(superclazz);
 		//self.table_name
 		if (isPersistent) {			

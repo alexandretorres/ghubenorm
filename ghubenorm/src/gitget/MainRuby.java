@@ -12,6 +12,9 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 
+import dao.ConfigDAO;
+import dao.DAOInterface;
+import db.jpa.JPA_DAO;
 import model.Language;
 import model.Repo;
 import sruby.RubyRepo;
@@ -66,6 +69,7 @@ class RubyCrawler implements Runnable {
 	@Override
 	public void run() {			
 		try {
+			ConfigDAO.config(JPA_DAO.instance);
 			URL uauth = new URL("https://api.github.com/?access_token="+oauth);
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
 			try (JsonReader rdr = gh.callApi(uauth)) {
@@ -109,8 +113,10 @@ class RubyCrawler implements Runnable {
 	//puro:https://github.com/iluwatar/java-design-patterns/blob/master/service-layer/src/main/java/com/iluwatar/servicelayer/spell/Spell.java
 	//raw: https://github.com/iluwatar/java-design-patterns/raw/master/service-layer/src/main/java/com/iluwatar/servicelayer/spell/Spell.java
 	public static void printCode(JsonObject repoJson,String fullName) throws Exception {
+		DAOInterface<Repo> dao = ConfigDAO.getConfig().getDAO(Repo.class);
 		int cnt=0,total=0,p=1;
-		do {
+		do {			
+			dao.beginTransaction();
 			//https://api.github.com/repositories/2500088/contents/db
 			//filename:schema.rb create_table in:file
 			URL url = new URL("https://api.github.com/search/code?page="+p+"&per_page=100"
@@ -122,7 +128,7 @@ class RubyCrawler implements Runnable {
 				total=obj.getInt("total_count");
 				JsonArray results = obj.getJsonArray("items");
 				if (total>0) {
-					Repo repo = new Repo();
+					Repo repo = new Repo(Language.RUBY);
 					repo.setLanguage(Language.RUBY);
 					repo.setName(fullName);
 					repo.setUrl(repoJson.getString("html_url"));
@@ -132,16 +138,13 @@ class RubyCrawler implements Runnable {
 						String fname = result.getString("name");
 						if (dbpath.contains("db/"+fname)) {
 							if (repo.getConfigPath()!=null) {
-								LOG.warning("duplicate path:"+repo.getConfigPath()+" x "+dbpath);
-							
+								LOG.warning("duplicate path:"+repo.getConfigPath()+" x "+dbpath);							
 							}
-							repo.setConfigPath(dbpath);
-							
-						}else 
-							LOG.info(" Rejected:"+fullName+"/raw/master/"+dbpath);
-						
-						
+							repo.setConfigPath(dbpath);							
+						} else 
+							LOG.info(" Rejected:"+fullName+"/raw/master/"+dbpath);						
 					}
+					dao.persit(repo);
 					if (repo.getConfigPath()!=null) {
 						LOG.info(" dbPath:"+fullName+"/raw/master/"+repo.getConfigPath());
 						loadRepo(repo);
@@ -150,12 +153,12 @@ class RubyCrawler implements Runnable {
 					}
 				}
 			}
+			dao.commitAndCloseTransaction();
 		} while(false);
 	}
 	
 	private static void loadRepo(Repo repo) {
-		try {
-			
+		try {			
 			//  /repos/:owner/:repo/contents/:path
 			URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"
 					+ "?access_token="+oauth);

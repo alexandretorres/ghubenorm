@@ -1,29 +1,45 @@
 package model;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToOne;
+
+@Entity
 public class MProperty {
-	
+	@Id
+	private int id;
 	private String name;
-	private String type;
-	private MClass typeClass;
-	private MClass parent;
-	
+	private String type;	
 	private int max=1;
 	private int min=0;
-	
-	private MColumnMapping columnMapping;
-	private MAssociationMapping associationMapping;
 	private boolean pk;
 	private boolean embedded;
 	private boolean ptransient;
-	
+	@Embedded
+	private MColumnMapping columnMapping;
+	@Embedded
+	private MAssociationMapping associationMapping;
+	@ManyToOne
+	private MClass typeClass;
+	@ManyToOne(optional=false)
+	private MClass parent;	
+	@OneToOne(cascade=CascadeType.ALL)
 	private MAssociation association;
 	
+	protected MProperty() {
+		
+	}
 	private MProperty(MClass parent) {
 		this.parent=parent;
 	}
 	public static MProperty newMProperty(MClass parent) {
 		return new MProperty(parent);
-	}
+	}	
+	public int getId() { return id;	}
+	public void setId(int id) {	this.id = id;	}
 	public String getName() {
 		return name;
 	}
@@ -65,11 +81,11 @@ public class MProperty {
 		return columnMapping;
 	}
 	public MProperty setColumnMapping(MColumnMapping columnMapping) {
-		if (columnMapping!=null)
-			columnMapping.setProperty(null);
+		//if (columnMapping!=null)
+		//	columnMapping.setProperty(null);
 		this.columnMapping = columnMapping;
-		if (columnMapping!=null)
-			columnMapping.setProperty(this);
+		//if (columnMapping!=null)
+		//	columnMapping.setProperty(this);
 		return this;
 	}
 	
@@ -97,11 +113,11 @@ public class MProperty {
 		return associationMapping;
 	}
 	public MProperty setAssociationMapping(MAssociationMapping associationMapping) {
-		if (associationMapping!=null)
-			associationMapping.setProperty(null);
+		//if (associationMapping!=null)
+		//	associationMapping.setProperty(null);
 		this.associationMapping = associationMapping;
-		if (associationMapping!=null)
-			associationMapping.setProperty(this);
+		//if (associationMapping!=null)
+		//	associationMapping.setProperty(this);
 		return this;
 	}
 	public MClass getParent() {

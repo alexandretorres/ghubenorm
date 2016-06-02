@@ -3,15 +3,23 @@ package model;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.OneToMany;
+@Entity
 public class MTable extends MDataSource {
 	
 	private String name;
 	private String catalog;
 	private String schema;
+	@OneToMany(mappedBy="table",cascade=CascadeType.PERSIST)
 	private List<MColumn> columns=new ArrayList<MColumn>();
 	
 	public static MTable newMTable(String name) {
 		return new MTable( name);
+	}
+	protected MTable() {
+		
 	}
 	private MTable(String name) {
 		this.name=name;

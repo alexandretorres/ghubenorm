@@ -8,5 +8,5 @@ public interface DAOInterface<C> {
 	public void rollbackAndCloseTransaction();
 	public <T> T first(Collection<T> col) ;
 	public C find(Object pk) ;
-	public void persit(C obj);
+	public C persit(C obj);
 }

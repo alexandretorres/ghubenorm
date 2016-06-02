@@ -75,8 +75,9 @@ public class DAO<C> implements DAOInterface<C>{
 	public C find(Object pk) {
 		return em.find(clazz, pk);
 	}
-	public void persit(C obj) {
+	public C persit(C obj) {
 		em.persist(obj);
+		return obj;
 	}
 	public static void finish() {
 		//map=null;

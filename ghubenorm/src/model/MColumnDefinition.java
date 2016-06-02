@@ -1,7 +1,18 @@
 package model;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Inheritance;
+import javax.persistence.InheritanceType;
+
+@Entity
+@Inheritance(strategy=InheritanceType.JOINED)
 public abstract class MColumnDefinition {
+	@Id
+	private int id;
 	
+	public int getId() { return id;	}
+	public void setId(int id) {	this.id = id;	}
 	public abstract String getName();
 
 	public abstract boolean isNullable();

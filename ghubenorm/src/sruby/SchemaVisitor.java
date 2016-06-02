@@ -13,6 +13,8 @@ import org.jruby.ast.Node;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 
+import dao.ConfigDAO;
+import dao.DAOInterface;
 import model.MClass;
 import model.MColumn;
 import model.MTable;
@@ -20,6 +22,7 @@ import model.MTable;
 
 public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 	private RubyRepo repo;
+	DAOInterface<MTable> daoTable = ConfigDAO.getDAO(MTable.class);
 	static String[] dbtypes = new String[] 
 			{"string","integer","datetime","boolean","decimal","binary"};
 	Stack<Object> stack = new Stack<Object>();
@@ -42,6 +45,9 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		}
 		return name;
 	}
+	/**
+	 * Faz sentido isso?
+	 */
 	@Override
 	public Object visitClassNode(ClassNode n) {
 		Object ret=null;
@@ -75,8 +81,8 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			Node nod = it.next();
 			String tabname = Helper.getValue(nod);
 			if (tabname!=null && tabname.length()>0) {							
-				table = MTable.newMTable(tabname);		
-				repo.tables.add(table);
+				table =MTable.newMTable(tabname);		
+				repo.getTables().add(table);
 			}
 			if (table!=null)
 				stack.push(table);
