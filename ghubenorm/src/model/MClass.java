@@ -8,17 +8,21 @@ import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 @Entity
 public class MClass {
-	@Id
+	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	private String name;
 	private String packageName;
 	private boolean isAbstract=false;
+	@ManyToOne
+	private Repo repo;
 	@Embedded
 	private MPersistent persistence=null;
 	@ManyToOne(cascade=CascadeType.PERSIST)
@@ -38,6 +42,15 @@ public class MClass {
 	}	
 	public int getId() { return id;	}
 	public void setId(int id) {	this.id = id;	}
+	protected Repo getRepo() {
+		return repo;
+	}
+	protected void setRepo(Repo repo) {
+		this.repo = repo;
+	}
+	protected void setOverrides(Set<MOverride> overrides) {
+		this.overrides = overrides;
+	}
 	public String getName() {
 		return name;
 	}
@@ -103,6 +116,7 @@ public class MClass {
 	}
 	public MClass override(MOverride override) {
 		this.overrides.add(override);
+		override.setClazz(this);
 		return this;
 	}
 	public Set<MOverride> getOverrides() {

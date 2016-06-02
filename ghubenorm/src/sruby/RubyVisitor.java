@@ -17,6 +17,8 @@ import org.jruby.ast.SelfNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 
+import dao.ConfigDAO;
+import dao.DAOInterface;
 import model.MClass;
 import model.MColumnDefinition;
 import model.MColumnMapping;
@@ -32,6 +34,10 @@ import model.MTable;
 public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	Stack<Object> stack = new Stack<Object>();
 	private RubyRepo repo;
+	
+	static DAOInterface<MClass> daoMClass = ConfigDAO.getDAO(MClass.class);
+	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
+	static DAOInterface<MProperty> daoMProp = ConfigDAO.getDAO(MProperty.class);
 	public void reset() {
 		stack.removeAll(stack);
 	}
@@ -56,8 +62,10 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	}
 	
 	public MClass createClass(ClassNode n,MClass superclazz,boolean isPersistent) {
+		
+		
 		String name = n.getCPath().getName();
-		MClass clazz = MClass.newMClass().setName(name);
+		MClass clazz = daoMClass.persit(MClass.newMClass().setName(name));
 		stack.push(clazz);
 		repo.getClasses().add(clazz);
 		clazz.setSuperClass(superclazz);
@@ -81,16 +89,17 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 				}
 				MTable tab = repo.getTable(tabname);
 				if (tab==null)
-					tab=clazz.getPersistence().newTableSource(tabname);
+					tab=daoMTable.persit(clazz.getPersistence().newTableSource(tabname));
 				else
 					clazz.getPersistence().setDataSource(tab);
 				// add properties from the "class"
 				for (MColumnDefinition col:tab.getColumns()) {
-					clazz.newProperty().
+					daoMProp.persit(
+							clazz.newProperty().
 							setName(col.getName()).
 							setType(col.getColummnDefinition()).
 							setMin(col.isNullable() ? 0 :1).
-							setColumnMapping(MColumnMapping.newMColumnMapping(col));
+							setColumnMapping(MColumnMapping.newMColumnMapping(col)));
 					
 				}
 			
@@ -171,7 +180,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 				case "attr_reader": case "attr_writer": case "attr_accessor":
 					for (Node cn:n.getArgsNode().childNodes()) {
 						String propName = Helper.getValue(cn);
-						clazz.newProperty().setName(propName);
+						daoMProp.persit(clazz.newProperty().setName(propName));
 					}
 					break;
 			}

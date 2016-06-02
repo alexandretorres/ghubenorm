@@ -22,11 +22,11 @@ import model.MTable;
 
 public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 	private RubyRepo repo;
-	DAOInterface<MTable> daoTable = ConfigDAO.getDAO(MTable.class);
+	
 	static String[] dbtypes = new String[] 
 			{"string","integer","datetime","boolean","decimal","binary"};
 	Stack<Object> stack = new Stack<Object>();
-	
+	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	public SchemaVisitor(RubyRepo repo){
 		this.repo=repo;
 	}
@@ -45,6 +45,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		}
 		return name;
 	}
+	
 	/**
 	 * Faz sentido isso?
 	 */
@@ -72,6 +73,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 	 * call to method on this
 	 */
 	public Object visitFCallNode(FCallNode n) {
+		
 		MTable table=null;
 		//System.out.println("call F node:"+n.getName());
 		if (n.getName().equals("create_table")) {
@@ -81,7 +83,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			Node nod = it.next();
 			String tabname = Helper.getValue(nod);
 			if (tabname!=null && tabname.length()>0) {							
-				table =MTable.newMTable(tabname);		
+				table = daoMTable.persit(MTable.newMTable(tabname));		
 				repo.getTables().add(table);
 			}
 			if (table!=null)

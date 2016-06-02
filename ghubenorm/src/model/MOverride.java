@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
@@ -13,7 +15,7 @@ import javax.persistence.OneToMany;
 @Entity
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 public abstract class MOverride {
-	@Id
+	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	@ManyToOne(optional=false)
 	private MClass clazz;
@@ -36,6 +38,12 @@ public abstract class MOverride {
 
 	public void setProperties(List<MProperty> properties) {
 		this.properties = properties;
+	}
+	protected MClass getClazz() {
+		return clazz;
+	}
+	protected void setClazz(MClass clazz) {
+		this.clazz = clazz;
 	}
 	
 }

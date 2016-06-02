@@ -5,6 +5,8 @@ import java.util.Iterator;
 import org.jruby.ast.*;
 import org.jruby.util.KeyValuePair;
 
+import dao.ConfigDAO;
+import dao.DAOInterface;
 import model.MAssociationDef;
 import model.MAttributeOverride;
 import model.MClass;
@@ -20,7 +22,9 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 	private MClass clazz;
 	private IArgumentNode node;
 	private String[][] args;
-
+	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
+	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
+	
 	public VisitComposedOf(RubyRepo repo, MClass clazz, IArgumentNode node) {
 		this.repo = repo;
 		this.clazz = clazz;
@@ -36,7 +40,7 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 		Node nameNode = it.next();
 		String pname = Helper.getValue(nameNode);
 		String typeName = pname;
-		MProperty prop=clazz.newProperty().setName(pname).setMax(1);
+		MProperty prop=daoProp.persit(clazz.newProperty().setName(pname).setMax(1));
 		MClass type = repo.getClazzFromUnderscore(typeName);
 		if (type!=null)
 			prop.setTypeClass(type);
@@ -54,7 +58,9 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 						filter(c->c.getName().equalsIgnoreCase(str[0]))
 						.findAny().orElse(null);
 				if (col==null) { // the column may be defined by the specizalizations
-					col = MColumn.newMColumn().setName(str[0]);
+					
+					col = daoColumn.persit( MColumn.newMColumn().setName(str[0]));
+					
 				}
 				MProperty embedRef = type.getProperties().stream().
 						filter(p->p.getName().equalsIgnoreCase(str[1])).findAny().orElse(null);

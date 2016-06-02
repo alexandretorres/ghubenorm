@@ -20,7 +20,7 @@ public class MColumn extends MColumnDefinition{
 	private int scale;
 	@Column(name="isUnique")
 	private boolean unique;
-	@ManyToOne(optional=false)
+	@ManyToOne(optional=true)
 	private MTable table;
 	/**
 	 * This property was not included on the original ENORM

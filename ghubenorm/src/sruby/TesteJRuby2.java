@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.RollbackException;
 
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.SyntaxException;
@@ -38,9 +39,13 @@ public class TesteJRuby2 {
 	public static void main(String[] args)  {
 		Node n=null;
 		try {
-			//testeDB();	
-			RubyRepo repo =	loader.setRepo(null);
+			ConfigDAO.config(JPA_DAO.instance);
+			RepoDAO dao = ConfigDAO.getDAO(Repo.class);
 			
+			dao.beginTransaction();
+			//testeDB();	
+			RubyRepo repo =	loader.setRepo(new Repo(Language.RUBY));
+			dao.persit(repo.getRepo());
 	        //first warm up the parser
 			FileInputStream in = new FileInputStream("warmup.rb");
 			n= loader.parse(in);			
@@ -75,14 +80,21 @@ public class TesteJRuby2 {
 	        }		     
 			loader.solveRefs();
 			System.out.println("files:"+fileCnt);
-		
-
 			repo.print();
+			
+			
+			dao.commitAndCloseTransaction();		
+			
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
+			Throwable t = e;
+			Throwable cause = e.getCause();
+			while(cause!=null && cause!=t) {
+				cause.printStackTrace();
+				cause=e.getCause();
+			}
+			// TODO Auto-generated catch block			
+		}		
 		ConfigDAO.finish();
 	}
 	public static void read(File f) throws Exception {	

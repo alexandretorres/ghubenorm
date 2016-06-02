@@ -1,5 +1,6 @@
 package model;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -7,7 +8,7 @@ import javax.persistence.OneToOne;
 
 @Embeddable
 public class MAssociationMapping {
-	@OneToOne
+	@OneToOne(cascade=CascadeType.ALL)
 	private MAssociationDef value;
 	
 	

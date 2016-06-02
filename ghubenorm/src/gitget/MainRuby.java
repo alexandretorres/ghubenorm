@@ -65,11 +65,12 @@ class RubyCrawler implements Runnable {
 	public static final long MAX_REPOS=500;
 	// per_page max é de 100 (mais que isso ele considera como 100)
 	static RubyRepoLoader loader = new RubyRepoLoader();
-	
+	DAOInterface<Repo> daoRepo;
 	@Override
 	public void run() {			
 		try {
 			ConfigDAO.config(JPA_DAO.instance);
+			daoRepo = ConfigDAO.getDAO(Repo.class);
 			URL uauth = new URL("https://api.github.com/?access_token="+oauth);
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
 			try (JsonReader rdr = gh.callApi(uauth)) {
@@ -104,6 +105,7 @@ class RubyCrawler implements Runnable {
 				}
 				p++;
 			} while(cnt<MAX_REPOS && cnt<total);
+			ConfigDAO.finish();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -112,11 +114,11 @@ class RubyCrawler implements Runnable {
 	// var=path
 	//puro:https://github.com/iluwatar/java-design-patterns/blob/master/service-layer/src/main/java/com/iluwatar/servicelayer/spell/Spell.java
 	//raw: https://github.com/iluwatar/java-design-patterns/raw/master/service-layer/src/main/java/com/iluwatar/servicelayer/spell/Spell.java
-	public static void printCode(JsonObject repoJson,String fullName) throws Exception {
-		DAOInterface<Repo> dao = ConfigDAO.getConfig().getDAO(Repo.class);
+	public void printCode(JsonObject repoJson,String fullName) throws Exception {
+		
 		int cnt=0,total=0,p=1;
-		do {			
-			dao.beginTransaction();
+		//do {			
+			daoRepo.beginTransaction();
 			//https://api.github.com/repositories/2500088/contents/db
 			//filename:schema.rb create_table in:file
 			URL url = new URL("https://api.github.com/search/code?page="+p+"&per_page=100"
@@ -144,7 +146,7 @@ class RubyCrawler implements Runnable {
 						} else 
 							LOG.info(" Rejected:"+fullName+"/raw/master/"+dbpath);						
 					}
-					dao.persit(repo);
+					daoRepo.persit(repo);
 					if (repo.getConfigPath()!=null) {
 						LOG.info(" dbPath:"+fullName+"/raw/master/"+repo.getConfigPath());
 						loadRepo(repo);
@@ -153,11 +155,11 @@ class RubyCrawler implements Runnable {
 					}
 				}
 			}
-			dao.commitAndCloseTransaction();
-		} while(false);
+			daoRepo.commitAndCloseTransaction();
+		//} while(false);
 	}
 	
-	private static void loadRepo(Repo repo) {
+	private  void loadRepo(Repo repo) {
 		try {			
 			//  /repos/:owner/:repo/contents/:path
 			URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"

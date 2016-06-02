@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.jruby.ast.*;
 import org.jruby.util.KeyValuePair;
 
+import dao.ConfigDAO;
+import dao.DAOInterface;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MClass;
@@ -119,6 +121,8 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
+	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
+	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	public VisitBelongsTo(RubyRepo repo,MClass clazz,IArgumentNode node) {
 		this.repo=repo;
 		this.clazz = clazz;
@@ -139,7 +143,7 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 						null
 						);
 		if (prop==null)
-			prop=clazz.newProperty();
+			prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
 		
 		MClass type = repo.getClazzFromUnderscore(typeName);
@@ -226,9 +230,10 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 						Optional<MDataSource> k = x.map(MPersistent::getSource);
 						
 						MTable source = (MTable) k.orElseGet(()->
-								parent.setPersistent().newTableSource(								
+							daoMTable.persit(
+							parent.setPersistent().newTableSource(								
 										NounInflector.getInstance().tableize(parent.getName())
-								));
+								)));
 						
 						for (String fk:fks) {
 							MJoinColumn jc = def.findJoinColumn(fk);

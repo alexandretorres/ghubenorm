@@ -5,6 +5,8 @@ import java.util.Iterator;
 import org.jruby.ast.*;
 import org.jruby.util.KeyValuePair;
 
+import dao.ConfigDAO;
+import dao.DAOInterface;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MClass;
@@ -67,7 +69,7 @@ public class VisitHasAndBelongsTo implements LateVisitor<MProperty> {
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
-
+	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	public VisitHasAndBelongsTo(RubyRepo repo, MClass clazz, IArgumentNode node) {
 		this.repo = repo;
 		this.clazz = clazz;
@@ -80,7 +82,7 @@ public class VisitHasAndBelongsTo implements LateVisitor<MProperty> {
 		Node nameNode = it.next();
 		String pname = Helper.getValue(nameNode);
 		String typeName = NounInflector.getInstance().singularize(pname);
-		MProperty prop=clazz.newProperty();
+		MProperty prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
 		prop.setMax(-1);
 		MClass type = repo.getClazzFromUnderscore(typeName);

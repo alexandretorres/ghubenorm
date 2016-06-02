@@ -18,8 +18,7 @@ import javax.persistence.OneToMany;
 
 public class Repo {
 	
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)	
 	private int id;
 	private String name;
 	private String url;
@@ -32,9 +31,9 @@ public class Repo {
 	 */
 	private String configPath;
 	
-	@OneToMany(cascade=CascadeType.ALL)
+	@OneToMany(mappedBy="repo",cascade=CascadeType.ALL)
 	Set<MClass> classes = new HashSet<MClass>();
-	@OneToMany(cascade=CascadeType.PERSIST)
+	@OneToMany(mappedBy="repo",cascade=CascadeType.PERSIST)
 	Set<MTable> tables = new HashSet<MTable>();
 	
 	protected Repo() {}

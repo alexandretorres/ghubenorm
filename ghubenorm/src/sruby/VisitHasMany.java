@@ -5,6 +5,8 @@ import java.util.Iterator;
 import org.jruby.ast.*;
 import org.jruby.util.KeyValuePair;
 
+import dao.ConfigDAO;
+import dao.DAOInterface;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MClass;
@@ -134,6 +136,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
+	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	public VisitHasMany(RubyRepo repo,MClass clazz,IArgumentNode node) {
 		this.repo=repo;
 		this.clazz = clazz;
@@ -146,7 +149,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 		String pname=Helper.getValue(nameNode); 
 		
 		String typeName =  NounInflector.getInstance().singularize(pname);
-		MProperty prop=clazz.newProperty();
+		MProperty prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
 		prop.setMax(-1);
 		

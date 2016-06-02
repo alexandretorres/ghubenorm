@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 @Entity
 public class MTable extends MDataSource {
@@ -12,17 +13,26 @@ public class MTable extends MDataSource {
 	private String name;
 	private String catalog;
 	private String schema;
+	@ManyToOne
+	private Repo repo;
 	@OneToMany(mappedBy="table",cascade=CascadeType.PERSIST)
 	private List<MColumn> columns=new ArrayList<MColumn>();
 	
 	public static MTable newMTable(String name) {
 		return new MTable( name);
 	}
+	
 	protected MTable() {
 		
 	}
 	private MTable(String name) {
 		this.name=name;
+	}
+	protected Repo getRepo() {
+		return repo;
+	}
+	protected void setRepo(Repo repo) {
+		this.repo = repo;
 	}
 	public String getName() {
 		return name;
