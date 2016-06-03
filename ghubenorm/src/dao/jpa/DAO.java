@@ -1,9 +1,12 @@
 package dao.jpa;
 
+import static gitget.Log.LOG;
+
 import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -48,7 +51,7 @@ public class DAO<C> implements DAOInterface<C>{
 			em = emf.createEntityManager();			 
 			em.getTransaction().begin();
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 		}
 	}
 	public void commitAndCloseTransaction() {
@@ -62,7 +65,7 @@ public class DAO<C> implements DAOInterface<C>{
 			if (em.getTransaction().isActive())
 				em.getTransaction().rollback();
 		} catch (Exception ex) {
-			
+			LOG.log(Level.WARNING,ex.getMessage(),ex);	
 		}
 		
 		em.close();
@@ -91,7 +94,7 @@ public class DAO<C> implements DAOInterface<C>{
 				
 			}
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 		}
 		
 	}

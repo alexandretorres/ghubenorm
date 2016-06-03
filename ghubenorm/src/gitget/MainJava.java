@@ -1,7 +1,10 @@
 package gitget;
 
+import static gitget.Log.LOG;
+
 import java.io.InputStream;
 import java.net.URL;
+import java.util.logging.Level;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -56,7 +59,8 @@ class JavaCrawler implements Runnable {
 				p++;
 			} while (cnt < MAX_REPOS && cnt < total);
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
+			
 		}
 	}
 

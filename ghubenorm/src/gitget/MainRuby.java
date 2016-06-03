@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.json.Json;
@@ -27,7 +28,7 @@ import static gitget.Log.LOG;
 
 public class MainRuby {
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) {		
 		new Thread(new RubyCrawler()).start();
 	}
 }
@@ -54,7 +55,7 @@ class GitHubCaller {
 				if (tries<=MAX_TRIES)
 					return callApi(url);
 			} catch (Exception tex) {
-				tex.printStackTrace();
+				LOG.log(Level.SEVERE,tex.getMessage(),tex);					
 			}
 			throw new RuntimeException(ex);
 		}
@@ -63,7 +64,7 @@ class GitHubCaller {
 class RubyCrawler implements Runnable {
 	static String oauth = Auth.getProperty("oauth");
 	static GitHubCaller gh = GitHubCaller.instance;
-	public static final long MAX_REPOS=500;
+	public static final long MAX_REPOS=5000000;
 	// per_page max é de 100 (mais que isso ele considera como 100)
 	static RubyRepoLoader loader = new RubyRepoLoader();
 	DAOInterface<Repo> daoRepo;
@@ -105,20 +106,23 @@ class RubyCrawler implements Runnable {
 					}
 				}
 				p++;
+				
 			} while(cnt<MAX_REPOS && cnt<total);
-			ConfigDAO.finish();
+			
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);
+		} finally {
+			ConfigDAO.finish();
 		}
 	}
 	// get html_url, replace /blob/ with /raw/ ?
 	// var=path
 	//puro:https://github.com/iluwatar/java-design-patterns/blob/master/service-layer/src/main/java/com/iluwatar/servicelayer/spell/Spell.java
 	//raw: https://github.com/iluwatar/java-design-patterns/raw/master/service-layer/src/main/java/com/iluwatar/servicelayer/spell/Spell.java
-	public void printCode(JsonObject repoJson,String fullName) throws Exception {
-		
-		int cnt=0,total=0,p=1;
-		//do {			
+	public void printCode(JsonObject repoJson,String fullName)  {
+		try {
+			int cnt=0,total=0,p=1;
+			//do {			
 			daoRepo.beginTransaction();
 			//https://api.github.com/repositories/2500088/contents/db
 			//filename:schema.rb create_table in:file
@@ -156,39 +160,38 @@ class RubyCrawler implements Runnable {
 					}
 				}
 			}
-			daoRepo.commitAndCloseTransaction();
+			daoRepo.commitAndCloseTransaction();			
 		//} while(false);
+		} catch (Exception ex) {
+			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);	
+		}
 	}
 	
-	private void loadRepo(Repo repo) {
-		try {			
-			//  /repos/:owner/:repo/contents/:path
-			URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"
-					+ "?access_token="+oauth);
-			JsonReader rdr = gh.callApi(url);
-			if (rdr==null) { //File not Found
-				return;
-			}
-			RubyRepo rrepo = loader.setRepo(repo);			
-			loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/master/"+repo.getConfigPath()));	
-					
-			JsonArray results = rdr.readArray();
-			for (JsonObject result : results.getValuesAs(JsonObject.class)) {
-				String type = result.getString("type");
-				if (type.equals("file")) {
-					String fpath = result.getString("download_url");
-					if (fpath.endsWith(".rb")) {
-						URL furl = new URL(fpath);						
-						loader.visitFile(furl);						
-					}
-				}				
-			}
-			
-			loader.solveRefs();
-			rrepo.print();
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
+	private void loadRepo(Repo repo) throws MalformedURLException {			
+		//  /repos/:owner/:repo/contents/:path
+		URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"
+				+ "?access_token="+oauth);
+		JsonReader rdr = gh.callApi(url);
+		if (rdr==null) { //File not Found
+			return;
 		}
+		RubyRepo rrepo = loader.setRepo(repo);			
+		loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/master/"+repo.getConfigPath()));	
+				
+		JsonArray results = rdr.readArray();
+		for (JsonObject result : results.getValuesAs(JsonObject.class)) {
+			String type = result.getString("type");
+			if (type.equals("file")) {
+				String fpath = result.getString("download_url");
+				if (fpath.endsWith(".rb")) {
+					URL furl = new URL(fpath);						
+					loader.visitFile(furl);						
+				}
+			}				
+		}
+		
+		loader.solveRefs();
+		rrepo.print();		
 	}
 	
 }

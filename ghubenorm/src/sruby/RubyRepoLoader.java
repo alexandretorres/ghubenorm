@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
+import java.util.logging.Level;
 
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
@@ -56,7 +57,7 @@ public class RubyRepoLoader {
 			return visitSchema(in);
 		} catch (Exception ex) {		
 			LOG.warning("could not visit file "+url);
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);				
 			return null;		
 		}
 	}
@@ -73,12 +74,13 @@ public class RubyRepoLoader {
 		try (InputStream in =  url.openStream()) {	
 			return visitFile(in);			
 		} catch (SyntaxException sex) {
-			Log.LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
-			sex.printStackTrace();
+			LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
+			LOG.log(Level.SEVERE,sex.getMessage(),sex);	
+			
 			return null;
 		} catch (Exception ex) {	
 			LOG.warning("could not visit file "+url);
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 			
 			return null;		
 		}

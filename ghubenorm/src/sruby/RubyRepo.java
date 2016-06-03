@@ -1,5 +1,7 @@
 package sruby;
 
+import static gitget.Log.LOG;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -11,10 +13,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 import org.jruby.ast.ClassNode;
 
+import gitget.Log;
 import model.Language;
 import model.MAssociation;
 import model.MAttributeOverride;
@@ -111,8 +115,10 @@ public class RubyRepo {
 	public void print() {
 		System.out.println("-----------------");
 		StringWriter sw =new StringWriter();
-		//PrintWriter pw = new PrintWriter(sw);
-		PrintWriter pw =new PrintWriter(System.out);
+		PrintWriter pw = new PrintWriter(sw);
+		
+		try {
+		//PrintWriter pw =new PrintWriter(System.out);
 		for (MClass cl:getClasses()) {
 			pw.println("=====================================");
 			pw.print((cl.getPackageName()==null ? "" : cl.getPackageName()+".")+cl.getName());
@@ -168,7 +174,7 @@ public class RubyRepo {
 						try {							
 							pw.print(p.getTypeClass().getName()+(inv==null ? "" : "."+ inv.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]"));
 						} catch (Exception ex) {
-							ex.printStackTrace();
+							LOG.log(Level.SEVERE,ex.getMessage(),ex);								
 						}
 					} else if (p.isEmbedded()) {
 						pw.print(" <Embbeded> ");
@@ -193,7 +199,11 @@ public class RubyRepo {
 			}
 			pw.flush();
 		}
-		
+		} catch (Exception ex) {
+			LOG.log(Level.SEVERE, ex.getMessage(), ex);
+		}
+		pw.flush();
+		LOG.log(Level.INFO, sw.toString());
 		//System.out.println(sw.getBuffer());
 	}
 	public Repo getRepo() {

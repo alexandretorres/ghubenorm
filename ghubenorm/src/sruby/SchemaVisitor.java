@@ -1,8 +1,11 @@
 package sruby;
 
+import static gitget.Log.LOG;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
+import java.util.logging.Level;
 
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
@@ -125,7 +128,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				try {
 					ret.setLength(Helper.getHashArgument(hn.getPairs(), "limit",Integer.class));	
 				} catch (Exception ex) {
-					ex.printStackTrace();
+					LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 				}
 				ret.setDefaulValue(Helper.getHashArgument(hn.getPairs(), "default"));
 				ret.setPrecision(Helper.getHashArgument(hn.getPairs(), "precision",Integer.class));

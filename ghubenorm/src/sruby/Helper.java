@@ -1,6 +1,9 @@
 package sruby;
+import static gitget.Log.LOG;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
@@ -67,7 +70,7 @@ public class Helper {
 							reduce(null,(a, b) -> (a==null ? b : a+","+ b) );
 					return ret;
 				} catch (Exception ex) {
-					ex.printStackTrace();
+					LOG.log(Level.SEVERE,ex.getMessage(),ex);						
 				}
 				return "";
 			}		

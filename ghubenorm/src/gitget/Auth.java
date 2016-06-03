@@ -1,9 +1,12 @@
 package gitget;
 
+import static gitget.Log.LOG;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.logging.Level;
 /**
  * stores passwords and authcodes in the oauth.properties file. oauth.properties should not be 
  * added to source control. TODO: create a template oauth.properties 
@@ -27,13 +30,14 @@ public class Auth {
 			//System.out.println("--->"+prop.getProperty("oauth"));			
 
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);			
 		} finally {
 			if (input != null) {
 				try {
 					input.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					LOG.log(Level.SEVERE,e.getMessage(),e);	
+					
 				}
 			}
 		}

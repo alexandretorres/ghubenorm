@@ -11,6 +11,8 @@ import gitget.Log;
 import model.Language;
 import model.Repo;
 
+import static gitget.Log.LOG;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -21,6 +23,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -71,9 +74,9 @@ public class TesteJRuby2 {
 	        		try {
 	        			read(f);
 	        		} catch (SyntaxException ex) {
-	        			Log.LOG.warning("Syntax exception on file "+f.getName()+" position "+ex.getPosition());
+	        			LOG.warning("Syntax exception on file "+f.getName()+" position "+ex.getPosition());
 	        	
-	        			ex.printStackTrace();
+	        			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 	        		}
 	        		fileCnt++;
 	        	}
@@ -86,7 +89,7 @@ public class TesteJRuby2 {
 			dao.commitAndCloseTransaction();		
 			
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.log(Level.SEVERE,e.getMessage(),e);	
 			Throwable t = e;
 			Throwable cause = e.getCause();
 			while(cause!=null && cause!=t) {
@@ -114,7 +117,8 @@ public class TesteJRuby2 {
             System.out.println(dao.findByURL("http"));
 			dao.commitAndCloseTransaction();
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.log(Level.SEVERE,e.getMessage(),e);	
+			
 			dao.rollbackAndCloseTransaction();	    
 	   
 	    }

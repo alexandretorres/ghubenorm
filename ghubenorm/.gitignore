@@ -3,6 +3,7 @@ libs/
 trash/
 repos/
 target/
+logs/
 .settings/
 .classpath
 oauth.properties

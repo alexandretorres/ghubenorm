@@ -1,10 +1,13 @@
 package gitget;
 
+import static gitget.Log.LOG;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.logging.Level;
 
 import model.Language;
 import model.Repo;
@@ -34,7 +37,8 @@ public class LoadRubyRepo {
 			///repos/:owner/:repo/contents/:path
 		
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
+			
 		}
 	}
 

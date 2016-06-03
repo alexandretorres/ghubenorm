@@ -1,5 +1,9 @@
 package sruby;
 
+import static gitget.Log.LOG;
+
+import java.util.logging.Level;
+
 import dao.ConfigDAO;
 import dao.jpa.ConfigJPA;
 import db.daos.RepoDAO;
@@ -20,7 +24,7 @@ public class TestLoadRepo {
 			dao.commitAndCloseTransaction();
 			ConfigDAO.finish();
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 		}
 	}
 
