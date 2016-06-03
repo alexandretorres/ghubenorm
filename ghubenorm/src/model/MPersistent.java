@@ -25,7 +25,7 @@ public class MPersistent {
 		return source;
 	}
 
-	protected boolean isPersistent() {
+	public boolean isPersistent() {
 		return persistent;
 	}
 

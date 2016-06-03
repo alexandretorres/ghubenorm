@@ -8,6 +8,7 @@ import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -31,9 +32,9 @@ public class Repo {
 	 */
 	private String configPath;
 	
-	@OneToMany(mappedBy="repo",cascade=CascadeType.ALL)
+	@OneToMany(fetch=FetchType.EAGER,mappedBy="repo",cascade=CascadeType.ALL)
 	Set<MClass> classes = new HashSet<MClass>();
-	@OneToMany(mappedBy="repo",cascade=CascadeType.PERSIST)
+	@OneToMany(fetch=FetchType.EAGER,mappedBy="repo",cascade=CascadeType.PERSIST)
 	Set<MTable> tables = new HashSet<MTable>();
 	
 	protected Repo() {}

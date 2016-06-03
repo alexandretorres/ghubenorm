@@ -1,6 +1,8 @@
 package model;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -30,7 +32,7 @@ public class MAssociation {
 		this.from = from;
 		this.to = to;
 		from.setAssociation(this);
-		to.setAssociation(this);
+		//to.setAssociation(this); //This violates ONE TO ONE
 	}
 	private MAssociation(MProperty from) {
 		super();
@@ -44,6 +46,8 @@ public class MAssociation {
 		return from;
 	}
 	public MAssociation setFrom(MProperty from) {
+		if (from!=null)
+			from.setAssociation(null);
 		this.from = from;
 		from.setAssociation(this);
 		return this;
@@ -53,7 +57,7 @@ public class MAssociation {
 	}
 	public MAssociation setTo(MProperty to) {
 		this.to = to;
-		to.setAssociation(this);
+		//to.setAssociation(this);
 		return this;
 	}
 	public boolean isNavigableFrom() {
@@ -80,10 +84,12 @@ public class MAssociation {
 		return from.getTypeClass();
 	}
 
-public MAssociation swap() {		
+	public MAssociation swap() {		
 		MProperty tmp = to;
 		to=from;
+		from.setAssociation(null);		
 		from=tmp;
+		from.setAssociation(this);
 		return this;
 	}
 }

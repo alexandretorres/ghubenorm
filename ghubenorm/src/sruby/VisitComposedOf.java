@@ -32,7 +32,7 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 	}
 
 	public MProperty exec() { 		
-		if (clazz.getPersistence()==null)
+		if (!clazz.isPersistent())
 			return null;
 		//Only Tables sources on activerec. ruby
 		MTable tab = (MTable) clazz.getPersistence().getSource();

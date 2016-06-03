@@ -72,7 +72,7 @@ public class RubyRepo {
 				if (parent!=null) {
 					List<ClassNode> lst = subclasses.get(name);	
 					for (ClassNode n:lst) {
-						rv.createClass(n, parent,parent.getPersistence()!=null);
+						rv.createClass(n, parent,parent.isPersistent());
 					}
 					keep=true;
 					it.remove();				
@@ -120,7 +120,7 @@ public class RubyRepo {
 				pw.print(" extends " + cl.getSuperClass().getName());
 			}
 			MTable tab=null;
-			if (cl.getPersistence()!=null) {
+			if (cl.isPersistent()) {
 				pw.print(" | ");
 				if (cl.getPersistence().getSource() instanceof MTable) {
 					tab = (MTable) cl.getPersistence().getSource() ;
@@ -133,7 +133,7 @@ public class RubyRepo {
 					pw.print("<PK>");
 				pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknow>>"));
 				
-				if (cl.getPersistence()!=null) {					
+				if (cl.isPersistent()) {					
 					if (p.getColumnMapping()!=null) {
 						MColumnDefinition col = p.getColumnMapping().getColumnDefinition();
 						pw.print(" | "+Optional.of(col.getName()).orElse(""));

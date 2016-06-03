@@ -155,4 +155,7 @@ public class MClass {
 		}
 		return false;
 	}
+	public boolean isPersistent() {
+		return persistence.isPersistent();
+	}
 }

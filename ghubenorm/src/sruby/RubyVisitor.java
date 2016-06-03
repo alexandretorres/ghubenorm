@@ -110,7 +110,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		//---
 		super.visitClassNode(n);
 		if (clazz!=null) {
-			if (clazz.getPersistence()!=null && !clazz.getProperties().stream().anyMatch(p->p.isPk())) {
+			if (clazz.isPersistent() && !clazz.getProperties().stream().anyMatch(p->p.isPk())) {
 				clazz.newPKProperty().setName("id").setType("integer");
 			}			
 			stack.pop();			
