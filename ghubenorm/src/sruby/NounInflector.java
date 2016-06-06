@@ -135,6 +135,7 @@ public final class NounInflector {
         addIrregular("move", "moves");
         addIrregular("person", "people");
         addIrregular("sex", "sexes");
+        addIrregular("photo","photos");  //added by AT
 
         addUncountable("equipment");
         addUncountable("fish");

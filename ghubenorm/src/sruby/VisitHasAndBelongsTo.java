@@ -81,7 +81,7 @@ public class VisitHasAndBelongsTo implements LateVisitor<MProperty> {
 		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
 		Node nameNode = it.next();
 		String pname = Helper.getValue(nameNode);
-		String typeName = NounInflector.getInstance().singularize(pname);
+		String typeName = JRubyInflector.getInstance().singularize(pname);
 		MProperty prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
 		prop.setMax(-1);
@@ -96,7 +96,7 @@ public class VisitHasAndBelongsTo implements LateVisitor<MProperty> {
 		//-------
 		type = prop.getTypeClass();
 		if (prop.getAssociation()==null && type!=null) {
-			String clazz_under = NounInflector.getInstance().underscore(NounInflector.getInstance().pluralize(clazz.getName()));
+			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName()));
 			for (MProperty p:type.getProperties()) {
 				if (p.getName().equals(clazz_under)) {
 					if (p.getAssociation()==null) {

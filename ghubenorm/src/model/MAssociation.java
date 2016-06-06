@@ -32,6 +32,7 @@ public class MAssociation {
 		this.from = from;
 		this.to = to;
 		from.setAssociation(this);
+		to.setToAssociation(this);
 		//to.setAssociation(this); //This violates ONE TO ONE
 	}
 	private MAssociation(MProperty from) {
@@ -57,7 +58,7 @@ public class MAssociation {
 	}
 	public MAssociation setTo(MProperty to) {
 		this.to = to;
-		//to.setAssociation(this);
+		to.setToAssociation(this);
 		return this;
 	}
 	public boolean isNavigableFrom() {
@@ -87,9 +88,11 @@ public class MAssociation {
 	public MAssociation swap() {		
 		MProperty tmp = to;
 		to=from;
-		from.setAssociation(null);		
+		to.setAssociation(null);
+		to.setToAssociation(this);;		
 		from=tmp;
 		from.setAssociation(this);
+		from.setToAssociation(null);
 		return this;
 	}
 }

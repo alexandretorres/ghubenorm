@@ -1,7 +1,9 @@
 package model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
@@ -17,8 +19,9 @@ public class MTable extends MDataSource {
 	@ManyToOne(optional=false)
 	private Repo repo;
 	@OneToMany(mappedBy="table",cascade=CascadeType.PERSIST)
-	private List<MColumn> columns=new ArrayList<MColumn>();
-	
+	private Set<MColumn> columns=new HashSet<MColumn>();
+	@OneToMany(mappedBy="table",cascade=CascadeType.ALL,orphanRemoval=true)
+	private Set<MDefinition> definitons = new HashSet<MDefinition>();
 	public static MTable newMTable(Repo repo,String name) {
 		return new MTable(repo, name);
 	}	
@@ -54,16 +57,16 @@ public class MTable extends MDataSource {
 		this.schema = schema;
 		return this;
 	}
-	public List<MColumn> getColumns() {
+	public Set<MColumn> getColumns() {
 		return columns;
 	}
-	public MTable setColumns(List<MColumn> columns) {
+	protected MTable setColumns(Set<MColumn> columns) {
 		this.columns = columns;
 		return this;
 	}
 	public MColumn addColumn() {
 		if (columns==null)
-			columns = new ArrayList<MColumn>();
+			columns = new HashSet<MColumn>();
 		MColumn c = MColumn.newMColumn();
 		c.setTable(this);
 		columns.add(c);
@@ -75,6 +78,13 @@ public class MTable extends MDataSource {
 				return c;
 		}
 		return null;
+	}
+	public MDefinition newIndex(MColumn... cols) {
+		MDefinition def = new MDefinition(this);
+		definitons.add(def);
+		def.addColumns(cols).setType(MDefinitionType.INDEX);
+		return def;
+		
 	}
 	
 }

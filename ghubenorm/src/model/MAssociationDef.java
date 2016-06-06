@@ -19,10 +19,12 @@ import javax.persistence.OneToMany;
 public class MAssociationDef {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
+	private MCascadeType cascade;
 	boolean orphanRemoval;
 	boolean enforce=false;
 	@OneToMany(mappedBy="associationDef",cascade=CascadeType.ALL)
 	private List<MJoinColumn> joinColumns = new ArrayList<MJoinColumn>();
+	
 	/**
 	 * Association table used on many to many
 	 */
@@ -80,6 +82,17 @@ public class MAssociationDef {
 		}
 		return null;
 	}
+
+	public MCascadeType getCascade() {
+		return cascade;
+	}
+
+	public void setCascade(MCascadeType cascade) {
+		this.cascade = cascade;
+	}
 	
-	
+	public void addCascade(MCascadeType cascadeOp) {
+		if (cascadeOp!=null)
+			this.cascade=cascadeOp.add(this.cascade);
+	}
 }

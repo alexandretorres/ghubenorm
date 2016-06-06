@@ -31,6 +31,8 @@ public class MProperty {
 	private MClass parent;	
 	@OneToOne(fetch=FetchType.LAZY,cascade=CascadeType.ALL)
 	private MAssociation association;
+	@OneToOne(mappedBy="to",cascade=CascadeType.PERSIST)
+	private MAssociation toAssociation;
 	
 	protected MProperty() {
 		
@@ -138,6 +140,12 @@ public class MProperty {
 	public MProperty setTransient(boolean t) {
 		this.ptransient=t;
 		return this;
+	}
+	public MAssociation getToAssociation() {
+		return toAssociation;
+	}
+	public void setToAssociation(MAssociation toAssociation) {
+		this.toAssociation = toAssociation;
 	}
 	
 }

@@ -60,7 +60,7 @@ public class TesteJRuby2 {
 			//in = new FileInputStream("repos/gitlabhq-master/db/schema.rb");
 			
 			fileCnt++;
-			n = loader.parse(in);
+			n = loader.visitSchema(in);
 	     
 	        //
 	        //File baseFile = new File("repos/chroma32-master/app/models/");//

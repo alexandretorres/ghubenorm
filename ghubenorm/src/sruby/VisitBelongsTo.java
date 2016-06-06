@@ -6,6 +6,8 @@ import java.util.Optional;
 
 import org.jruby.ast.*;
 import org.jruby.util.KeyValuePair;
+import static gitget.Log.LOG;
+
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
@@ -118,9 +120,17 @@ import model.MTable;
  */
 public class VisitBelongsTo implements LateVisitor<MProperty> {
 	//public static final VisitBelongsTo instance = new VisitBelongsTo();
+	// arguments:-----------
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
+	// values....
+	private String pname;
+	private MClass type;
+	private MProperty prop;
+	private String[] fks=null;
+	private String inverseOf;
+	
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
@@ -135,10 +145,20 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
 		Node nameNode = it.next();
 		//MProperty prop = clazz.newProperty();
-		String pname=Helper.getValue(nameNode); 
-		String typeName =pname;
+		pname=Helper.getValue(nameNode); 
+		// SE FK foi definido, ai ferrou, porque pname+id pode ser outro campo nada a ver
 		//clazz.getProperties().stream().filter(p->p.getName().equalsIgnoreCase(pname+"_id"));
-		MProperty prop  = clazz.getProperties().stream().
+		/*
+		*/
+		this.type = repo.getClazzFromUnderscore(pname);
+		// collect data
+		while (it.hasNext()) {
+			Node in = it.next();
+			visitArg(in);
+			// search for inverse_of and other stuff
+		}
+		
+		prop  = clazz.getProperties().stream().
 				filter(p->p.getName().equalsIgnoreCase(pname+"_id")).
 				findFirst().orElse(
 						null
@@ -147,19 +167,20 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 			prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
 		
-		MClass type = repo.getClazzFromUnderscore(typeName);
 		if (type!=null)
 			prop.setTypeClass(type);
-		while (it.hasNext()) {
-			Node in = it.next();
-			visitArg(prop,in);
-			// search for inverse_of and other stuff
+		else
+			type = prop.getTypeClass();
+		// Set FKs...
+		if (fks!=null) {
+			createFKs();
 		}
+		if (inverseOf!=null)
+			createInverseOf();
 		//remove properties for fks
-		
-		type = prop.getTypeClass();
+
 		if (prop.getAssociation()==null && type!=null) {
-			String clazz_under = NounInflector.getInstance().underscore(NounInflector.getInstance().pluralize(clazz.getName()));
+			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName()));
 			for (MProperty p:type.getProperties()) {
 				// this is for has_many in the other side
 				if (p.getName().equals(clazz_under)) {
@@ -170,6 +191,7 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 						break;
 					} else if (p.getAssociation().getTo()==null) {
 						p.getAssociation().setTo(prop).swap();
+						prop.getAssociation().setNavigableTo(true);
 						break;
 					}
 				} 
@@ -184,7 +206,69 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 		return prop;
 		
 	}
-	private void visitArg(MProperty prop,Node arg) {
+	private void createFKs() {
+		MAssociationDef def = prop.getOrInitAssociationDef();
+		
+		//MClass parent = prop.getParent();
+		
+		MTable source = (MTable) clazz.findDataSource();
+		if (source==null) {
+			LOG.warning("Foreing Key exist but DataSource not found for class:"+clazz+". Creating a table source");
+			source =daoMTable.persit(
+					clazz.newTableSource(								
+							JRubyInflector.getInstance().tableize(clazz.getName())));
+		}
+		/*
+		Optional<MPersistent> x = Optional.ofNullable(parent.getPersistence());
+		Optional<MDataSource> k = x.map(MPersistent::getSource);
+		//TODO: Does not create table if it inherits!
+		MTable source = (MTable) k.orElseGet(()->
+			daoMTable.persit(
+			parent.newTableSource(								
+						JRubyInflector.getInstance().tableize(parent.getName())
+				)));
+		*/
+		for (String fk:fks) {
+			MJoinColumn jc = def.findJoinColumn(fk);
+			MColumn col = source.findColumn(fk);
+			if (col==null) {								
+				col =  daoColumn.persit(source.addColumn().setName(fk));
+			} else {
+				//remove property
+				MProperty delProp = clazz.getProperties().stream().
+						filter(p->p.getName().equalsIgnoreCase(fk) && !p.equals(prop)).
+						findFirst().orElse(null);
+				if (delProp!=null) {
+					delProp.getParent().getProperties().remove(delProp);
+					
+				}
+			}
+			if (jc==null) {
+				jc=def.newJoingColumn(col);				
+			}							
+		}	
+	}
+	private void createInverseOf() {
+		//MAssociationDef def = prop.getOrInitAssociationDef();
+		MClass ctype = prop.getTypeClass();
+		if (ctype!=null) {
+			final String tmp=inverseOf;
+			MProperty inverse = ctype.getProperties().stream().
+					filter(p->p.getName().equals(tmp)).
+					findFirst().orElse(null);
+
+			if (inverse!=null) {
+				if (inverse.getAssociation()==null) {									
+					MAssociation.newMAssociation(prop, inverse).setNavigableFrom(true).setNavigableTo(true);
+				} else {
+					//neste caso o inverse é ao contrário, definido do outro lado
+					inverse.getAssociation().setTo(prop);
+				}
+			}
+		}
+
+	}
+	private void visitArg(Node arg) {
 		if (arg instanceof HashNode) {
 			HashNode hn = (HashNode) arg;
 			
@@ -192,71 +276,18 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 				String name=Helper.getName(pair.getKey());
 				Node valueNode = pair.getValue();					
 				String value = Helper.getValue(valueNode);					
-				
-				MAssociationDef def=null;
+								
 				switch (name.toLowerCase()) {
 					case "class_name": 
-						MClass type = repo.getClazz(value);
-						if (type!=null)
-							prop.setTypeClass(type);
+						this.type = repo.getClazz(value);
+						//if (type!=null)
+						//	prop.setTypeClass(type);
 						break;
 					case "inverse_of": 
-						def = prop.getOrInitAssociationDef();
-						MClass ctype = prop.getTypeClass();
-						if (ctype!=null) {
-							final String tmp=value;
-							MProperty inverse = ctype.getProperties().stream().
-									filter(p->p.getName().equals(tmp)).
-									findFirst().orElse(null);
-
-							if (inverse!=null) {
-								if (inverse.getAssociation()==null) {
-									
-									MAssociation.newMAssociation(prop, inverse).setNavigableFrom(true).setNavigableTo(true);
-								} else {
-									//neste caso o inverse é ao contrário, definido do outro lado
-									inverse.getAssociation().setTo(prop);
-								}
-							}
-						}
-							
-						
+						this.inverseOf = value;						
 						break;
-					case "foreign_key": 	
-						def = prop.getOrInitAssociationDef();
-						
-						String[] fks = value.split(",");
-						MClass parent = prop.getParent();
-						Optional<MPersistent> x = Optional.ofNullable(parent.getPersistence());
-						Optional<MDataSource> k = x.map(MPersistent::getSource);
-						
-						MTable source = (MTable) k.orElseGet(()->
-							daoMTable.persit(
-							parent.newTableSource(								
-										NounInflector.getInstance().tableize(parent.getName())
-								)));
-						
-						for (String fk:fks) {
-							MJoinColumn jc = def.findJoinColumn(fk);
-							MColumn col = source.findColumn(fk);
-							if (col==null) {								
-								col =  daoColumn.persit(source.addColumn().setName(fk));
-							} else {
-								//remove property
-								MProperty delProp = clazz.getProperties().stream().
-										filter(p->p.getName().equalsIgnoreCase(fk) && !p.equals(prop)).
-										findFirst().orElse(null);
-								if (delProp!=null) {
-									delProp.getParent().getProperties().remove(delProp);
-									
-								}
-							}
-							if (jc==null) {
-								jc=def.newJoingColumn(col);
-							
-							}							
-						}
-						
+					case "foreign_key":						
+						this.fks = value.split(",");					
 						break;
 				}
 				

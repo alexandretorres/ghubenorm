@@ -9,6 +9,7 @@ import dao.ConfigDAO;
 import dao.DAOInterface;
 import model.MAssociation;
 import model.MAssociationDef;
+import model.MCascadeType;
 import model.MClass;
 import model.MProperty;
 
@@ -148,7 +149,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 		Node nameNode = it.next();
 		String pname=Helper.getValue(nameNode); 
 		
-		String typeName =  NounInflector.getInstance().singularize(pname);
+		String typeName =  JRubyInflector.getInstance().singularize(pname);
 		MProperty prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
 		prop.setMax(-1);
@@ -166,7 +167,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 		//Uma PROP so tem uma assoc no lado from(?), mas uma coluna pode ter várias(?)
 		type = prop.getTypeClass();
 		if (prop.getAssociation()==null && type!=null) {
-			String clazz_under = NounInflector.getInstance().underscore(clazz.getName());
+			String clazz_under = JRubyInflector.getInstance().underscore(clazz.getName());
 			//visit SUPERCLASS PROPERTIES
 			for (MProperty p:type.getProperties()) {
 				// this is for belongs_to
@@ -211,6 +212,44 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 						// has_many :zzz :through :yyy   <-- shortcut for many-to-many OR "collapsed" one-to-many-to-many
 						prop.setTransient(true);
 						break;
+					case "dependent":
+						switch (value) {
+							case "destroy":
+							case "delete":
+								def = prop.getOrInitAssociationDef();
+								def.setOrphanRemoval(true);
+								def.addCascade(MCascadeType.REMOVE);
+								break;
+							
+						}
+						break;
+					case "autosave":
+						if (value==null || "true".equals(value)) {
+							def = prop.getOrInitAssociationDef();
+							def.addCascade(MCascadeType.PERSIST);
+						}
+						break;
+					case "inverse_of": 
+						def = prop.getOrInitAssociationDef();
+						MClass ctype = prop.getTypeClass();
+						if (ctype!=null) {
+							final String tmp=value;
+							MProperty inverse = ctype.getProperties().stream().
+									filter(p->p.getName().equals(tmp)).
+									findFirst().orElse(null);
+
+							if (inverse!=null) {
+								if (inverse.getAssociation()==null) {
+									
+									MAssociation.newMAssociation(inverse, prop).setNavigableFrom(true).setNavigableTo(true);
+								} else {
+									//neste caso o inverse é ao contrário, definido do outro lado
+									inverse.getAssociation().setTo(inverse);
+								}
+							}
+						}
+						break;
+						
 				}
 			}
 		}

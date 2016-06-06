@@ -64,7 +64,7 @@ class GitHubCaller {
 class RubyCrawler implements Runnable {
 	static String oauth = Auth.getProperty("oauth");
 	static GitHubCaller gh = GitHubCaller.instance;
-	public static final long MAX_REPOS=5000000;
+	public static final long MAX_REPOS=500;
 	// per_page max é de 100 (mais que isso ele considera como 100)
 	static RubyRepoLoader loader = new RubyRepoLoader();
 	DAOInterface<Repo> daoRepo;
@@ -167,13 +167,13 @@ class RubyCrawler implements Runnable {
 		}
 	}
 	
-	private void loadRepo(Repo repo) throws MalformedURLException {			
+	public RubyRepo loadRepo(Repo repo) throws MalformedURLException {			
 		//  /repos/:owner/:repo/contents/:path
 		URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"
 				+ "?access_token="+oauth);
 		JsonReader rdr = gh.callApi(url);
 		if (rdr==null) { //File not Found
-			return;
+			return null;
 		}
 		RubyRepo rrepo = loader.setRepo(repo);			
 		loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/master/"+repo.getConfigPath()));	
@@ -191,7 +191,8 @@ class RubyCrawler implements Runnable {
 		}
 		
 		loader.solveRefs();
-		rrepo.print();		
+		rrepo.print();	
+		return rrepo;
 	}
 	
 }

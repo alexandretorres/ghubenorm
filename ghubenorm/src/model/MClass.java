@@ -91,6 +91,19 @@ public class MClass {
 		persistence.setPersistent(false);
 		return this;
 	}
+	/**
+	 * Find datasource in this class or in the superclasses
+	 * @return
+	 */
+	public MDataSource findDataSource() {
+		MDataSource ret = persistence.getSource();
+		if (ret!=null)
+			return ret;
+		if (superClass!=null && superClass.isPersistent())
+			return superClass.findDataSource();
+		return null;
+		
+	}
 	public MPersistent getPersistence() {
 		return persistence;
 	}
@@ -147,9 +160,9 @@ public class MClass {
 	 */
 	public boolean isFirstConcretePersistent() {
 		if (this.superClass==null) {
-			return persistence!=null && !isAbstract;
+			return isPersistent() && !isAbstract;
 		}
-		if (superClass.persistence!=null) {
+		if (superClass.isPersistent()) {
 			return !superClass.isFirstConcretePersistent();
 			
 		}
@@ -157,5 +170,8 @@ public class MClass {
 	}
 	public boolean isPersistent() {
 		return persistence.isPersistent();
+	}
+	public String toString() {
+		return (repo!=null ? "Repo:"+repo.getName()+" - " : "" ) + this.getName();
 	}
 }

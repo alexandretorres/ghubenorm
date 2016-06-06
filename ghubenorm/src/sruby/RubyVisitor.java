@@ -83,7 +83,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			if (clazz.isFirstConcretePersistent()) {
 				
 				AttrAssignNode an = Helper.findAttrAssignNode(n.getBodyNode(), "table_name");		
-				String tabname = NounInflector.getInstance().tableize(name);
+				String tabname = JRubyInflector.getInstance().tableize(name);
 				if (an!=null && an.getReceiverNode() instanceof SelfNode) {				
 					tabname=Helper.getValue(an.getArgsNode());
 				}
@@ -111,7 +111,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		super.visitClassNode(n);
 		if (clazz!=null) {
 			if (clazz.isPersistent() && !clazz.getProperties().stream().anyMatch(p->p.isPk())) {
-				clazz.newPKProperty().setName("id").setType("integer");
+				clazz.newPKProperty().setName("id").setType("integer"); //TODO: not for subclasses!!
 			}			
 			stack.pop();			
 			List<ClassNode> subs = repo.subclasses.get(name);

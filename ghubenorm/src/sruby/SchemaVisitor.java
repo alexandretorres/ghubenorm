@@ -13,17 +13,34 @@ import org.jruby.ast.Colon2Node;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.TrueNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
+import org.jruby.util.KeyValuePair;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
 import model.MClass;
 import model.MColumn;
+import model.MDefinition;
+import model.MDefinitionType;
 import model.MTable;
 
 
 public class SchemaVisitor extends AbstractNodeVisitor<Object> {
+	/**
+	 * Ruby pluralize:
+	 * gem install activesupport
+	 * or
+	 * jruby -S gem install activesupport
+	 * irb
+	 * or
+	 * jirb 
+	 * require 'active_support/inflector'
+	 * "<string>".pluralize(3)
+	 * @author torres
+	 *
+	 */
 	private RubyRepo repo;
 	
 	static String[] dbtypes = new String[] 
@@ -65,9 +82,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		
 		MTable table=null;
 		//System.out.println("call F node:"+n.getName());
-		if (n.getName().equals("create_table")) {
-			
-			
+		if (n.getName().equals("create_table")) {			
 			Iterator<Node> it = n.getArgsNode().childNodes().iterator();
 			Node nod = it.next();
 			String tabname = Helper.getValue(nod);
@@ -78,6 +93,25 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			if (table!=null)
 				stack.push(table);
 			
+		} else if (n.getName().equals("add_index")) {
+			Iterator<Node> it = n.getArgsNode().childNodes().iterator();
+			Node nod = it.next();
+			String tabname = Helper.getValue(nod);
+			MTable tab = repo.getTable(tabname);
+			if (tab!=null) {
+				nod = it.next();
+				String[] colNames = Helper.getValue(nod).split(",");
+				MColumn[] cols = new MColumn[colNames.length];
+				for (int i=0;i<colNames.length;i++) {
+					cols[i] = tab.findColumn(colNames[i]);
+				}
+				if (it.hasNext())
+					nod = it.next();
+				else 
+					nod=null;
+				addIndex(nod, tab, cols);
+				
+			}
 		}
 		super.visitFCallNode(n);
 		if (table!=null) {
@@ -113,7 +147,8 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		}
 		MColumn ret=null;
 		if (it.hasNext()) {
-			ret= daoColumn.persit(tab.addColumn().setName(Helper.getValue(it.next())));
+			String name = Helper.getValue(it.next());
+			ret= daoColumn.persit(tab.addColumn().setName(name));
 		} else {
 			return null;
 		}
@@ -130,6 +165,11 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				} catch (Exception ex) {
 					LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 				}
+				//String index = Helper.getHashArgument(hn.getPairs(), "index");
+				Node nidx = Helper.getHashValue(hn.getPairs(), "index");
+				if (nidx!=null) {
+					addIndex(nidx,tab, ret);
+				}
 				ret.setDefaulValue(Helper.getHashArgument(hn.getPairs(), "default"));
 				ret.setPrecision(Helper.getHashArgument(hn.getPairs(), "precision",Integer.class));
 				ret.setScale(Helper.getHashArgument(hn.getPairs(), "scale",Integer.class));
@@ -140,6 +180,28 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		}
 		ret.setColummnDefinition(type);
 		return ret;
+	}
+	private MDefinition addIndex(Node nidx,MTable tab,MColumn... cols) {		
+		MDefinition def=null;
+		if (nidx==null || nidx instanceof TrueNode) {
+			return tab.newIndex(cols);
+		} else if (nidx instanceof HashNode){
+			//KeyValuePair<Node, Node> pair = hn.getPairs().stream().filter(p->Helper.getName(p.getKey()).equals("index")).findFirst().orElse(null);
+			//Node indexNode = pair.getValue();
+			if (nidx instanceof HashNode) {
+				HashNode ihn = (HashNode) nidx;
+				String name = Helper.getHashArgument(ihn.getPairs(),"name");
+				String unique = Helper.getHashArgument(ihn.getPairs(),"unique");
+				def = tab.newIndex(cols).setName(name);
+				if ("true".equals(unique))
+					def.setType(MDefinitionType.UNIQUE);
+				
+				return def;
+			}
+		} else {
+			LOG.warning("Unknown index node type:"+nidx.getClass());
+		}	
+		return def;
 	}
 	/**
 	 * call to method on something

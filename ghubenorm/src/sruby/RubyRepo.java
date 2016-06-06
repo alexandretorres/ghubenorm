@@ -62,7 +62,7 @@ public class RubyRepo {
 	}
 	public MClass getClazzFromUnderscore(String underscore_name) {
 		Optional<MClass> ret = getClasses().stream().filter(
-				cl->NounInflector.getInstance().underscore(cl.getName()).equalsIgnoreCase(underscore_name)).
+				cl->JRubyInflector.getInstance().underscore(cl.getName()).equalsIgnoreCase(underscore_name)).
 				findFirst();
 		return ret.orElse(null);
 	}
@@ -122,6 +122,8 @@ public class RubyRepo {
 		for (MClass cl:getClasses()) {
 			pw.println("=====================================");
 			pw.print((cl.getPackageName()==null ? "" : cl.getPackageName()+".")+cl.getName());
+			if (cl.isAbstract())
+				pw.print("[Abstract]");
 			if (cl.getSuperClass()!=null) {
 				pw.print(" extends " + cl.getSuperClass().getName());
 			}
@@ -148,6 +150,8 @@ public class RubyRepo {
 						pw.print( col.getLength()==0 ? "" : "("+col.getLength()+")");
 					}
 					MAssociation assoc = p.getAssociation();
+					if (assoc==null)
+						assoc = p.getToAssociation();
 					if (assoc!=null) {						
 						MProperty inv = assoc.getInverse(p);
 						if (p.getAssociationMapping()!=null) {
@@ -172,7 +176,7 @@ public class RubyRepo {
 						else
 							pw.print("---------------");
 						try {							
-							pw.print(p.getTypeClass().getName()+(inv==null ? "" : "."+ inv.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]"));
+							pw.print(p.getTypeClass().getName()+(inv==null ? "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
 						} catch (Exception ex) {
 							LOG.log(Level.SEVERE,ex.getMessage(),ex);								
 						}

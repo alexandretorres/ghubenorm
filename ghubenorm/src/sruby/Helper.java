@@ -106,7 +106,7 @@ public class Helper {
 				
 			}
 			if (hn.getPairs().size()>1)
-				ret.append("{");
+				ret.append("}");
 			return ret.toString();
 		} else if (node instanceof FloatNode) {
 			return Double.toString(((FloatNode)node).getValue());
@@ -122,6 +122,9 @@ public class Helper {
 			
 		}		
 		//return visit(node);
+	}
+	static public Node getHashValue(List<KeyValuePair<Node, Node>> list,String name) {
+		 return list.stream().filter(p->Helper.getName(p.getKey()).equals(name)).findFirst().map(p->p.getValue()).orElse(null);
 	}
 	static public <T> T getHashArgument(List<KeyValuePair<Node, Node>> list,String name,Class<T> cl) {
 		String res = getHashArgument(list, name);

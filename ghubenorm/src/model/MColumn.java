@@ -8,12 +8,13 @@ import javax.persistence.Transient;
 
 @Entity
 public class MColumn extends MColumnDefinition{
+	//TODO: Use nullable types for length, precision and so forth. 
 	@Transient public static final int DEFAULT_LENGTH = 255;	
 	@Transient public static final int DEFAULT_SCALE = 0;	
 	private String name;
-	private boolean nullable;
-	private boolean insertable;
-	private boolean updatable;
+	private boolean nullable=true;
+	private boolean insertable=true;
+	private boolean updatable=true;
 	private String colummnDefinition;
 	private int length;
 	private int precision;
