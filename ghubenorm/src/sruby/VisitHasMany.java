@@ -244,7 +244,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 									MAssociation.newMAssociation(inverse, prop).setNavigableFrom(true).setNavigableTo(true);
 								} else {
 									//neste caso o inverse é ao contrário, definido do outro lado
-									inverse.getAssociation().setTo(inverse);
+									inverse.getAssociation().setTo(prop);
 								}
 							}
 						}

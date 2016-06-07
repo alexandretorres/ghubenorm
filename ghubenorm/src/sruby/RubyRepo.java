@@ -102,7 +102,7 @@ public class RubyRepo {
 		subclasses.clear();
 		for (LateVisitor v:visitors) {
 			v.exec();
-		}
+		}		
 	}
 	public void listTables() {
 		for (MTable t:getTables()) {
