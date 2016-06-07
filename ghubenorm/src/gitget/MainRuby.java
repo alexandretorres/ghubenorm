@@ -64,7 +64,7 @@ class GitHubCaller {
 class RubyCrawler implements Runnable {
 	static String oauth = Auth.getProperty("oauth");
 	static GitHubCaller gh = GitHubCaller.instance;
-	public static final long MAX_REPOS=500;
+	public static final long MAX_REPOS=50000;
 	// per_page max é de 100 (mais que isso ele considera como 100)
 	static RubyRepoLoader loader = new RubyRepoLoader();
 	DAOInterface<Repo> daoRepo;
@@ -82,6 +82,7 @@ class RubyCrawler implements Runnable {
 			}
 			long cnt=0,total=0,p=1;
 			do {
+				//PROBLEM: ONLY 1000 RESULTS PER SEARCH! 
 				URL url = new URL("https://api.github.com/search/repositories?page="+p+"&per_page=100&q=language:ruby&order=desc&access_token="+oauth);
 				LOG.info("********************************************************************************* ");
 				LOG.info("page "+p);
