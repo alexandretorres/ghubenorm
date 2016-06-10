@@ -16,7 +16,8 @@ public class MainLoadOneRepo {
 		//repo.setName("diaspora/diaspora");
 		//repo.setName("drhenner/ror_ecommerce");
 		//repo.setName("tenex/rails-assets");
-		repo.setName("churchio/onebody");		
+	//	repo.setName("churchio/onebody");	
+		repo.setName("mephistorb/mephisto");
 		
 		repo.setConfigPath("db/schema.rb");
 		try {

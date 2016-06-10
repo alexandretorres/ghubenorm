@@ -69,6 +69,7 @@ public class RubyRepo {
 	public void solveRefs(RubyVisitor rv) {
 		boolean keep;
 		do {
+			HashSet<String> removed = new HashSet<String>(); 
 			keep=false;
 			for (Iterator<String> it=subclasses.keySet().iterator();it.hasNext();) {
 				String name = it.next();
@@ -79,8 +80,12 @@ public class RubyRepo {
 						rv.createClass(n, parent,parent.isPersistent());
 					}
 					keep=true;
-					it.remove();				
+					removed.add(name);
+					//it.remove();				
 				}
+			}
+			for (String s:removed) {
+				subclasses.remove(s);
 			}
 		} while (keep && !subclasses.isEmpty());
 		

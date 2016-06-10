@@ -139,8 +139,10 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		}
 		if (sname.equals("") || sname.equals("ActiveRecord::Base")) {
 			ret = createClass(n,null,sname.equals("ActiveRecord::Base"));			
-		} else {
+			// Inner classes are not added in resove ref stage. TODO: separated method to read before the resolve
+		} else if (stack.isEmpty()){
 			List<ClassNode> subs = repo.subclasses.get(sname);
+			
 			if (subs==null) {
 				subs = new ArrayList<ClassNode>();
 				repo.subclasses.put(sname, subs); //TODO: remove the :: or process this correctly

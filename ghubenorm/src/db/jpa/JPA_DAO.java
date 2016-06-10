@@ -35,5 +35,8 @@ class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 	public List<Repo> findByURL(String url) {
 		return getEm().createNamedQuery(FindByURL,Repo.class).setParameter("url", url).getResultList();
 	}
+	public List<Repo> findAll() {
+		return getEm().createQuery("SELECT r FROM Repo r order by id",Repo.class).getResultList();
+	}
 	
 }

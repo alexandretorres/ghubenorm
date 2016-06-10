@@ -7,6 +7,7 @@ import model.Repo;
 
 public interface RepoDAO extends DAOInterface<Repo> {	
 	public List<Repo> findByURL(String url);
+	public List<Repo> findAll();
 }
 
 

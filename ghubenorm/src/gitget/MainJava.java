@@ -29,7 +29,7 @@ class JavaCrawler implements Runnable {
 		try {
 			URL uauth = new URL("https://api.github.com/?access_token=" + oauth);
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
-			try (JsonReader rdr = gh.callApi(uauth)) {
+			try (JsonReader rdr = gh.callApi(uauth,false)) {
 				JsonObject obj = rdr.readObject();
 				System.out.println(obj.toString());
 			}
@@ -41,7 +41,7 @@ class JavaCrawler implements Runnable {
 						.println("********************************************************************************* ");
 				System.out.println("page " + p);
 				//try (InputStream is = url.openStream(); JsonReader rdr = Json.createReader(is)) {
-				try (JsonReader rdr = gh.callApi(url)) {
+				try (JsonReader rdr = gh.callApi(url,true)) {
 					JsonObject obj = rdr.readObject();
 					JsonArray results = obj.getJsonArray("items");
 					total = obj.getInt("total_count");
@@ -75,7 +75,7 @@ class JavaCrawler implements Runnable {
 			URL url = new URL("https://api.github.com/search/code?page=" + p + "&per_page=100"
 					+ "&q=javax.persistence+in:file+language:java+repo:" + path + "&access_token=" + oauth);
 			//try (InputStream is = url.openStream(); JsonReader rdr = Json.createReader(is)) {
-			try (JsonReader rdr = gh.callApi(url)) {
+			try (JsonReader rdr = gh.callApi(url,true)) {
 				JsonObject obj = rdr.readObject();
 				total = obj.getInt("total_count");
 				JsonArray results = obj.getJsonArray("items");
