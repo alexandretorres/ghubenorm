@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.List;
 
 import org.antlr.v4.runtime.TokenStream;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import sjava.SJavaParser.AnnotationContext;
 import sjava.SJavaParser.ClassBodyContext;
@@ -12,6 +13,7 @@ import sjava.SJavaParser.ClassDeclarationContext;
 import sjava.SJavaParser.ClassModifierContext;
 import sjava.SJavaParser.CompilationUnitContext;
 import sjava.SJavaParser.NormalClassDeclarationContext;
+import sjava.SJavaParser.PackageDeclarationContext;
 import sjava.SJavaParser.SingleStaticImportDeclarationContext;
 import sjava.SJavaParser.SingleTypeImportDeclarationContext;
 import sjava.SJavaParser.StaticImportOnDemandDeclarationContext;
@@ -90,6 +92,20 @@ public class SJavaListnerImpl extends SJavaBaseListener {
 		
 		
 		System.out.println("the body is={"+ctx.getText()+"}");
+	}
+	@Override
+	public void enterPackageDeclaration(PackageDeclarationContext ctx) {
+		if (ctx.Identifier().isEmpty())
+			return;
+		String name=null;
+		for (TerminalNode id:ctx.Identifier()) {
+			if (name==null)
+				name=id.getText();
+			else
+				name +="."+id.getText();
+		}
+		comp.packageName=name;
+		super.enterPackageDeclaration(ctx);
 	}
 	
 }

@@ -7,6 +7,7 @@ import java.util.Set;
 import static sjava.JPATags.*;
 
 public class CompilationUnit {
+	String packageName="";
 	Set<Clazz> classes= new HashSet<Clazz>();
 	Set<Import> imports = new HashSet<Import>();
 	public boolean importsTag(JPATags tag) {
@@ -30,6 +31,13 @@ public class CompilationUnit {
 		}
 		return ret;
 	}
+	public String getPackageName() {
+		return packageName;
+	}
+	public void setPackageName(String packageName) {
+		this.packageName = packageName;
+	}
+	
 }
 class Import {
 	String from;
