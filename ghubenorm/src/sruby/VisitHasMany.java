@@ -5,6 +5,7 @@ import java.util.Iterator;
 import org.jruby.ast.*;
 import org.jruby.util.KeyValuePair;
 
+import common.LateVisitor;
 import dao.ConfigDAO;
 import dao.DAOInterface;
 import model.MAssociation;

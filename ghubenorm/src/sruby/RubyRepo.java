@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 
 import org.jruby.ast.ClassNode;
 
+import common.LateVisitor;
 import gitget.Log;
 import model.Language;
 import model.MAssociation;
@@ -94,16 +95,6 @@ public class RubyRepo {
 				rv.createClass(n, null,false);
 			}
 		}
-	
-		
-		/*
-		for (String name:subclasses.keySet()) {
-			List<ClassNode> lst = subclasses.get(name);	
-			MClass parent = getClazz(name);
-			for (ClassNode n:lst) {
-				rv.createClass(n, parent,parent.getPersistence()!=null);
-			}			
-		}*/
 		subclasses.clear();
 		for (LateVisitor v:visitors) {
 			v.exec();

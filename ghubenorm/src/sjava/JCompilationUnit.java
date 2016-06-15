@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.script.ScriptEngine;
@@ -40,6 +41,7 @@ public class JCompilationUnit {
 	}
 	public MClass createClass() {
 		MClass c = MClass.newMClass(jrepo.getRepo());//new MClass(comp,ctx.Identifier().getText());
+		c.setPackageName(packageName);
 		classes.add(c);
 		jrepo.getClasses().add(c);
 		return c;
@@ -99,12 +101,30 @@ public class JCompilationUnit {
 		jrepo.getTables().add(tab);
 		return tab;
 	}
+	public MClass getClazz(String name) {		
+		//TODO:extract package name
+		MClass ret = jrepo.getClasses().stream().filter(cl->(cl.getName().equals(name) && cl.getPackageName().equals(packageName)) || cl.getFullName().equals(name)).
+				findFirst().orElse(jrepo.getClasses().stream().filter(cl->this.importClass(cl)).findFirst().orElse(null));
+		
+		return ret;
+	}
+	public boolean importClass(MClass cl) {
+		for (Import i:imports) {
+			if (i.isImport(cl.getPackageName(), cl.getName()))
+				return true;
+		}
+		return false;
+	}
 }
 class Import {
 	String from;
+	String base;
 	public static Import newImport(String from) {
 		Import ret = new Import();
 		ret.from=from;
+		if (from.endsWith(".*")) {
+			ret.base = from.substring(0,from.length()-2);
+		}
 		return ret;
 	}
 	private Import() {
@@ -112,6 +132,16 @@ class Import {
 	}
 	public String getFrom() {
 		return from;
+	}
+	
+	public boolean isImport(String pak,String name) {		
+		if (from.equals(pak+"."+name)) {
+			return true;
+		}
+		if (base!=null) {			
+			return base.equals(pak);
+		}
+		return false;
 	}
 }
 class ElementValue {

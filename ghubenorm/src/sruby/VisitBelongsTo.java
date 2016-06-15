@@ -6,6 +6,9 @@ import java.util.Optional;
 
 import org.jruby.ast.*;
 import org.jruby.util.KeyValuePair;
+
+import common.LateVisitor;
+
 import static gitget.Log.LOG;
 
 

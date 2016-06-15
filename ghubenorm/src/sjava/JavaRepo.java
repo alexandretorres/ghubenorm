@@ -3,7 +3,9 @@ package sjava;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
+import common.LateVisitor;
 import gitget.Dir;
 import model.MClass;
 import model.MTable;
@@ -14,6 +16,7 @@ public class JavaRepo {
 	private Dir root;
 	private List<Dir> basePaths;
 	private Dir badFiles;
+	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
 	//----
 	private HashMap<String, JCompilationUnit> parsed = new HashMap<String, JCompilationUnit>();
 	
@@ -59,6 +62,11 @@ public class JavaRepo {
 		this.parsed = parsed;
 	}
 	
+	public void solveRefs() {
+		for (LateVisitor v:visitors) {
+			v.exec();
+		}
+	}
 	
 	
 }

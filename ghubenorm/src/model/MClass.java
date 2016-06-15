@@ -56,6 +56,9 @@ public class MClass {
 	public String getName() {
 		return name;
 	}
+	public String getFullName() {
+		return packageName+"."+name;
+	}
 	public MClass setName(String name) {
 		this.name = name;
 		return this;

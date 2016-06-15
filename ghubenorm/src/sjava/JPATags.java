@@ -1,7 +1,7 @@
 package sjava;
 
 public enum JPATags {
-	Entity,PK,Column,Table,SecondaryTable,SecondaryTables;
+	Entity,PK,Column,Table,SecondaryTable,SecondaryTables,OneToMany,ManyToOne,OneToOne,ManyToMany,Embedded;
 	String path;
 	JPATags() {
 		path="javax.persistence";

@@ -20,8 +20,7 @@ public class Test {
 
 	public static void main(String[] args) {
 		//File f = new File(".");
-		try {
-			
+		try {			
 			CharStream stream =		
 					new ANTLRInputStream("hello alex");
 			HelloLexer lexer = new HelloLexer(stream);
@@ -47,6 +46,7 @@ public class Test {
 		    comp.parser=parser;
 		    SJavaListnerImpl listner = new SJavaListnerImpl(comp);
 		    walker.walk(listner, context); 
+		    comp.jrepo.solveRefs();
 		    //System.out.println("compilation unit:\n"+listner.comp);
 		    comp.jrepo.getRepo().print();
 			/*ParseTree tree = parser.compilationUnit(); 
