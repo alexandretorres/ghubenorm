@@ -1,7 +1,7 @@
 package sjava;
 
 public enum JPATags {
-	Entity,PK,Column;
+	Entity,PK,Column,Table,SecondaryTable,SecondaryTables;
 	String path;
 	JPATags() {
 		path="javax.persistence";
@@ -23,5 +23,9 @@ public enum JPATags {
 	}
 	public boolean isImport(Import imp) {
 		return isImport(imp.getFrom());
+	}
+	public boolean isType(Annotation a) {
+		return (a.type!=null && a.type.equals(this.name()));			
+		
 	}
 }

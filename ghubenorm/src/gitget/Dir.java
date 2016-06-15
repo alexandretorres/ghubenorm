@@ -42,6 +42,7 @@ public class Dir {
 				for (Dir c:dir.children) {
 					ret.addChild(c);
 				}
+				dir.parent=null;
 				dir.children=null;
 			}			
 		}		

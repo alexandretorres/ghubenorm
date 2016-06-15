@@ -15,7 +15,7 @@ import dao.DAOInterface;
 import dao.nop.ConfigNop;
 import model.Language;
 import model.Repo;
-import sjava.CompilationUnit;
+import sjava.JCompilationUnit;
 import sjava.JavaLoader;
 import sjava.JavaRepo;
 
@@ -37,6 +37,8 @@ public class JavaCrawler {
 			JavaRepo jrepo = new JavaRepo(repo);			
 			Dir root = Dir.newRoot();
 			jrepo.setRoot(root);
+			loader.setJrepo(jrepo);
+			//--
 			JsonObject result = gh.listFileTree(fullName);
 			for (JsonObject res: result.getJsonArray("tree").getValuesAs(JsonObject.class)) {
 				String path  =res.getString("path");
@@ -94,7 +96,7 @@ public class JavaCrawler {
 	}
 	protected String findPackage(JavaRepo jrepo,String leafPath) throws MalformedURLException {
 		URL url = new URL("https://github.com/"+jrepo.getRepo().getName()+ "/raw/master"+leafPath);
-		CompilationUnit unit= loader.load(url);	
+		JCompilationUnit unit= loader.load(url);	
 		if (unit==null) {
 			return null;
 		}

@@ -74,11 +74,26 @@ public class MClass {
 		this.isAbstract = isAbstract;
 		return this;
 	}
+	/**
+	 * creates a new MTable. If the datasource is set to JoinedSource, adds this new table to the source.
+	 * If not, sets this MTable as the new source. 
+	 * @param name
+	 * @return
+	 */
 	public MTable newTableSource(String name) {
 		MTable t= MTable.newMTable(repo,name);
-		persistence = setPersistent();
-		persistence.setPersistent(true).setDataSource(t);		
+		persistence = setPersistent();		
+		persistence.setDataSource(t);		
 		return t;
+	}
+	public MJoinedSource setJoinedSource() {
+		persistence = setPersistent();
+		if (persistence.getSource() instanceof MJoinedSource)
+			return (MJoinedSource)persistence.getSource();
+		MJoinedSource s = new MJoinedSource();
+		
+		persistence.setPersistent(true).setDataSource(s);		
+		return s;
 	}
 	public MPersistent setPersistent() {
 		if (persistence==null)

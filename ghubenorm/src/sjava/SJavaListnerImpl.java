@@ -1,8 +1,15 @@
 package sjava;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import model.MClass;
+import model.MJoinedSource;
+import model.MTable;
 
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -12,6 +19,7 @@ import sjava.SJavaParser.ClassBodyContext;
 import sjava.SJavaParser.ClassDeclarationContext;
 import sjava.SJavaParser.ClassModifierContext;
 import sjava.SJavaParser.CompilationUnitContext;
+import sjava.SJavaParser.MarkerAnnotationContext;
 import sjava.SJavaParser.NormalClassDeclarationContext;
 import sjava.SJavaParser.PackageDeclarationContext;
 import sjava.SJavaParser.SingleStaticImportDeclarationContext;
@@ -21,10 +29,11 @@ import sjava.SJavaParser.TypeImportOnDemandDeclarationContext;
 import static sjava.JPATags.*;
 
 public class SJavaListnerImpl extends SJavaBaseListener {
-	CompilationUnit comp = new CompilationUnit();
-	SJavaParser parser;
-	public SJavaListnerImpl(SJavaParser parser) {
-		this.parser = parser;
+	JCompilationUnit comp;
+	static SJavaParser parser;
+	public SJavaListnerImpl(JCompilationUnit comp) {
+		parser = comp.parser;
+		this.comp = comp;
 	}
 	@Override
 	public void enterCompilationUnit(CompilationUnitContext ctx) {
@@ -66,24 +75,55 @@ public class SJavaListnerImpl extends SJavaBaseListener {
 	@Override
 	public void enterAnnotation(AnnotationContext ctx) {
 		// ALL annotations
+		super.enterAnnotation(ctx);
 		
 	}
+	
+	@Override
+	public void enterMarkerAnnotation(MarkerAnnotationContext ctx) {
+		// TODO Auto-generated method stub
+		super.enterMarkerAnnotation(ctx);
+	}
+	
 	@Override
 	public void enterNormalClassDeclaration(NormalClassDeclarationContext ctx) {
 		TokenStream tokens = parser.getTokenStream();
-		Clazz c = new Clazz(comp,ctx.Identifier().getText());
-		comp.classes.add(c);
+		MClass c = comp.createClass().setName(ctx.Identifier().getText());//new MClass(comp,ctx.Identifier().getText());
+		List<Annotation> annots = new ArrayList<Annotation>();
 		for (ClassModifierContext mod:ctx.classModifier()) {
 			if (mod.annotation()!=null) {
-				
+				Annotation anot = Annotation.newAnnotation(mod.annotation());
+				annots.add(anot);
 				System.out.println("class has annotation "+tokens.getText(mod.annotation().getSourceInterval()));
-				if (mod.annotation().markerAnnotation()!=null) {
-					String type =mod.annotation().markerAnnotation().typeName().Identifier().getText();
-					c.setEntity(Entity.name().equals(type) && comp.importsTag(Entity));
+				if (Entity.isType(anot) && comp.importsTag(Entity)) {
+					c.setPersistent();				
+				
 				}
+			}			
+		}
+		if (c.isPersistent()) {			
+			Annotation atab = annots.stream().filter(a->Table.isType(a)).findFirst().orElse(null);
+			Annotation asecTab = annots.stream().filter(a->SecondaryTable.isType(a)).findFirst().orElse(null);
+			Annotation[] asecTabs = 
+					annots.stream().filter(a->SecondaryTables.isType(a)).findFirst().map(s->s.getListValue()).orElse(Collections.EMPTY_LIST)
+					.stream().map(v->v.annotation).toArray(Annotation[]::new);
+			//asecTabs.getSingleValue().
+			if (asecTab!=null || asecTabs.length>0) {	
+				c.setJoinedSource();
+				if (atab!=null)
+					comp.toTable(c, atab);
+				if (asecTab!=null) {					
+					comp.toTable(c, asecTab);
+				}
+				for (Annotation a:asecTabs) {
+					comp.toTable(c, a);
+				}				
+			} else if (atab!=null) {				
+				comp.toTable(c, atab);
 			}
 			
 		}
+		
 		
 		
 	}

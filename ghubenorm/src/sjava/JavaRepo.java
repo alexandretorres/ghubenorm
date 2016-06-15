@@ -1,5 +1,6 @@
 package sjava;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
@@ -13,6 +14,8 @@ public class JavaRepo {
 	private Dir root;
 	private List<Dir> basePaths;
 	private Dir badFiles;
+	//----
+	private HashMap<String, JCompilationUnit> parsed = new HashMap<String, JCompilationUnit>();
 	
 	public JavaRepo(Repo repo) {
 		this.repo = repo;
@@ -49,6 +52,13 @@ public class JavaRepo {
 	public void setBadFiles(Dir badFiles) {
 		this.badFiles = badFiles;
 	}
+	public HashMap<String, JCompilationUnit> getParsed() {
+		return parsed;
+	}
+	public void setParsed(HashMap<String, JCompilationUnit> parsed) {
+		this.parsed = parsed;
+	}
+	
 	
 	
 }

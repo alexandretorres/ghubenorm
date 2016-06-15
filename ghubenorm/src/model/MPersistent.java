@@ -17,7 +17,11 @@ public class MPersistent {
 	}
 	
 	public MPersistent setDataSource(MDataSource ds) {
-		this.source=ds;
+		if (this.source instanceof MJoinedSource && ds instanceof MTable) {
+			MTable tab = (MTable)ds;			
+			((MJoinedSource) source).addTable(tab);
+		} else
+			this.source=ds;
 		return this;
 	}	
 	
