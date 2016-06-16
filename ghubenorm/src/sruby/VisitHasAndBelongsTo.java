@@ -111,7 +111,7 @@ public class VisitHasAndBelongsTo implements LateVisitor<MProperty> {
 					}
 				} 
 			}
-			if (prop.getAssociation()==null)
+			if (prop.getAssociation()==null && prop.getToAssociation()==null)
 				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/

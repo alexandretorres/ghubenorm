@@ -23,11 +23,17 @@ public class JavaCrawler {
 	public static void main(String[] args) {
 		ConfigDAO.config(new ConfigNop());
 		new JavaCrawler().processRepo(null,"facebook/react-native");
+		//new JavaCrawler().processRepo(null,"BorisIvanov/com-iqbuzz-tickets");
 		
 	}
 	private static GitHubCaller gh = GitHubCaller.instance;
 	private DAOInterface<Repo> daoRepo;
 	private JavaLoader loader = new JavaLoader();
+	/**
+	 * Persistence.xml may not exist! Spring uses application.yaml or who knows!
+	 * @param repoJson
+	 * @param fullName
+	 */
 	public void processRepo(JsonObject repoJson,String fullName)  {
 		try {
 			if (daoRepo==null)

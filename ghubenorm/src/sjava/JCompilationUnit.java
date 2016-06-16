@@ -1,5 +1,6 @@
 package sjava;
 
+import static gitget.Log.LOG;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -241,8 +243,10 @@ class ExprEval {
 		try {				   
 			return jsEngine.eval(expr);
 		} catch (ScriptException e) {
+			LOG.warning("Java expression was not evaluated:"+expr);
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOG.log(Level.FINE, e.getMessage(),e);
+			
 		}
 		return expr;
 		

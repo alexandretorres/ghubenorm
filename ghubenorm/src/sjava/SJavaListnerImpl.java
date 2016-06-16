@@ -101,7 +101,8 @@ public class SJavaListnerImpl extends SJavaBaseListener {
 		MClass c = comp.createClass().setName(ctx.Identifier().getText());//new MClass(comp,ctx.Identifier().getText());
 		classStack.push(c);
 		List<Annotation> annots = new ArrayList<Annotation>();
-		for (ClassModifierContext mod:ctx.classModifier()) {
+		for (ClassModifierContext mod:ctx.classModifier()) {	
+			
 			if (mod.annotation()!=null) {
 				Annotation anot = Annotation.newAnnotation(mod.annotation());
 				annots.add(anot);

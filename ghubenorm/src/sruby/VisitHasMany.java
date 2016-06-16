@@ -145,7 +145,8 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 		this.node = node;
 	}
 	@Override
-	public MProperty exec() {
+	public MProperty exec() { 
+		//TODO: This is ALL WRONG! creating duplicated associations
 		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
 		Node nameNode = it.next();
 		String pname=Helper.getValue(nameNode); 
@@ -184,7 +185,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 					}
 				} 
 			}
-			if (prop.getAssociation()==null)
+			if (prop.getAssociation()==null && prop.getToAssociation()==null)
 				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
