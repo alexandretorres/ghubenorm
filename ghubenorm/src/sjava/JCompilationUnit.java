@@ -16,17 +16,18 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.antlr.v4.runtime.TokenStream;
-import org.antlr.v4.runtime.misc.Interval;
-
+import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
+import com.github.javaparser.ast.expr.MemberValuePair;
+import com.github.javaparser.ast.expr.NormalAnnotationExpr;
+import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import model.MClass;
 import model.MTable;
-import sjava.SJavaParser.AnnotationContext;
-import sjava.SJavaParser.ElementValueArrayInitializerContext;
-import sjava.SJavaParser.ElementValueContext;
-import sjava.SJavaParser.ElementValuePairContext;
-import sjava.SJavaParser.NormalAnnotationContext;
+
 
 import static sjava.JPATags.*;
 
@@ -36,7 +37,7 @@ public class JCompilationUnit {
 	Set<MClass> classes= new HashSet<MClass>();
 	Set<Import> imports = new HashSet<Import>();
 	JavaRepo jrepo;
-	transient SJavaParser parser;
+	
 	
 	public JCompilationUnit(JavaRepo jrepo, String url) {
 		this.url=url;
@@ -151,20 +152,20 @@ class ElementValue {
 	Annotation annotation;
 	List<ElementValue> values;
 	Object value;
-	public ElementValue(ElementValueContext val) {
-		if (val.annotation()!=null) {
-			this.annotation = Annotation.newAnnotation(val.annotation());
-		} else if (val.elementValueArrayInitializer()!=null) {
-			ElementValueArrayInitializerContext array = val.elementValueArrayInitializer();
+	public ElementValue(Expression val) {
+		if (val instanceof AnnotationExpr) {
+			this.annotation = Annotation.newAnnotation((AnnotationExpr)val);
+		} else if (val instanceof ArrayInitializerExpr) {
+			ArrayInitializerExpr array = (ArrayInitializerExpr)val;
 			values = new ArrayList<ElementValue>();
-			for (ElementValueContext item:array.elementValueList().elementValue()) {
+			for (Expression item:array.getValues()) {
 				values.add(new ElementValue(item));
 			}
-		} else if (val.conditionalExpression()!=null) {
-			TokenStream tokens = SJavaListnerImpl.parser.getTokenStream();			
-			Interval interval = val.conditionalExpression().getSourceInterval();			
-			this.value = ExprEval.evaluate( tokens.getText(interval));
-			
+		} else /*if (val.conditionalExpression()!=null)*/ {
+			//TokenStream tokens = SJavaListnerImpl.parser.getTokenStream();			
+			//Interval interval = val.conditionalExpression().getSourceInterval();			
+			//this.value = ExprEval.evaluate( tokens.getText(interval));
+			this.value = ExprEval.evaluate( val.toString());
 		}
 	}
 }
@@ -217,25 +218,48 @@ class Annotation {
 		}
 		return Collections.EMPTY_LIST;
 	}
-	static Annotation newAnnotation(AnnotationContext a) {
-		Annotation ret = new Annotation();
-		if (a.markerAnnotation()!=null) {
-			ret.type = a.markerAnnotation().typeName().Identifier().getText();
-		} else if (a.normalAnnotation()!=null) {
-			NormalAnnotationContext ctx = a.normalAnnotation();
-			ret.type = ctx.typeName().Identifier().getText();
-			for (ElementValuePairContext pair:ctx.elementValuePairList().elementValuePair()) {
-				String id = pair.Identifier().getText();
-				ElementValueContext value = pair.elementValue();
-				ret.values.put(id,new ElementValue(value));
-			}
-		} else if (a.singleElementAnnotation()!=null) {
-			ret.type = a.singleElementAnnotation().typeName().Identifier().getText();
-			ElementValueContext value = a.singleElementAnnotation().elementValue();
-			ret.values.put(DEFAULT_KEY,new ElementValue(value));
+	
+	static private VoidVisitorAdapter<Annotation> adapt = new VoidVisitorAdapter<Annotation>() {
+
+		@Override
+		public void visit(MarkerAnnotationExpr n, Annotation arg) {
+			arg.load(n);			
 		}
+
+		@Override
+		public void visit(NormalAnnotationExpr n, Annotation arg) {
+			arg.load(n);			
+		}
+
+		@Override
+		public void visit(SingleMemberAnnotationExpr n, Annotation arg) {
+			arg.load(n);			
+		}
+		
+	};
+	static Annotation newAnnotation(AnnotationExpr a) {
+		Annotation ret = new Annotation();
+		a.accept(adapt,ret);
 		return ret;
 	}
+	private void load(MarkerAnnotationExpr m) {
+		type = m.getName().toString();
+	}
+	private void load(NormalAnnotationExpr na) {
+		type = na.getName().toString();			
+		for (MemberValuePair pair:na.getPairs()) {
+			String id = pair.getName();
+			Expression value = pair.getValue();
+			values.put(id,new ElementValue(value));
+		}
+	}
+	private void load(SingleMemberAnnotationExpr m) {
+		type = m.getName().toString();
+		
+		Expression value = m.getMemberValue();
+		values.put(DEFAULT_KEY,new ElementValue(value));
+	}
+	
 }
 class ExprEval {
 	private static ScriptEngineManager mgr = new ScriptEngineManager();
