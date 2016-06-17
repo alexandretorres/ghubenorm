@@ -92,6 +92,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 		}
 		if (massoc==null)
 			MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
+		//TODO: all other association parameters
 		return null;
 	}
 

@@ -8,3 +8,4 @@ logs/
 .classpath
 oauth.properties
 out.rb
+/.apt_generated/

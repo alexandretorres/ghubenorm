@@ -19,6 +19,7 @@ import javax.script.ScriptException;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.misc.Interval;
 
+
 import model.MClass;
 import model.MTable;
 import sjava.SJavaParser.AnnotationContext;
@@ -240,6 +241,7 @@ class ExprEval {
 	private static ScriptEngineManager mgr = new ScriptEngineManager();
 	private static ScriptEngine jsEngine = mgr.getEngineByName("JavaScript");
 	public static Object evaluate(String expr)  {
+		Prof.open("ExprEval.eval");
 		try {				   
 			return jsEngine.eval(expr);
 		} catch (ScriptException e) {
@@ -248,6 +250,7 @@ class ExprEval {
 			LOG.log(Level.FINE, e.getMessage(),e);
 			
 		}
+		Prof.close("ExprEval.eval");
 		return expr;
 		
 	}

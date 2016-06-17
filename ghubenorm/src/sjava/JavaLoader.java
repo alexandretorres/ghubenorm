@@ -13,7 +13,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-
 import model.Repo;
 import sjava.SJavaParser.CompilationUnitContext;
 
@@ -44,23 +43,35 @@ public class JavaLoader {
 		
 		
 	}
-	private void doLoad(JCompilationUnit comp,URL url) throws IOException {
+	protected void doLoad(JCompilationUnit comp,URL url) throws IOException {
+		SJavaParser parser=null;
+		
 		try (InputStream in =  url.openStream()) {	
+			
 			ANTLRInputStream stfile = new ANTLRInputStream(in);
 			SJavaLexer lexer = new SJavaLexer(stfile);
-			TokenStream tokenStream = new CommonTokenStream(lexer);
-			SJavaParser parser = new SJavaParser(tokenStream);		
+			TokenStream tokenStream = new CommonTokenStream(lexer);			
 			
-			CompilationUnitContext context = parser.compilationUnit();
-			// Walk it and attach our listener
-		    //context.packageDeclaration()...
-		    comp.parser=parser;
-		    SJavaListnerImpl listner = new SJavaListnerImpl(comp);
-		    walker.walk(listner, context); 
-		    System.out.println("compilation unit:\n"+comp);
-		    return;
+			Prof.open("JavaLoader.parser");
+			parser = new SJavaParser(tokenStream);	
+			Prof.close("JavaLoader.parser");
 		}
+		Prof.open("JavaLoader.doLoad.test");
+		CompilationUnitContext context = parser.compilationUnit();
+		Prof.close("JavaLoader.doLoad.test");
+		// Walk it and attach our listener
+	    //context.packageDeclaration()...
+	    comp.parser=parser;
+	    Prof.open("JavaLoader.walk");
+	    SJavaListnerImpl listner = new SJavaListnerImpl(comp);
+	    walker.walk(listner, context); 
+	    Prof.close("JavaLoader.walk");
+	 //   System.out.println("compilation unit:\n"+comp);
+	    
+	    return;
+		
 	}
+
 	public JavaRepo getJrepo() {
 		return jrepo;
 	}

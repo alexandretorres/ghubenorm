@@ -48,7 +48,7 @@ public class SJavaListnerImpl extends SJavaBaseListener {
 	@Override
 	public void enterCompilationUnit(CompilationUnitContext ctx) {
 		classStack.removeAll(classStack);
-		System.out.println("text CU:"+ctx.getText());
+		//System.out.println("text CU:"+ctx.getText());
 	}
 
 	@Override
@@ -106,7 +106,7 @@ public class SJavaListnerImpl extends SJavaBaseListener {
 			if (mod.annotation()!=null) {
 				Annotation anot = Annotation.newAnnotation(mod.annotation());
 				annots.add(anot);
-				System.out.println("class has annotation "+tokens.getText(mod.annotation().getSourceInterval()));
+				//System.out.println("class has annotation "+tokens.getText(mod.annotation().getSourceInterval()));
 				if (Entity.isType(anot) && comp.importsTag(Entity)) {
 					c.setPersistent();					
 				}
@@ -141,7 +141,7 @@ public class SJavaListnerImpl extends SJavaBaseListener {
 	}
 	@Override
 	public void enterClassBody(ClassBodyContext ctx) {		
-		System.out.println("the body is={"+ctx.getText()+"}");
+		//System.out.println("the body is={"+ctx.getText()+"}");
 	}
 	@Override
 	public void enterPackageDeclaration(PackageDeclarationContext ctx) {
