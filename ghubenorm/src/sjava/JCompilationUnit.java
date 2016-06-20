@@ -19,13 +19,16 @@ import javax.script.ScriptException;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
 import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.NormalAnnotationExpr;
 import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
+import common.Util;
 import model.MClass;
+import model.MProperty;
 import model.MTable;
 
 
@@ -105,6 +108,57 @@ public class JCompilationUnit {
 		jrepo.getTables().add(tab);
 		return tab;
 	}
+	/**
+	 * return true if ALL references to classes with this name are solved
+	 * @param newClass
+	 * @return
+	 */
+	public boolean checkPendingRefs(MClass newClass) {
+		int isClass=0;
+		for (MClass cl:classes) {
+			if (cl.getSuperClass()==null && cl.getSuperClassName()!=null) {
+				String superName = cl.getSuperClassName();
+				if (superName.equals(newClass.getFullName())) {
+					cl.setSuperClass(newClass);
+					isClass=isClass==0?isClass=1:isClass;
+				/*
+				String pakName = null;
+				int point=superName.indexOf(".");
+				if (point>=0) {
+					pakName = superName.substring(0,point);
+					superName = superName.substring(point+1);
+					if (pakName.equals(cl.getPackageName()) && superName.equals(newClass.getName())) {
+						cl.setSuperClass(newClass);
+						isClass=isClass==0?isClass=1:isClass;
+					}*/
+				} else if (superName.equals(newClass.getName())){
+					if (importClass(newClass)) {
+						cl.setSuperClass(newClass);
+						isClass=isClass==0?isClass=1:isClass;
+					} else {
+						isClass=2;
+					}
+				}				
+			}
+			for (MProperty prop:cl.getProperties()) {
+				if (prop.getTypeClass()==null || prop.getType()!=null) {
+					String typeName = prop.getType();
+					if (typeName.equals(newClass.getFullName())) {
+						prop.setTypeClass(newClass);
+						isClass=isClass==0?isClass=1:isClass;
+					} else if (typeName.equals(newClass.getName())){
+						if (importClass(newClass)) {
+							prop.setTypeClass(newClass);
+							isClass=isClass==0?isClass=1:isClass;
+						} else {
+							isClass=2;
+						}
+					}	
+				}
+			}
+		}
+		return isClass==1;
+	}
 	public MClass getClazz(String name) {		
 		//TODO:extract package name
 		MClass ret = jrepo.getClasses().stream().filter(cl->(cl.getName().equals(name) && cl.getPackageName().equals(packageName)) || cl.getFullName().equals(name)).
@@ -113,6 +167,8 @@ public class JCompilationUnit {
 		return ret;
 	}
 	public boolean importClass(MClass cl) {
+		if (Util.equals(packageName, cl.getPackageName()))
+				return true;
 		for (Import i:imports) {
 			if (i.isImport(cl.getPackageName(), cl.getName()))
 				return true;
@@ -161,6 +217,9 @@ class ElementValue {
 			for (Expression item:array.getValues()) {
 				values.add(new ElementValue(item));
 			}
+		} else if (val instanceof FieldAccessExpr) {
+			FieldAccessExpr fex = (FieldAccessExpr) val;
+			this.value = fex.toString();
 		} else /*if (val.conditionalExpression()!=null)*/ {
 			//TokenStream tokens = SJavaListnerImpl.parser.getTokenStream();			
 			//Interval interval = val.conditionalExpression().getSourceInterval();			
@@ -186,9 +245,22 @@ class Annotation {
 		}
 		return null;
 	}
+	@SuppressWarnings("unchecked")
+	public <T> T getValue(String name,T def_value,Class<T> type) {
+		if (values.containsKey(name)) {
+			return (T) values.get(name).value;
+		}
+		return def_value;
+	}
 	public String getValue(String name,String def_value) {
 		if (values.containsKey(name)) {
 			return (String) values.get(name).value;
+		}
+		return def_value;
+	}
+	public boolean getValue(String name,boolean def_value) {
+		if (values.containsKey(name)) {
+			return (boolean) values.get(name).value;
 		}
 		return def_value;
 	}

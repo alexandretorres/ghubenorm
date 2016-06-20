@@ -27,6 +27,7 @@ public class MClass {
 	private MPersistent persistence=new MPersistent();
 	@ManyToOne(cascade=CascadeType.PERSIST)
 	private MClass superClass;
+	private String superClassName;
 	@OneToMany(mappedBy="parent",cascade=CascadeType.PERSIST)
 	private List<MProperty> properties = new ArrayList<MProperty>();
 	@OneToMany(mappedBy="clazz",cascade=CascadeType.ALL)
@@ -138,6 +139,12 @@ public class MClass {
 		return this;
 	}
 	
+	public String getSuperClassName() {
+		return superClassName;
+	}
+	public void setSuperClassName(String superClassName) {
+		this.superClassName = superClassName;
+	}
 	public MProperty newProperty() {
 		MProperty prop = MProperty.newMProperty(this);
 		properties.add(prop);

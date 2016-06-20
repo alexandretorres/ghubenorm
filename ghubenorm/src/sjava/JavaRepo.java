@@ -1,9 +1,13 @@
 package sjava;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
+
 
 import common.LateVisitor;
 import gitget.Dir;
@@ -17,6 +21,7 @@ public class JavaRepo {
 	private List<Dir> basePaths;
 	private Dir badFiles;
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
+	Map<String,List<JCompilationUnit>> pendingRefs = new HashMap<String,List<JCompilationUnit>>();
 	//----
 	private HashMap<String, JCompilationUnit> parsed = new HashMap<String, JCompilationUnit>();
 	
@@ -63,9 +68,21 @@ public class JavaRepo {
 	}
 	
 	public void solveRefs() {
+		for (Entry<String, List<JCompilationUnit>> entry:pendingRefs.entrySet()) {
+			// do something
+		}
 		for (LateVisitor v:visitors) {
 			v.exec();
 		}
+	}
+	public void addLateSubclass(String supername,MClass clazz,JCompilationUnit comp) {
+		clazz.setSuperClassName(supername);
+		List<JCompilationUnit> list = pendingRefs.get(supername);
+		if (list==null) {
+			list = new ArrayList<>();
+			pendingRefs.put(supername, list);
+		}
+		list.add(comp);
 	}
 	
 	

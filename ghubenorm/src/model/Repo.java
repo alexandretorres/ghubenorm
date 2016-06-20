@@ -119,11 +119,11 @@ public class Repo {
 				if (p.isPk())
 					pw.print("<PK>");
 				pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknow>>"));
-				
-				if (cl.isPersistent()) {					
+				//TODO:check Java not persitent can have decl.
+				//if (cl.isPersistent()) {					
 					if (p.getColumnMapping()!=null) {
 						MColumnDefinition col = p.getColumnMapping().getColumnDefinition();
-						pw.print(" | "+Optional.of(col.getName()).orElse(""));
+						pw.print(" | "+Optional.ofNullable(col.getName()).orElse(""));
 						if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
 							pw.print(":"+col.getColummnDefinition());
 						pw.print( col.getLength()==0 ? "" : "("+col.getLength()+")");
@@ -163,7 +163,7 @@ public class Repo {
 						pw.print(" <Embbeded> ");
 						
 					}
-				}
+				//}
 				pw.println();
 			}
 			if (!cl.getOverrides().isEmpty()) {

@@ -13,6 +13,7 @@ import static sjava.JPATags.Table;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
 
@@ -24,6 +25,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.ModifierSet;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
@@ -31,6 +33,9 @@ import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import model.MClass;
+import model.MColumn;
+import model.MColumnDefinition;
+import model.MColumnMapping;
 import model.MProperty;
 
 
@@ -62,11 +67,21 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	}
 	@Override
 	public void visit(ClassOrInterfaceDeclaration cd, Object arg1) {
+		MClass c =null;
 		if (!cd.isInterface()) {
-			MClass c = comp.createClass().setName(cd.getName());
+			c = comp.createClass().setName(cd.getName());
 			classStack.push(c);
 			List<Annotation> annots = new ArrayList<Annotation>();
 			c.setAbstract(ModifierSet.isAbstract(cd.getModifiers()));		
+			for (ClassOrInterfaceType scls:cd.getExtends()) {
+				String superName = scls.getName();
+				MClass superClass = comp.getClazz(superName);
+				if (superClass!=null) {
+					c.setSuperClass(superClass);					
+				} else {
+					comp.jrepo.addLateSubclass(superName, c,comp);
+				}
+			}
 			
 			for (AnnotationExpr mod:cd.getAnnotations()) {			
 				Annotation anot = Annotation.newAnnotation(mod);
@@ -100,48 +115,77 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		}
 		
 		super.visit(cd, arg1);
-		classStack.pop(); //??
+		List<JCompilationUnit> pending = comp.jrepo.pendingRefs.get(cd.getName());
+		if (pending!=null && c!=null)
+			for (Iterator<JCompilationUnit> it =pending.iterator();it.hasNext();) {
+				JCompilationUnit comp = it.next();
+				if (comp.checkPendingRefs(c)) {
+					it.remove();
+				}
+				//TODO: comp.solve refs (superclasses, embedds...)
+			}
+		if (c!=null)
+			classStack.pop(); //??
 	}
 
 	
 	@Override
 	public void visit(FieldDeclaration ctx, Object arg1) {
-		MClass clazz = classStack.peek();
-		List<Annotation> annots = new ArrayList<Annotation>();
-		boolean isStatic=false;
-		isStatic = ModifierSet.isStatic(ctx.getModifiers());
-		for (AnnotationExpr mod:ctx.getAnnotations()) {		 
-			annots.add(Annotation.newAnnotation(mod));					
-		}
-		Annotation assoc = annots.stream().filter(a->OneToMany.isType(a) || ManyToMany.isType(a) || ManyToOne.isType(a) || OneToOne.isType(a)).findFirst().orElse(null);
-		Annotation embed = annots.stream().filter(a->Embedded.isType(a)).findFirst().orElse(null);
-		Annotation column = annots.stream().filter(a->Column.isType(a)).findFirst().orElse(null);
-		String typeName=null;
-		Type type = ctx.getType();
-		if (type instanceof PrimitiveType) {
-			typeName = ((PrimitiveType)type).toString();
-		} else if (type instanceof ReferenceType) {
-			ReferenceType utype = (ReferenceType) type;
-			//UnannReferenceTypeContext utype = ctx.unannType().unannReferenceType();  
-			//ctx.unannType().unannReferenceType().unannClassOrInterfaceType().unannClassType_lfno_unannClassOrInterfaceType().typeArguments().getText()
-			typeName = utype.getType().toString();
-		}
-		
-		for (VariableDeclarator var:ctx.getVariables()) {
-			if (!isStatic) {
-				
-				MProperty prop = clazz.newProperty().setName(var.getId().getName()).setType(typeName);					
-				if (var.getId().getArrayCount()>0) {
-					prop.setMax(-1);
-					prop.setTransient(true);
-				} else if (assoc!=null) {
-					comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));
+		if (!classStack.isEmpty()) {			
+			MClass clazz = classStack.peek();
+			List<Annotation> annots = new ArrayList<Annotation>();
+			boolean isStatic=false;
+			isStatic = ModifierSet.isStatic(ctx.getModifiers());
+			for (AnnotationExpr mod:ctx.getAnnotations()) {		 
+				annots.add(Annotation.newAnnotation(mod));					
+			}
+			Annotation assoc = annots.stream().filter(a->OneToMany.isType(a) || ManyToMany.isType(a) || ManyToOne.isType(a) || OneToOne.isType(a)).findFirst().orElse(null);
+			Annotation embed = annots.stream().filter(a->Embedded.isType(a)).findFirst().orElse(null);
+			Annotation column = annots.stream().filter(a->Column.isType(a)).findFirst().orElse(null);
+			String typeName=null;
+			Type type = ctx.getType();
+			if (type instanceof PrimitiveType) {
+				typeName = ((PrimitiveType)type).toString();
+			} else if (type instanceof ReferenceType) {
+				ReferenceType utype = (ReferenceType) type;
+				//UnannReferenceTypeContext utype = ctx.unannType().unannReferenceType();  
+				//ctx.unannType().unannReferenceType().unannClassOrInterfaceType().unannClassType_lfno_unannClassOrInterfaceType().typeArguments().getText()
+				typeName = utype.getType().toString();
+			}
+			
+			for (VariableDeclarator var:ctx.getVariables()) {
+				if (!isStatic) {
+					
+					MProperty prop = clazz.newProperty().setName(var.getId().getName()).setType(typeName);					
+					if (var.getId().getArrayCount()>0) {
+						prop.setMax(-1);
+						prop.setTransient(true);
+					} else if (assoc!=null) {
+						comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));
+					} else if (embed!=null) {
+						prop.setEmbedded(true);
+					}
+					if (column!=null) {
+						MColumn colDef = MColumn.newMColumn();
+						prop.setColumnMapping(MColumnMapping.newMColumnMapping(colDef));
+						
+					}
+					
+					
 				}
-				
-				
 			}
 		}
 		super.visit(ctx, arg1);
+	}
+	public void setMColumn(MColumn col,Annotation column) {
+		col.setName(column.getValue("name",null));
+		col.setUnique(column.getValue("unique",Boolean.FALSE));
+		col.setNullable(column.getValue("nullable",Boolean.TRUE));
+		col.setColummnDefinition(column.getValue("columnDefinition",null));
+		col.setLength(column.getValue("length",null,Integer.class));
+		col.setPrecision(column.getValue("precision",null,Integer.class));
+		col.setScale(column.getValue("scale",null,Integer.class));
+		//set table... late!?
 	}
 	@Override
 	public void visit(MethodDeclaration arg0, Object arg1) {

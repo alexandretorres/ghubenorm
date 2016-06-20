@@ -40,7 +40,8 @@ public class JavaLoaderTest {
 		try {
 			loader.setJrepo(jrepo);
 			//File baseFile = new File("trash/SmallTest.java");
-			File baseFile = new File("repos/MSD_File_Sharing-e1d5650d8cf477355ebe69b52f507c85c12b2ba6/WHAM project war/WHAM/src");
+			//File baseFile = new File("repos/MSD_File_Sharing-e1d5650d8cf477355ebe69b52f507c85c12b2ba6/WHAM project war/WHAM/src");
+			File baseFile = new File("src/");
 			Prof.open("loadDir");
 			loadDir(baseFile);
 			Prof.close("loadDir");
