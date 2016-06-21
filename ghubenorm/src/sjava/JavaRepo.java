@@ -84,6 +84,9 @@ public class JavaRepo {
 		}
 		list.add(comp);
 	}
-	
+	public MTable findTable(String name) {
+		MTable ret = getTables().stream().filter(t->t.getName().equals(name)).findFirst().orElse(null);
+		return ret;
+	}
 	
 }

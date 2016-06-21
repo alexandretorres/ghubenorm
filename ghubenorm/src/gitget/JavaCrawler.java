@@ -22,6 +22,7 @@ import sjava.JavaRepo;
 public class JavaCrawler {
 	public static void main(String[] args) {
 		ConfigDAO.config(new ConfigNop());
+		//https://github.com/rocioemera/SubscriptionSystem
 		new JavaCrawler().processRepo(null,"facebook/react-native");
 		//new JavaCrawler().processRepo(null,"BorisIvanov/com-iqbuzz-tickets");
 		

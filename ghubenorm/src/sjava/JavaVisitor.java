@@ -32,11 +32,16 @@ import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
+import static gitget.Log.LOG;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
 import model.MColumnMapping;
+import model.MDataSource;
+import model.MJoinedSource;
 import model.MProperty;
+import model.MTable;
+import model.MTableRef;
 
 
 public class JavaVisitor extends VoidVisitorAdapter<Object>  {
@@ -177,7 +182,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		}
 		super.visit(ctx, arg1);
 	}
-	public void setMColumn(MColumn col,Annotation column) {
+	public void setMColumn(MClass clazz,MColumn col,Annotation column) {
 		col.setName(column.getValue("name",null));
 		col.setUnique(column.getValue("unique",Boolean.FALSE));
 		col.setNullable(column.getValue("nullable",Boolean.TRUE));
@@ -185,6 +190,25 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		col.setLength(column.getValue("length",null,Integer.class));
 		col.setPrecision(column.getValue("precision",null,Integer.class));
 		col.setScale(column.getValue("scale",null,Integer.class));
+		String tabname = column.getValueAsString("table");
+		
+		MDataSource source = clazz.getPersistence().getSource();
+		if (source instanceof MTableRef)
+			source = ((MTableRef)source).getTable();
+		if (source instanceof MJoinedSource) {
+			for (MTable tab:((MJoinedSource)source).getDefines()) {
+				if (tabname==null || tab.getName().equalsIgnoreCase(tabname)) {
+					col.setTable(tab);
+					break;
+				}
+			}
+		} else if (source instanceof MTable) {
+			//TODO: if tablename does not match this would be an error.			
+			col.setTable((MTable) source);			
+			if (tabname!=null && !col.getTable().getName().equalsIgnoreCase(tabname))
+				LOG.info("JPA Column refers to table not declared by the class");
+		}
+	
 		//set table... late!?
 	}
 	@Override
