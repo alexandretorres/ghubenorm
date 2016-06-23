@@ -16,6 +16,7 @@ public class JavaLoader {
 	JavaRepo jrepo;	
 	JavaVisitor visitor = new JavaVisitor();
 	public JCompilationUnit load(URL url) {
+		Prof.open("LOAD");
 		try {
 			String surl = url.toString();
 			JCompilationUnit comp = jrepo.getParsed().get(surl);			
@@ -30,7 +31,9 @@ public class JavaLoader {
 			LOG.warning("could not visit file "+url);
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);				
 			return null;		
-		}		
+		} finally {	
+			Prof.close("LOAD");
+		}
 	}
 	protected void doLoad(JCompilationUnit comp,URL url) throws IOException {		    
 		try (InputStream in =  url.openStream()) {	

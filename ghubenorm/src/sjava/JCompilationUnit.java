@@ -27,10 +27,12 @@ import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import common.Util;
+import dao.ConfigDAO;
+import dao.DAOInterface;
 import model.MClass;
 import model.MProperty;
 import model.MTable;
-
+import model.Repo;
 
 import static sjava.JPATags.*;
 
@@ -40,14 +42,16 @@ public class JCompilationUnit {
 	Set<MClass> classes= new HashSet<MClass>();
 	Set<Import> imports = new HashSet<Import>();
 	JavaRepo jrepo;
-	
+	static DAOInterface<MClass> daoMClass = ConfigDAO.getDAO(MClass.class);
+	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	
 	public JCompilationUnit(JavaRepo jrepo, String url) {
 		this.url=url;
 		this.jrepo=jrepo;
 	}
-	public MClass createClass() {
-		MClass c = MClass.newMClass(jrepo.getRepo());//new MClass(comp,ctx.Identifier().getText());
+	public MClass createClass(String name) {		
+		MClass c = daoMClass.persit(MClass.newMClass(jrepo.getRepo()).setName(name));
+		//new MClass(comp,ctx.Identifier().getText());
 		c.setPackageName(packageName);
 		classes.add(c);
 		jrepo.getClasses().add(c);
@@ -102,7 +106,7 @@ public class JCompilationUnit {
 	 */
 	//--
 	public MTable toTable(MClass c,Annotation atab) {
-		MTable tab = c.newTableSource(atab.getValue("name", c.getName()));
+		MTable tab = daoMTable.persit(c.newTableSource(atab.getValue("name", c.getName())));
 		tab.setCatalog(atab.getValueAsString("catalog"));
 		tab.setSchema(atab.getValueAsString("schema"));
 		jrepo.getTables().add(tab);
@@ -345,8 +349,9 @@ class ExprEval {
 			// TODO Auto-generated catch block
 			LOG.log(Level.FINE, e.getMessage(),e);
 			
+		} finally {
+			Prof.close("ExprEval.eval");
 		}
-		Prof.close("ExprEval.eval");
 		return expr;
 		
 	}

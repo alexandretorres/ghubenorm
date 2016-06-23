@@ -2,28 +2,52 @@ package gitget;
 
 import static gitget.Log.LOG;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.logging.Level;
 
+import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonReader;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
 import dao.nop.ConfigNop;
+import db.jpa.JPA_DAO;
 import model.Language;
 import model.Repo;
 import sjava.JCompilationUnit;
 import sjava.JavaLoader;
 import sjava.JavaRepo;
+import sjava.Prof;
 
 public class JavaCrawler {
+	public static String[] ORM_ARTIFACTS = {
+			"<artifactId>hibernate-entitymanager</artifactId>",
+			"<artifactId>spring-orm</artifactId>","<artifactId>hibernate-core</artifactId>",
+			"<artifactId>hibernate</artifactId>","<artifactId>javax.persistence</artifactId>",
+			"<artifactId>openjpa</artifactId>",
+			"<artifactId>eclipselink</artifactId>",
+			"<artifactId>org.eclipse.persistence.jpa</artifactId>",
+			"<artifactId>datanucleus-jpa</artifactId>"};
 	public static void main(String[] args) {
-		ConfigDAO.config(new ConfigNop());
+		ConfigDAO.config(JPA_DAO.instance);	
+		//ConfigDAO.config(new ConfigNop());
 		//https://github.com/rocioemera/SubscriptionSystem
-		new JavaCrawler().processRepo(null,"facebook/react-native");
+		//new JavaCrawler().processRepo(null,"facebook/react-native");
+		//new JavaCrawler().processRepo(null,"kmahaley/MSD_File_Sharing");
+		new JavaCrawler().processRepo(null,"travis/cosmo");
+		ConfigDAO.finish();
+		Prof.print();
 		//new JavaCrawler().processRepo(null,"BorisIvanov/com-iqbuzz-tickets");
 		
 	}
@@ -37,6 +61,8 @@ public class JavaCrawler {
 	 */
 	public void processRepo(JsonObject repoJson,String fullName)  {
 		try {
+			Prof.open("checkIfPersistent");
+			String persistenceXML = null;			
 			if (daoRepo==null)
 				daoRepo = ConfigDAO.getDAO(Repo.class);	
 			Repo repo = new Repo(Language.JAVA);
@@ -46,25 +72,111 @@ public class JavaCrawler {
 			jrepo.setRoot(root);
 			loader.setJrepo(jrepo);
 			//--
+			Prof.open("listFileTree");
 			JsonObject result = gh.listFileTree(fullName);
+			Prof.close("listFileTree");
 			for (JsonObject res: result.getJsonArray("tree").getValuesAs(JsonObject.class)) {
 				String path  =res.getString("path");
 				if (path.endsWith("persistence.xml"))  {
 					LOG.info("path "+path+" has a persistence.xml file");
 					repo.setConfigPath(path);
-				}
-				if (path.endsWith(".java")) {
+					persistenceXML=path;
+				} else if (path.endsWith("pom.xml") && jrepo.JPAArtifacts.isEmpty()) {
+					Prof.open("findPOMArtifacts");
+					findPOMArtifacts(jrepo,path);
+					Prof.close("findPOMArtifacts");
+					if (!jrepo.JPAArtifacts.isEmpty()) {
+						LOG.info("path "+path+" has a pom.xml file with ORM artifact");
+						repo.setConfigPath(path);
+					}
+				} else if (path.endsWith(".java")) {
 					root.register(path);
 				}
 			}
-			findBasePaths(jrepo);			
-			jrepo.getRoot().print();
+			daoRepo.beginTransaction();
+			daoRepo.persit(repo);
+			Prof.close("checkIfPersistent");
+			if (persistenceXML!=null || !jrepo.JPAArtifacts.isEmpty() || !jrepo.JPAJars.isEmpty()) {
+				Prof.open("findBasePaths");
+				findBasePaths(jrepo);
+				Prof.close("findBasePaths");
+				
+				findJavaPersistenceRefs(jrepo);
+				//readAllJavaFiles(jrepo); or...		
+				
+				jrepo.getRepo().print();
+				
+			}
+			daoRepo.commitAndCloseTransaction();
 			//para cada path principal, pega um java, deduz o path real a partir do package
 		} catch (Exception ex) {
 			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);	
 		}
 	}
-	protected void findBasePaths(JavaRepo jrepo) throws MalformedURLException {
+	protected void readAllJavaFiles(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
+		for (Dir f:jrepo.getRoot().toList()) {
+			if (f.children==null || f.children.isEmpty()) {
+				URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master"+f.getPath(),null)).toURL();			
+				loader.load(url);
+				LOG.info("loaded "+f.getPath());
+			}
+		}
+	}
+	protected void findJavaPersistenceRefs(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
+		int p=1;
+		int total=0;
+		do {
+			URL url = new URL("https://api.github.com/search/code?page=" + p + "&per_page=100"
+					+ "&q=javax.persistence+in:file+language:java+repo:" + jrepo.getRepo().getName() + "&access_token=" + gh.oauth);
+			//try (InputStream is = url.openStream(); JsonReader rdr = Json.createReader(is)) {
+			try (JsonReader rdr = gh.callApi(url,true)) {
+				JsonObject obj = rdr.readObject();
+				if (total==0)
+					total = obj.getInt("total_count");
+				JsonArray results = obj.getJsonArray("items");
+	
+				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
+					String path = result.getString("path");
+					URL furl = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master/"+path,null)).toURL();			
+					loader.load(furl);
+					//TODO: load on demand
+					//System.out.println(result);
+					total--;
+				}
+			}
+		} while (total>0);
+		
+		
+	}
+	protected void findPOMArtifacts(JavaRepo jrepo,String path) {
+		try { //https://raw.githubusercontent.com/kmahaley/MSD_File_Sharing/master/WHAM%20project%20war/WHAM/pom.xml
+			/*String fil=Request.Get("https://raw.githubusercontent.com/kmahaley/MSD_File_Sharing/master/WHAM%20project%20war/WHAM/pom.xml")
+	        .connectTimeout(1000)
+	        .socketTimeout(1000)
+	        .execute().returnContent().asString();
+			*/
+			//
+			
+			URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master/"+path,null)).toURL();			
+			try (BufferedReader in = new BufferedReader( new InputStreamReader(url.openStream()))) {	
+				
+				for (String st=in.readLine();st!=null;st=in.readLine()) {				
+					for (String art:ORM_ARTIFACTS) {
+						if (st.contains(art)) {
+							jrepo.JPAArtifacts.push(art);
+							break;
+						}
+					}
+				}
+			} 
+			
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+	
+		}
+	}
+	protected void findBasePaths(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		Dir root = jrepo.getRoot();
 		root.removeTestFolders();
 		List<Dir> basePaths = new ArrayList<Dir>();
@@ -101,8 +213,9 @@ public class JavaCrawler {
 		jrepo.setBasePaths(basePaths);
 		jrepo.setRoot(root2);
 	}
-	protected String findPackage(JavaRepo jrepo,String leafPath) throws MalformedURLException {
-		URL url = new URL("https://github.com/"+jrepo.getRepo().getName()+ "/raw/master"+leafPath);
+	protected String findPackage(JavaRepo jrepo,String leafPath) throws MalformedURLException, URISyntaxException {
+		URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master"+leafPath,null)).toURL();
+		//URL url = new URL("https://github.com/"+jrepo.getRepo().getName()+ "/raw/master"+leafPath);
 		JCompilationUnit unit= loader.load(url);	
 		if (unit==null) {
 			return null;
@@ -111,4 +224,8 @@ public class JavaCrawler {
 	}
 	
 }
-
+/*
+ * The Search API has a custom rate limit. For requests using Basic Authentication, OAuth, or client ID and secret, 
+ * you can make up to 30 requests per minute. For unauthenticated requests, the rate limit allows you to make up to 
+ * 10 requests per minute. (30/min=> 2 seconds)
+ * */

@@ -47,7 +47,10 @@ public class Prof {
 		int times=0;
 		long first;
 		public String toString() {
-			return (sum/1000000l)+"/"+times+"="+((sum/1000000l)/times)+"  with first="+(first/1000000l);
+			if (sum==0 || times==0 || first==0)
+				return "";
+			return (sum/1000000L)+"/"+times+"="+((sum/1000000L)/times)+"  with first="+(first/1000000L);
+			            
 		}
 	}
 }

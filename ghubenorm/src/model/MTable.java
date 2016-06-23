@@ -16,7 +16,7 @@ public class MTable extends MDataSource {
 	private String name;
 	private String catalog;
 	private String schema;
-	@ManyToOne(optional=false)
+	@ManyToOne //optional=false causes superclasses not null for this id
 	private Repo repo;
 	@OneToMany(mappedBy="table",cascade=CascadeType.PERSIST)
 	private Set<MColumn> columns=new HashSet<MColumn>();

@@ -30,6 +30,9 @@ import static gitget.Log.LOG;
  *
  */
 public class GitHubCrawler implements Runnable {
+	static {
+		ConfigDAO.config(JPA_DAO.instance);		
+	}
 	RubyCrawler ruby = new RubyCrawler();
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
@@ -41,7 +44,7 @@ public class GitHubCrawler implements Runnable {
 	@Override
 	public void run() {			
 		try {
-			ConfigDAO.config(JPA_DAO.instance);			
+				
 			URL uauth = new URL("https://api.github.com/?access_token="+gh.oauth);
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
 			try (JsonReader rdr = gh.callApi(uauth,false)) {
@@ -115,7 +118,7 @@ public class GitHubCrawler implements Runnable {
 					//----
 					Language lang = mainLanguage(fullName);
 					if (lang==Language.RUBY) {
-						ruby.processRepo(result,fullName);
+						//ruby.processRepo(result,fullName);
 					} else if (lang==Language.JAVA) {
 						java.processRepo(result, fullName);
 					}

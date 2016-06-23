@@ -20,6 +20,9 @@ public class JavaRepo {
 	private Dir root;
 	private List<Dir> basePaths;
 	private Dir badFiles;
+	public Stack<String> JPAArtifacts = new Stack<String>();
+	public Stack<String> JPAJars = new Stack<String>();
+	
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
 	Map<String,List<JCompilationUnit>> pendingRefs = new HashMap<String,List<JCompilationUnit>>();
 	//----

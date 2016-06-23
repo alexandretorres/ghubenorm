@@ -32,6 +32,9 @@ import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
+import dao.ConfigDAO;
+import dao.DAOInterface;
+
 import static gitget.Log.LOG;
 import model.MClass;
 import model.MColumn;
@@ -42,9 +45,14 @@ import model.MJoinedSource;
 import model.MProperty;
 import model.MTable;
 import model.MTableRef;
+import model.Repo;
 
 
 public class JavaVisitor extends VoidVisitorAdapter<Object>  {
+	
+	static DAOInterface<MProperty> daoMProp = ConfigDAO.getDAO(MProperty.class);	
+	static DAOInterface<MColumn> daoMCol = ConfigDAO.getDAO(MColumn.class);
+	
 	private JCompilationUnit comp;
 	private Stack<MClass> classStack = new Stack<MClass>();
 	public void setComp(JCompilationUnit comp) {
@@ -74,7 +82,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	public void visit(ClassOrInterfaceDeclaration cd, Object arg1) {
 		MClass c =null;
 		if (!cd.isInterface()) {
-			c = comp.createClass().setName(cd.getName());
+			c = comp.createClass(cd.getName());
 			classStack.push(c);
 			List<Annotation> annots = new ArrayList<Annotation>();
 			c.setAbstract(ModifierSet.isAbstract(cd.getModifiers()));		
@@ -104,7 +112,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						.stream().map(v->v.annotation).toArray(Annotation[]::new);
 				//asecTabs.getSingleValue().
 				if (asecTab!=null || asecTabs.length>0) {	
-					c.setJoinedSource();
+					DAOInterface<MJoinedSource> DAOJoined = ConfigDAO.getDAO(MJoinedSource.class);
+					DAOJoined.persit(c.setJoinedSource());
 					if (atab!=null)
 						comp.toTable(c, atab);
 					if (asecTab!=null) {					
@@ -161,7 +170,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			for (VariableDeclarator var:ctx.getVariables()) {
 				if (!isStatic) {
 					
-					MProperty prop = clazz.newProperty().setName(var.getId().getName()).setType(typeName);					
+					MProperty prop = daoMProp.persit(clazz.newProperty().setName(var.getId().getName()).setType(typeName));					
 					if (var.getId().getArrayCount()>0) {
 						prop.setMax(-1);
 						prop.setTransient(true);
@@ -171,18 +180,16 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						prop.setEmbedded(true);
 					}
 					if (column!=null) {
-						MColumn colDef = MColumn.newMColumn();
-						prop.setColumnMapping(MColumnMapping.newMColumnMapping(colDef));
-						
-					}
-					
-					
+						daoMCol.persit(createMColumn(prop,column));											
+					}				
 				}
 			}
 		}
 		super.visit(ctx, arg1);
 	}
-	public void setMColumn(MClass clazz,MColumn col,Annotation column) {
+	public MColumn createMColumn(MProperty prop,Annotation column) {
+		MClass clazz = prop.getParent();
+		MColumn col = MColumn.newMColumn();
 		col.setName(column.getValue("name",null));
 		col.setUnique(column.getValue("unique",Boolean.FALSE));
 		col.setNullable(column.getValue("nullable",Boolean.TRUE));
@@ -190,6 +197,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		col.setLength(column.getValue("length",null,Integer.class));
 		col.setPrecision(column.getValue("precision",null,Integer.class));
 		col.setScale(column.getValue("scale",null,Integer.class));
+		prop.setColumnMapping(MColumnMapping.newMColumnMapping(col));	
 		String tabname = column.getValueAsString("table");
 		
 		MDataSource source = clazz.getPersistence().getSource();
@@ -208,7 +216,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			if (tabname!=null && !col.getTable().getName().equalsIgnoreCase(tabname))
 				LOG.info("JPA Column refers to table not declared by the class");
 		}
-	
+		
+		return col;
 		//set table... late!?
 	}
 	@Override

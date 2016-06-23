@@ -10,9 +10,10 @@ import javax.persistence.OrderColumn;
 
 @Entity
 public class MJoinedSource extends MDataSource{
-	@OneToMany(cascade=CascadeType.PERSIST)
+	
 	@OrderColumn(name="pos")
-	private List<MTable> defines ;
+	@OneToMany(cascade=CascadeType.PERSIST)
+	private List<MTable> defines=new ArrayList<MTable>() ;
 	protected MJoinedSource() {
 		
 	}
