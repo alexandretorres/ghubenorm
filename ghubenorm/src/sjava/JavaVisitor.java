@@ -1,15 +1,7 @@
 package sjava;
 
-import static sjava.JPATags.Column;
-import static sjava.JPATags.Embedded;
-import static sjava.JPATags.Entity;
-import static sjava.JPATags.ManyToMany;
-import static sjava.JPATags.ManyToOne;
-import static sjava.JPATags.OneToMany;
-import static sjava.JPATags.OneToOne;
-import static sjava.JPATags.SecondaryTable;
-import static sjava.JPATags.SecondaryTables;
-import static sjava.JPATags.Table;
+import static sjava.JPATags.*;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -100,15 +92,19 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				Annotation anot = Annotation.newAnnotation(mod);
 				annots.add(anot);
 				//System.out.println("class has annotation "+tokens.getText(mod.annotation().getSourceInterval()));
-				if (Entity.isType(anot) && comp.importsTag(Entity)) {
+				if (Entity.isType(anot,comp)) {
 					c.setPersistent();					
 				}
+				if (MappedSuperclass.isType(anot,comp)) {
+					comp.jrepo.mappedSuperClasses.add(c);
+				}
 			}
+			Annotation idClass = annots.stream().filter(a->IdClass.isType(a,comp)).findFirst().orElse(null);
 			if (c.isPersistent()) {			
-				Annotation atab = annots.stream().filter(a->Table.isType(a)).findFirst().orElse(null);
-				Annotation asecTab = annots.stream().filter(a->SecondaryTable.isType(a)).findFirst().orElse(null);
+				Annotation atab = annots.stream().filter(a->Table.isType(a,comp)).findFirst().orElse(null);
+				Annotation asecTab = annots.stream().filter(a->SecondaryTable.isType(a,comp)).findFirst().orElse(null);
 				Annotation[] asecTabs = 
-						annots.stream().filter(a->SecondaryTables.isType(a)).findFirst().map(s->s.getListValue()).orElse(Collections.EMPTY_LIST)
+						annots.stream().filter(a->SecondaryTables.isType(a,comp)).findFirst().map(s->s.getListValue()).orElse(Collections.EMPTY_LIST)
 						.stream().map(v->v.annotation).toArray(Annotation[]::new);
 				//asecTabs.getSingleValue().
 				if (asecTab!=null || asecTabs.length>0) {	
@@ -153,9 +149,16 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			for (AnnotationExpr mod:ctx.getAnnotations()) {		 
 				annots.add(Annotation.newAnnotation(mod));					
 			}
-			Annotation assoc = annots.stream().filter(a->OneToMany.isType(a) || ManyToMany.isType(a) || ManyToOne.isType(a) || OneToOne.isType(a)).findFirst().orElse(null);
-			Annotation embed = annots.stream().filter(a->Embedded.isType(a)).findFirst().orElse(null);
-			Annotation column = annots.stream().filter(a->Column.isType(a)).findFirst().orElse(null);
+			Annotation assoc = annots.stream().
+					filter(a->OneToMany.isType(a,comp) || ManyToMany.isType(a,comp) || ManyToOne.isType(a,comp) || OneToOne.isType(a,comp)).
+					findFirst().orElse(null);
+			Annotation embed = annots.stream().filter(a->Embedded.isType(a,comp)).findFirst().orElse(null);
+			Annotation column = annots.stream().filter(a->Column.isType(a,comp)).findFirst().orElse(null);
+			//
+			Annotation id = annots.stream().filter(a->Id.isType(a,comp)).findFirst().orElse(null);
+			
+			Annotation embeddedId = annots.stream().filter(a->EmbeddedId.isType(a,comp)).findFirst().orElse(null);
+			//------
 			String typeName=null;
 			Type type = ctx.getType();
 			if (type instanceof PrimitiveType) {
@@ -178,6 +181,11 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));
 					} else if (embed!=null) {
 						prop.setEmbedded(true);
+					}
+					if (id!=null) {
+						prop.setPk(true);
+					} else if (embeddedId!=null) {
+						prop.setPk(true);
 					}
 					if (column!=null) {
 						daoMCol.persit(createMColumn(prop,column));											

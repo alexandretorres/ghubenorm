@@ -42,7 +42,7 @@ public class Repo {
 	@OneToMany(fetch=FetchType.EAGER,mappedBy="repo",cascade=CascadeType.ALL)
 	Set<MClass> classes = new HashSet<MClass>();
 	@OneToMany(fetch=FetchType.EAGER,mappedBy="repo",cascade=CascadeType.PERSIST)
-	Set<MTable> tables = new HashSet<MTable>();
+	Set<MDataSource> dataSources = new HashSet<MDataSource>();
 	
 	protected Repo() {}
 	public Repo(Language lang) {
@@ -84,12 +84,18 @@ public class Repo {
 	protected void setClasses(Set<MClass> classes) {
 		this.classes = classes;
 	}
-	public Set<MTable> getTables() {
-		return tables;
+	public Set<MDataSource> getDataSources() {
+		return dataSources;
 	}
-	protected void setTables(Set<MTable> tables) {
-		this.tables = tables;
+	protected void setDataSources(Set<MDataSource> sources) {
+		this.dataSources = sources;
 	}
+/*	public Set<MDataSource> getTables() {
+		return sources;
+	}
+	protected void setTables(Set<MDataSource> sources) {
+		this.sources = sources;
+	}*/
 	//--------------------
 	public void print() {
 		System.out.println("-----------------");

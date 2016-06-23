@@ -31,7 +31,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 		if (!optional)
 			prop.setMin(1);
 		MClass typeClass = prop.getTypeClass();
-		if (OneToMany.isType(assoc) || ManyToMany.isType(assoc)) {
+		if (OneToMany.isType(assoc,unit) || ManyToMany.isType(assoc,unit)) {
 			prop.setMax(-1);
 			int[] interval = new int[] {prop.getType().indexOf("<"),prop.getType().indexOf(">")};
 			if (interval[0]>=0 && interval[1]>=0 && interval[0]<interval[1]) {
@@ -68,12 +68,11 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 			MProperty invProp = typeClass.getProperties().stream().filter(p->p.getName().equals(inverse)).
 					findFirst().orElse(null);
 			if (invProp!=null) {
-				if (OneToMany.isType(assoc) || ManyToMany.isType(assoc)) {
+				if (OneToMany.isType(assoc,unit) || ManyToMany.isType(assoc,unit)) {
 					if (invProp.getAssociation()==null) {
 						massoc=MAssociation.newMAssociation(invProp,prop).
 						setNavigableFrom(true).
-						setNavigableTo(true);
-						
+						setNavigableTo(true);						
 					} else if (invProp.getAssociation().getTo()==null) {
 						massoc=invProp.getAssociation().setTo(prop);					
 					}
@@ -85,8 +84,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 					} else if (invProp.getAssociation().getTo()==null) {
 						massoc=invProp.getAssociation().setTo(prop).swap();
 						prop.getAssociation().setNavigableTo(true);						
-					}
-					
+					}					
 				}
 			}
 		}

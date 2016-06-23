@@ -2,16 +2,18 @@ package sjava;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Stack;
-
+import java.util.stream.Collectors;
 
 import common.LateVisitor;
 import gitget.Dir;
 import model.MClass;
+import model.MDataSource;
 import model.MTable;
 import model.Repo;
 
@@ -22,7 +24,7 @@ public class JavaRepo {
 	private Dir badFiles;
 	public Stack<String> JPAArtifacts = new Stack<String>();
 	public Stack<String> JPAJars = new Stack<String>();
-	
+	public Set<MClass> mappedSuperClasses = new HashSet<MClass>();
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
 	Map<String,List<JCompilationUnit>> pendingRefs = new HashMap<String,List<JCompilationUnit>>();
 	//----
@@ -52,8 +54,8 @@ public class JavaRepo {
 	public Set<MClass> getClasses() {
 		return repo.getClasses();
 	}
-	public Set<MTable> getTables() {
-		return repo.getTables();
+	public Set<MDataSource> getDataSources() {
+		return repo.getDataSources();
 	}
 	public Dir getBadFiles() {
 		if (badFiles==null)
@@ -87,8 +89,13 @@ public class JavaRepo {
 		}
 		list.add(comp);
 	}
+	private Set<MTable> getTables() {
+		return getDataSources().stream().filter(ds -> ds instanceof MTable).map(t -> (MTable) t).collect(Collectors.toSet());
+	}
 	public MTable findTable(String name) {
-		MTable ret = getTables().stream().filter(t->t.getName().equals(name)).findFirst().orElse(null);
+		MTable ret = getDataSources().stream().filter(ds -> ds instanceof MTable).map(t -> (MTable) t).
+						filter(t->t.getName().equals(name)).findFirst().orElse(null);		
+		//MTable ret = getTables().stream().filter(t->t.getName().equals(name)).findFirst().orElse(null);
 		return ret;
 	}
 	

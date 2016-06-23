@@ -1,7 +1,11 @@
 package sjava;
 
+import javax.persistence.MappedSuperclass;
+
+//IdClass=Type
 public enum JPATags {
-	Entity,PK,Column,Table,SecondaryTable,SecondaryTables,OneToMany,ManyToOne,OneToOne,ManyToMany,Embedded;
+	Entity,Id,IdClass,EmbeddedId,Column,Table,SecondaryTable,SecondaryTables,
+	OneToMany,ManyToOne,OneToOne,ManyToMany,Embedded,Inheritance,MappedSuperclass;
 	String path;
 	JPATags() {
 		path="javax.persistence";
@@ -24,8 +28,14 @@ public enum JPATags {
 	public boolean isImport(Import imp) {
 		return isImport(imp.getFrom());
 	}
-	public boolean isType(Annotation a) {
+	private boolean isType(Annotation a) {
 		return (a.type!=null && a.type.equals(this.name()));			
 		
+	}
+	public boolean isType(Annotation a,JCompilationUnit comp) {
+		if (isType(a)) {
+			return comp.importsTag(this);
+		} else
+			return false;
 	}
 }

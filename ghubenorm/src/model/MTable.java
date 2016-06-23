@@ -16,8 +16,7 @@ public class MTable extends MDataSource {
 	private String name;
 	private String catalog;
 	private String schema;
-	@ManyToOne //optional=false causes superclasses not null for this id
-	private Repo repo;
+
 	@OneToMany(mappedBy="table",cascade=CascadeType.PERSIST)
 	private Set<MColumn> columns=new HashSet<MColumn>();
 	@OneToMany(mappedBy="table",cascade=CascadeType.ALL,orphanRemoval=true)
@@ -26,16 +25,11 @@ public class MTable extends MDataSource {
 		return new MTable(repo, name);
 	}	
 	protected MTable() { }
-	private MTable(Repo repo,String name) {
-		this.repo=repo;
+	protected MTable(Repo repo,String name) {
+		setRepo(repo);
 		this.name=name;
 	}
-	protected Repo getRepo() {
-		return repo;
-	}
-	protected void setRepo(Repo repo) {
-		this.repo = repo;
-	}
+	
 	public String getName() {
 		return name;
 	}

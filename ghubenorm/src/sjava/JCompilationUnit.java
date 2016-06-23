@@ -109,7 +109,7 @@ public class JCompilationUnit {
 		MTable tab = daoMTable.persit(c.newTableSource(atab.getValue("name", c.getName())));
 		tab.setCatalog(atab.getValueAsString("catalog"));
 		tab.setSchema(atab.getValueAsString("schema"));
-		jrepo.getTables().add(tab);
+		jrepo.getDataSources().add(tab);
 		return tab;
 	}
 	/**
@@ -252,7 +252,13 @@ class Annotation {
 	@SuppressWarnings("unchecked")
 	public <T> T getValue(String name,T def_value,Class<T> type) {
 		if (values.containsKey(name)) {
-			return (T) values.get(name).value;
+			T value = (T) values.get(name).value;
+			if (type.isInstance(value))
+				return value;
+			else {
+				LOG.warning("Annotation<"+this.type+">.getValue("+name+"): Could not assign "+value+" using type "+type);
+				return def_value;
+			}
 		}
 		return def_value;
 	}

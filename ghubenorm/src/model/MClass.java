@@ -95,7 +95,7 @@ public class MClass {
 		if (persistence.getSource() instanceof MJoinedSource)
 			return (MJoinedSource)persistence.getSource();
 		MJoinedSource s = new MJoinedSource();
-		
+		s.setRepo(repo);
 		persistence.setPersistent(true).setDataSource(s);		
 		return s;
 	}

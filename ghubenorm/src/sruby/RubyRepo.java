@@ -50,8 +50,9 @@ public class RubyRepo {
 	public Set<MClass> getClasses() {
 		return repo.getClasses();
 	}
+	@SuppressWarnings("unchecked")
 	public Set<MTable> getTables() {
-		return repo.getTables();
+		return (Set) repo.getDataSources();
 	}
 	public MTable getTable(String name) {
 		Optional<MTable> ret = getTables().stream().filter(tab->tab.getName().equalsIgnoreCase(name)).findFirst();

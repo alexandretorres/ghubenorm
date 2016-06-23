@@ -17,6 +17,7 @@ public class MJoinedSource extends MDataSource{
 	protected MJoinedSource() {
 		
 	}
+	
 	public List<MTable> getDefines() {
 		return defines;
 	}

@@ -139,7 +139,11 @@ public class JavaCrawler {
 					String path = result.getString("path");
 					URL furl = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master/"+path,null)).toURL();			
 					loader.load(furl);
-					//TODO: load on demand
+					//TODO: load on demand (?) BUT is it needed? all classes import javax.persistence
+					/**
+					 * Composite PKs must be Embedded OR have all fields listed on the entity class.
+					 * ..and Must be public.
+					 */
 					//System.out.println(result);
 					total--;
 				}
