@@ -34,6 +34,8 @@ public class MClass {
 	private Set<MOverride> overrides = new HashSet<MOverride>();
 	@OneToMany(mappedBy="superClass")
 	private Set<MClass> specializations=new HashSet<MClass>();
+	@OneToMany(cascade=CascadeType.ALL,orphanRemoval=true)
+	private Set<MGeneralization> generalization= new HashSet<MGeneralization>();
 	
 	public static MClass newMClass(Repo repo) {
 		return new MClass(repo);
@@ -175,6 +177,25 @@ public class MClass {
 	}
 	public void setSpecializations(Set<MClass> specializations) {
 		this.specializations = specializations;
+	}
+	
+	public Set<MGeneralization> getGeneralization() {
+		return generalization;
+	}
+	protected void setGeneralization(Set<MGeneralization> generalization) {
+		this.generalization = generalization;
+	}
+	public <T extends MGeneralization> T addGeneralization(Class<T> type) {
+		T ret;
+		try {
+			ret = type.newInstance();
+		} catch (Exception e) {		
+			e.printStackTrace();		
+			return null;
+		}
+		
+		generalization.add(ret);
+		return ret;
 	}
 	/**
 	 * SE superclasse for abstrata e for persistente, filho tem tabela

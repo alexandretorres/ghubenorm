@@ -24,6 +24,7 @@ import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
+import common.LateVisitor;
 import dao.ConfigDAO;
 import dao.DAOInterface;
 
@@ -33,10 +34,14 @@ import model.MColumn;
 import model.MColumnDefinition;
 import model.MColumnMapping;
 import model.MDataSource;
+import model.MFlat;
+import model.MGeneralization;
+import model.MHorizontal;
 import model.MJoinedSource;
 import model.MProperty;
 import model.MTable;
 import model.MTableRef;
+import model.MVertical;
 import model.Repo;
 
 
@@ -98,6 +103,13 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				if (MappedSuperclass.isType(anot,comp)) {
 					comp.jrepo.mappedSuperClasses.add(c);
 				}
+				
+					
+				if (Inheritance.isType(anot, comp)) {
+					comp.jrepo.visitors.add(new VisitInheritance(c, comp, anot));
+										
+				}
+				
 			}
 			Annotation idClass = annots.stream().filter(a->IdClass.isType(a,comp)).findFirst().orElse(null);
 			if (c.isPersistent()) {			
@@ -234,5 +246,37 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		super.visit(arg0, arg1);
 	}
 	
-	
+	class VisitInheritance implements LateVisitor<MClass> {
+		MClass superClass;
+		JCompilationUnit unit;
+		Annotation inheritance;
+		
+		public VisitInheritance(MClass superClass, JCompilationUnit unit, Annotation inheritance) {
+			super();
+			this.superClass = superClass;
+			this.unit = unit;
+			this.inheritance = inheritance;
+		}
+
+		@Override
+		public MClass exec() {
+			MGeneralization gen=null;
+			String[] type = inheritance.getValue("strategy","").split("\\.");
+			for (MClass sub:superClass.getSpecializations()) {
+				switch (type[type.length-1]){
+					case "JOINED":
+						gen = sub.addGeneralization(MHorizontal.class);
+						break;
+					case "TABLE_PER_CLASS":
+						gen = sub.addGeneralization(MVertical.class);
+						break;
+					default:
+						gen = sub.addGeneralization(MFlat.class);
+						
+				}	
+			}
+			return superClass;
+		}
+		
+	}
 }

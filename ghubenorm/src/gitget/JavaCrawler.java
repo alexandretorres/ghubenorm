@@ -149,6 +149,7 @@ public class JavaCrawler {
 				}
 			}
 		} while (total>0);
+		jrepo.solveRefs();
 		
 		
 	}

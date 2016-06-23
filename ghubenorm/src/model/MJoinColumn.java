@@ -10,12 +10,14 @@ import javax.persistence.ManyToOne;
 public class MJoinColumn {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
-	@ManyToOne(optional=false)
+	@ManyToOne(optional=false)  //TODO:  is this optional when using generalization join cols?
 	private MAssociationDef associationDef;
 	@ManyToOne(optional=false)
 	private MColumnDefinition column;
 	@ManyToOne
 	private MColumnDefinition inverse;
+	@ManyToOne
+	private MVertical generalization;
 	
 	protected MJoinColumn() {}
 	public static MJoinColumn newMJoinColumn(MAssociationDef adef,MColumnDefinition column) {
@@ -43,6 +45,13 @@ public class MJoinColumn {
 	public void setInverse(MColumnDefinition inverse) {
 		this.inverse = inverse;
 	}	
+	
+	protected MVertical getGeneralization() {
+		return generalization;
+	}
+	protected void setGeneralization(MVertical generalization) {
+		this.generalization = generalization;
+	}
 	public MColumnDefinition getColumnForProperty(MProperty p) {
 		if (p==null)
 			return null;
