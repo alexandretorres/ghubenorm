@@ -39,6 +39,9 @@ public class JavaCrawler {
 			"<artifactId>eclipselink</artifactId>",
 			"<artifactId>org.eclipse.persistence.jpa</artifactId>",
 			"<artifactId>datanucleus-jpa</artifactId>"};
+	public static String[] JARS = {
+			"hibernate-core","spring-orm","hibernate-entitymanager","org.eclipse.persistence.jpa","eclipselink","openjpa","datanucleus-jpa"
+	};
 	public static void main(String[] args) {
 		ConfigDAO.config(JPA_DAO.instance);	
 		//ConfigDAO.config(new ConfigNop());
@@ -88,6 +91,14 @@ public class JavaCrawler {
 					if (!jrepo.JPAArtifacts.isEmpty()) {
 						LOG.info("path "+path+" has a pom.xml file with ORM artifact");
 						repo.setConfigPath(path);
+					}
+				} else if (path.endsWith(".jar")) {
+					for (String jname:JARS) {
+						if (path.contains(jname)) {
+							jrepo.JPAJars.add(jname);
+							repo.setConfigPath(path);
+							break;
+						}
 					}
 				} else if (path.endsWith(".java")) {
 					root.register(path);
