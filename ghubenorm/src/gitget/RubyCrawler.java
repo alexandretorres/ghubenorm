@@ -131,7 +131,7 @@ class RubyCrawler  {
 		}*/
 		if (rrepo!=null) {
 			loader.solveRefs();
-			rrepo.print();
+			rrepo.getRepo().print();
 		}
 		return rrepo;
 	}

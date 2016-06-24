@@ -109,7 +109,7 @@ public class RubyRepo {
 			}
 		}
 	}
-	public void print() {
+	public void print_() {
 		System.out.println("-----------------");
 		StringWriter sw =new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);

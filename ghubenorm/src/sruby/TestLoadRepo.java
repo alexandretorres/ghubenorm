@@ -23,7 +23,7 @@ public class TestLoadRepo {
 				//Repo repo = dao.find(3);
 				LOG.log(Level.INFO,repo.getId()+" "+repo.getUrl());
 				RubyRepo rrepo = new RubyRepo(repo);
-				rrepo.print();
+				rrepo.getRepo().print();
 			}
 			dao.commitAndCloseTransaction();
 				
@@ -41,7 +41,7 @@ public class TestLoadRepo {
 			dao.beginTransaction();
 			Repo repo = dao.find(3);
 			RubyRepo rrepo = new RubyRepo(repo);
-			rrepo.print();
+			rrepo.getRepo().print();
 			dao.commitAndCloseTransaction();
 			ConfigDAO.finish();
 		} catch (Exception ex) {

@@ -83,7 +83,7 @@ public class TesteJRuby2 {
 	        }		     
 			loader.solveRefs();
 			System.out.println("files:"+fileCnt);
-			repo.print();
+			repo.getRepo().print();
 			
 			
 			dao.commitAndCloseTransaction();		
