@@ -25,7 +25,7 @@ public abstract class MColumnDefinition {
 
 	public abstract String getColummnDefinition() ;
 
-	public abstract int getLength();
+	public abstract Integer getLength();
 
 	public abstract int getPrecision();
 

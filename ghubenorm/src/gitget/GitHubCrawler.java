@@ -118,7 +118,7 @@ public class GitHubCrawler implements Runnable {
 					//----
 					Language lang = mainLanguage(fullName);
 					if (lang==Language.RUBY) {
-						//ruby.processRepo(result,fullName);
+						ruby.processRepo(result,fullName);
 					} else if (lang==Language.JAVA) {
 						java.processRepo(result, fullName);
 					}

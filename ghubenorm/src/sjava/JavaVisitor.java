@@ -34,9 +34,12 @@ import model.MColumn;
 import model.MColumnDefinition;
 import model.MColumnMapping;
 import model.MDataSource;
+import model.MDiscriminator;
+import model.MDiscrminableGeneralization;
 import model.MFlat;
 import model.MGeneralization;
 import model.MHorizontal;
+import model.MJoinColumn;
 import model.MJoinedSource;
 import model.MProperty;
 import model.MTable;
@@ -49,7 +52,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	
 	static DAOInterface<MProperty> daoMProp = ConfigDAO.getDAO(MProperty.class);	
 	static DAOInterface<MColumn> daoMCol = ConfigDAO.getDAO(MColumn.class);
-	
+	static DAOInterface<MJoinColumn> daoJoinCol = ConfigDAO.getDAO(MJoinColumn.class);
 	private JCompilationUnit comp;
 	private Stack<MClass> classStack = new Stack<MClass>();
 	public void setComp(JCompilationUnit comp) {
@@ -86,6 +89,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			for (ClassOrInterfaceType scls:cd.getExtends()) {
 				String superName = scls.getName();
 				MClass superClass = comp.getClazz(superName);
+				comp.jrepo.visitors.add(new VisitInheritance(c, comp));		
 				if (superClass!=null) {
 					c.setSuperClass(superClass);					
 				} else {
@@ -104,9 +108,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					comp.jrepo.mappedSuperClasses.add(c);
 				}				
 					//DiscriminatorColumn
-				if (Inheritance.isType(anot, comp)) {
-					comp.jrepo.visitors.add(new VisitInheritance(c, comp, anot));										
-				}				
+							
 			}
 			comp.jrepo.classAnnot.put(c, annots);
 			Annotation idClass = annots.stream().filter(a->IdClass.isType(a,comp)).findFirst().orElse(null);
@@ -196,15 +198,14 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						prop.setPk(true);
 					}
 					if (column!=null) {
-						daoMCol.persit(createMColumn(prop,column));											
+						daoMCol.persit(createColumnMapping(prop,column));											
 					}				
 				}
 			}
 		}
 		super.visit(ctx, arg1);
 	}
-	public MColumn createMColumn(MProperty prop,Annotation column) {
-		MClass clazz = prop.getParent();
+	public static MColumn createMColumn(MClass clazz,Annotation column) {
 		MColumn col = MColumn.newMColumn();
 		col.setName(column.getValue("name",null));
 		col.setUnique(column.getValue("unique",Boolean.FALSE));
@@ -213,9 +214,9 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		col.setLength(column.getValue("length",null,Integer.class));
 		col.setPrecision(column.getValue("precision",null,Integer.class));
 		col.setScale(column.getValue("scale",null,Integer.class));
-		prop.setColumnMapping(MColumnMapping.newMColumnMapping(col));	
+		//--
 		String tabname = column.getValueAsString("table");
-		
+		//--
 		MDataSource source = clazz.getPersistence().getSource();
 		if (source instanceof MTableRef)
 			source = ((MTableRef)source).getTable();
@@ -232,7 +233,12 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			if (tabname!=null && !col.getTable().getName().equalsIgnoreCase(tabname))
 				LOG.info("JPA Column refers to table not declared by the class");
 		}
-		
+		return col;
+	}
+	public  MColumn createColumnMapping(MProperty prop,Annotation column) {
+		MClass clazz = prop.getParent();
+		MColumn col = createMColumn(clazz,column);
+		prop.setColumnMapping(MColumnMapping.newMColumnMapping(col));	
 		return col;
 		//set table... late!?
 	}
@@ -243,36 +249,156 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	}
 	
 	class VisitInheritance implements LateVisitor<MClass> {
-		MClass superClass;
+		MClass subClass;
 		JCompilationUnit unit;
 		//Annotation inheritance;
 		
-		public VisitInheritance(MClass superClass, JCompilationUnit unit, Annotation inheritance) {
-			super();
-			this.superClass = superClass;
+		public VisitInheritance(MClass subClass, JCompilationUnit unit) {
+			this.subClass = subClass;
 			this.unit = unit;
-			//this.inheritance = inheritance;
+			
 		}
-
+		private void loadPKJoin(MClass superClass,MClass subClass,MVertical gen,Annotation pkJoin,Annotation fk) {
+			//TODO: create a MDefinition object for FK defs 
+			List<MProperty> superPK = subClass.getPK(); //TODO: get defaultnames...			
+			String name = pkJoin.getValue("name", ""); 
+			String colDef = pkJoin.getValue("columnDefinition", null); 
+			String refColName = pkJoin.getValue("referencedColumnName", null); 
+			if (fk==null) {
+				fk = (Annotation)pkJoin.getValue("foreignKey");
+			}
+			MColumn col = MColumn.newMColumn();
+			col.setName(name);
+			col.setColummnDefinition(colDef);
+			JavaVisitor.daoMCol.persit(col);
+			MTable mainTab = subClass.getPersistence().getMainTable();			
+			if (mainTab!=null) {
+				col.setTable(mainTab);
+			}
+			MJoinColumn jc = MJoinColumn.newMJoinColumn(gen, col);
+			daoJoinCol.persit(jc);
+			mainTab = superClass.getPersistence().getMainTable();
+			if (refColName!=null) { //TODO: create main table if absent
+				MColumn refCol=null;
+				if (mainTab!=null) {
+					//find the refcol
+					for (MColumn cref:mainTab.getColumns()) {
+						if (cref.getName().equals(refColName)) {
+							refCol=cref;
+							break;
+						}
+					}
+				}
+				if (refCol==null) {	// Creates the reference column, if it does not exists				
+					for (MProperty cp:superPK) {
+						if (cp.isEmbedded()) {
+							for (MProperty embp:cp.getTypeClass().getProperties()) {
+								if (embp.getName().equals(refCol)) {
+									refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
+									embp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));								
+									break;
+								}
+							}
+							if (refCol!=null)
+								break;
+						} else {
+							if (cp.getName().equals(refCol)) {
+								refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
+								cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
+								break;
+							}
+							
+						}
+					}
+				}
+				// Now we have created the reference column
+				jc.setInverse(refCol);				
+				gen.getJoinCols().add(jc);
+			}
+		}
 		@Override
 		public MClass exec() {
+			MClass superClass = subClass.getSuperClass();
+			if (superClass==null || !subClass.isPersistent())
+				return null;
+			//--
 			MGeneralization gen=null;
-			List<Annotation> annots = unit.jrepo.classAnnot.get(superClass);
-			Annotation inheritance = annots.stream().filter(a->Inheritance.isType(a, unit)).findFirst().orElse(null);
-			String[] type = inheritance.getValue("strategy","").split("\\.");
-			for (MClass sub:superClass.getSpecializations()) {
-				switch (type[type.length-1]){
-					case "JOINED":
-						gen = sub.addGeneralization(MHorizontal.class);
-						break;
-					case "TABLE_PER_CLASS":
-						gen = sub.addGeneralization(MVertical.class);
-						break;
-					default:
-						gen = sub.addGeneralization(MFlat.class);
-						
-				}	
+			List<Annotation> sannots = unit.jrepo.classAnnot.get(superClass);
+			List<Annotation> annots = unit.jrepo.classAnnot.get(subClass);
+			Annotation inheritance =  Inheritance.findAnnotation(sannots, unit);
+			String type="";
+			if (inheritance!=null) {
+				type = ExprEval.getConstant(inheritance.getValue("strategy",""));
 			}
+			
+			switch (type){
+				case "JOINED":
+					gen = subClass.addGeneralization(MVertical.class);
+					Annotation pkJoins = PrimaryKeyJoinColumn.findAnnotation(annots, unit);					
+										
+					if (pkJoins==null) {
+						Annotation pkJoin=PrimaryKeyJoinColumn.findAnnotation(annots, unit);
+						if (pkJoin!=null)
+							loadPKJoin(superClass,subClass,(MVertical)gen,pkJoin,null);
+					} else {
+						List<ElementValue> lst = pkJoins.getListValue("value");
+						Annotation fk = (Annotation)pkJoins.getValue("foreignKey");
+						
+						for (ElementValue pkj:lst) {
+							loadPKJoin(superClass,subClass,(MVertical)gen,(Annotation)pkj.getValue(),fk);
+						}
+					}
+					break;
+				case "TABLE_PER_CLASS":
+					gen = subClass.addGeneralization(MHorizontal.class);
+					break;
+				default:
+					gen = subClass.addGeneralization(MFlat.class);
+					
+			}	
+			Annotation discrCol = DiscriminatorColumn.findAnnotation(sannots, unit);
+			if (discrCol!=null) {
+				MDiscriminator dcol = superClass.getDiscriminatorColumn();
+				if (dcol==null) {
+					dcol = new MDiscriminator();
+					superClass.setDiscriminatorColumn(dcol);
+				}
+				if (dcol.getValue()==null)
+					dcol.setValue(discrCol.getValueAsString("name"));
+				if (dcol.getColumn()==null) {					
+					String dtype = ExprEval.getConstant(discrCol.getValue("discriminatorType",null));
+					Integer length = discrCol.getValue("length",null,Integer.class);
+					Annotation column = discrCol.getValue("columnDefinition",null,Annotation.class);
+					MColumn col=null;
+					if (column!=null) {
+						col = createMColumn(superClass,column);
+						if (col.getColummnDefinition()==null) {
+							col.setColummnDefinition(dtype);
+						}
+						if (length!=null && col.getLength()==null)
+							col.setLength(length);
+						JavaVisitor.daoMCol.persit(col);
+						dcol.setColumn(col);
+					} else if (dtype!=null || length!=null) {
+						col = MColumn.newMColumn();
+						col.setColummnDefinition(dtype);
+						if (length!=null)
+							col.setLength(length);
+						JavaVisitor.daoMCol.persit(col);
+						dcol.setColumn(col);
+					}
+				}
+			}
+			if (gen instanceof MDiscrminableGeneralization) {
+				Annotation discrVal = DiscriminatorValue.findAnnotation(annots, unit);
+				if (discrVal!=null) {
+					String discr = discrVal.getSingleValue(null);
+					((MDiscrminableGeneralization) gen).setDiscriminatorValue(discr);
+				}
+			}
+			
+			
+			
 			return superClass;
 		}
 		

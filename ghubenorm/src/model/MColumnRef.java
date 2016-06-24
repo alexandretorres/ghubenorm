@@ -46,7 +46,7 @@ public class MColumnRef extends MColumnDefinition {
 		return column.getColummnDefinition();
 	}
 
-	public int getLength() {
+	public Integer getLength() {
 		return column.getLength();
 	}
 

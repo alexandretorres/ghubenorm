@@ -11,7 +11,7 @@ public abstract class MDiscrminableGeneralization extends MGeneralization {
 		return discriminatorValue;
 	}
 
-	protected void setDiscriminatorValue(String discriminatorValue) {
+	public void setDiscriminatorValue(String discriminatorValue) {
 		this.discriminatorValue = discriminatorValue;
 	}
 	

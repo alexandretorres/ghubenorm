@@ -1,11 +1,15 @@
 package sjava;
 
+import java.util.Collection;
+
 import javax.persistence.MappedSuperclass;
 
 //IdClass=Type
 public enum JPATags {
-	Entity,Id,IdClass,EmbeddedId,Column,Table,SecondaryTable,SecondaryTables,
-	OneToMany,ManyToOne,OneToOne,ManyToMany,Embedded,Inheritance,MappedSuperclass;
+	Entity,Id,IdClass,EmbeddedId,
+	Column,Table,SecondaryTable,SecondaryTables,PrimaryKeyJoinColumn,PrimaryKeyJoinColumns,
+	OneToMany,ManyToOne,OneToOne,ManyToMany,Embedded,
+	Inheritance,MappedSuperclass,DiscriminatorValue,DiscriminatorColumn;
 	String path;
 	JPATags() {
 		path="javax.persistence";
@@ -38,4 +42,8 @@ public enum JPATags {
 		} else
 			return false;
 	}
+	public Annotation findAnnotation(Collection<Annotation> sannots,JCompilationUnit unit) {
+		return sannots.stream().filter(a->this.isType(a, unit)).findFirst().orElse(null);		
+	}
+	
 }

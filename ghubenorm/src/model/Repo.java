@@ -132,7 +132,7 @@ public class Repo {
 						pw.print(" | "+Optional.ofNullable(col.getName()).orElse(""));
 						if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
 							pw.print(":"+col.getColummnDefinition());
-						pw.print( col.getLength()==0 ? "" : "("+col.getLength()+")");
+						pw.print( col.getLength()==null ? "" : "("+col.getLength()+")");
 					}
 					MAssociation assoc = p.getAssociation();
 					if (assoc==null)

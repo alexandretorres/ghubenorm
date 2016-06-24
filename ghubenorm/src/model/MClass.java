@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Embedded;
@@ -36,6 +37,8 @@ public class MClass {
 	private Set<MClass> specializations=new HashSet<MClass>();
 	@OneToMany(cascade=CascadeType.ALL,orphanRemoval=true)
 	private Set<MGeneralization> generalization= new HashSet<MGeneralization>();
+	@Embedded
+	private MDiscriminator discriminatorColumn;
 	
 	public static MClass newMClass(Repo repo) {
 		return new MClass(repo);
@@ -185,6 +188,13 @@ public class MClass {
 	protected void setGeneralization(Set<MGeneralization> generalization) {
 		this.generalization = generalization;
 	}
+	
+	public MDiscriminator getDiscriminatorColumn() {
+		return discriminatorColumn;
+	}
+	public void setDiscriminatorColumn(MDiscriminator discriminatorColumn) {
+		this.discriminatorColumn = discriminatorColumn;
+	}
 	public <T extends MGeneralization> T addGeneralization(Class<T> type) {
 		T ret;
 		try {
@@ -217,7 +227,11 @@ public class MClass {
 	public boolean isPersistent() {
 		return persistence.isPersistent();
 	}
+	public List<MProperty> getPK() {
+		return getProperties().stream().filter(p->p.isPk()).collect(Collectors.toList());
+	}
 	public String toString() {
 		return (repo!=null ? "Repo:"+repo.getName()+" - " : "" ) + this.getName();
 	}
+	
 }

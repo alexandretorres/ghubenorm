@@ -9,14 +9,14 @@ import javax.persistence.Transient;
 @Entity
 public class MColumn extends MColumnDefinition{
 	//TODO: Use nullable types for length, precision and so forth. 
-	@Transient public static final int DEFAULT_LENGTH = 255;	
+//	@Transient public static final int DEFAULT_LENGTH = 255;	
 	@Transient public static final int DEFAULT_SCALE = 0;	
 	private String name;
 	private boolean nullable=true;
 	private boolean insertable=true;
 	private boolean updatable=true;
 	private String colummnDefinition;
-	private int length;
+	private Integer length;
 	private int precision;
 	private int scale;
 	@Column(name="isUnique")
@@ -69,14 +69,14 @@ public class MColumn extends MColumnDefinition{
 		this.colummnDefinition = colummnDefinition;
 		return this;
 	}
-	public int getLength() {
+	public Integer getLength() {
 		return length;
 	}
 	public MColumn setLength(Integer length) {
-		if (length==null)
+		/*if (length==null)
 			this.length = DEFAULT_LENGTH;
-		else
-			this.length = length;
+		else*/
+		this.length = length;
 		return this;
 	}
 	public int getPrecision() {
@@ -115,8 +115,9 @@ public class MColumn extends MColumnDefinition{
 	public MTable getTable() {
 		return table;
 	}
-	public void setTable(MTable table) {
+	public MColumn setTable(MTable table) {
 		this.table = table;
+		return this;
 	}
 	
 	

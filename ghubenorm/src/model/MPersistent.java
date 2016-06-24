@@ -24,7 +24,18 @@ public class MPersistent {
 			this.source=ds;
 		return this;
 	}	
-	
+	public MTable getMainTable() {
+		if (source instanceof MJoinedSource) {
+			MJoinedSource jds =(MJoinedSource) source;
+			if (jds.getDefines().isEmpty())
+				return null;
+			else
+				return jds.getDefines().get(0);
+		} else if (source instanceof MTableRef) {
+			return ((MTableRef)source).getTable();
+		} else
+			return (MTable) source;
+	}
 	public MDataSource getSource() {
 		return source;
 	}

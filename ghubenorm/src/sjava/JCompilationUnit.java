@@ -212,7 +212,7 @@ class Import {
 class ElementValue {
 	Annotation annotation;
 	List<ElementValue> values;
-	Object value;
+	private Object value;
 	public ElementValue(Expression val) {
 		if (val instanceof AnnotationExpr) {
 			this.annotation = Annotation.newAnnotation((AnnotationExpr)val);
@@ -232,6 +232,16 @@ class ElementValue {
 			this.value = ExprEval.evaluate( val.toString());
 		}
 	}
+	//TODO: inner subclasses for each type
+	public Object getValue() {
+		if (annotation!=null)
+			return annotation;
+		if (values!=null)
+			return values;
+		if (value!=null)
+			return value;
+		return null;
+	}
 }
 class Annotation {
 	String type;
@@ -240,20 +250,20 @@ class Annotation {
 	private Annotation() {	}
 	public Object getValue(String name) {
 		if (values.containsKey(name)) {
-			return values.get(name).value;
+			return values.get(name).getValue();
 		}
 		return null;
 	}
 	public String getValueAsString(String name) {
 		if (values.containsKey(name)) {
-			return (String)values.get(name).value;
+			return (String)values.get(name).getValue();
 		}
 		return null;
 	}
 	@SuppressWarnings("unchecked")
 	public <T> T getValue(String name,T def_value,Class<T> type) {
 		if (values.containsKey(name)) {
-			T value = (T) values.get(name).value;
+			T value = (T) values.get(name).getValue();
 			if (type.isInstance(value))
 				return value;
 			else {
@@ -265,24 +275,24 @@ class Annotation {
 	}
 	public String getValue(String name,String def_value) {
 		if (values.containsKey(name)) {
-			return (String) values.get(name).value;
+			return (String) values.get(name).getValue();
 		}
 		return def_value;
 	}
 	public boolean getValue(String name,boolean def_value) {
 		if (values.containsKey(name)) {
-			return (boolean) values.get(name).value;
+			return (boolean) values.get(name).getValue();
 		}
 		return def_value;
 	}
 	public Object getSingleValue() {
 		if (values.containsKey(DEFAULT_KEY))
-			return values.get(DEFAULT_KEY).value;
+			return values.get(DEFAULT_KEY).getValue();
 		return null;
 	}
 	public String getSingleValue(String def_value) {
 		if (values.containsKey(DEFAULT_KEY)) {
-			return (String) values.get(DEFAULT_KEY).value;
+			return (String) values.get(DEFAULT_KEY).getValue();
 		}
 		return def_value;
 	}
@@ -345,6 +355,12 @@ class Annotation {
 	
 }
 class ExprEval {
+	public static String getConstant(String constant) {
+		if (constant==null)
+			return null;
+		String[] types = constant.split("\\.");
+		return types[types.length-1];
+	}
 	private static ScriptEngineManager mgr = new ScriptEngineManager();
 	private static ScriptEngine jsEngine = mgr.getEngineByName("JavaScript");
 	public static Object evaluate(String expr)  {
@@ -352,7 +368,7 @@ class ExprEval {
 		try {				   
 			return jsEngine.eval(expr);
 		} catch (ScriptException e) {
-			LOG.warning("Java expression was not evaluated:"+expr);
+			LOG.fine("Java expression was not evaluated:"+expr);
 			// TODO Auto-generated catch block
 			LOG.log(Level.FINE, e.getMessage(),e);
 			

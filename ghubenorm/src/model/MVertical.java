@@ -13,7 +13,7 @@ public class MVertical extends MDiscrminableGeneralization {
 	@OneToMany(mappedBy="generalization")
 	private Set<MJoinColumn> joinCols = new HashSet<MJoinColumn>();
 
-	protected Set<MJoinColumn> getJoinCols() {
+	public Set<MJoinColumn> getJoinCols() {
 		return joinCols;
 	}
 

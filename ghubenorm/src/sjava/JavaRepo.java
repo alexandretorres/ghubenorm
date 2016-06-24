@@ -28,7 +28,7 @@ public class JavaRepo {
 	public Set<MClass> mappedSuperClasses = new HashSet<MClass>();
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
 	Map<String,List<JCompilationUnit>> pendingRefs = new HashMap<String,List<JCompilationUnit>>();
-	Map<MClass,List<Annotation>> classAnnot;
+	Map<MClass,List<Annotation>> classAnnot = new HashMap<MClass,List<Annotation>>();
 	//----
 	private HashMap<String, JCompilationUnit> parsed = new HashMap<String, JCompilationUnit>();
 	
