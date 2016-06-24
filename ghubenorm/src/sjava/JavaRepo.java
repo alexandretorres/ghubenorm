@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import common.LateVisitor;
 import gitget.Dir;
+import gitget.Log;
 import model.MClass;
 import model.MDataSource;
 import model.MTable;
@@ -27,6 +28,7 @@ public class JavaRepo {
 	public Set<MClass> mappedSuperClasses = new HashSet<MClass>();
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
 	Map<String,List<JCompilationUnit>> pendingRefs = new HashMap<String,List<JCompilationUnit>>();
+	Map<MClass,List<Annotation>> classAnnot;
 	//----
 	private HashMap<String, JCompilationUnit> parsed = new HashMap<String, JCompilationUnit>();
 	
@@ -73,7 +75,10 @@ public class JavaRepo {
 	}
 	
 	public void solveRefs() {
+		if (!pendingRefs.isEmpty())
+			Log.LOG.warning("Pending refs");
 		for (Entry<String, List<JCompilationUnit>> entry:pendingRefs.entrySet()) {
+			
 			// do something
 		}
 		for (LateVisitor v:visitors) {

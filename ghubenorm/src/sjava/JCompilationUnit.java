@@ -41,6 +41,7 @@ public class JCompilationUnit {
 	String packageName="";
 	Set<MClass> classes= new HashSet<MClass>();
 	Set<Import> imports = new HashSet<Import>();
+
 	JavaRepo jrepo;
 	static DAOInterface<MClass> daoMClass = ConfigDAO.getDAO(MClass.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);

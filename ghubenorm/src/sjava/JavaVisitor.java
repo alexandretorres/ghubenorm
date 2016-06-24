@@ -102,15 +102,13 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				}
 				if (MappedSuperclass.isType(anot,comp)) {
 					comp.jrepo.mappedSuperClasses.add(c);
-				}
-				
-					
+				}				
+					//DiscriminatorColumn
 				if (Inheritance.isType(anot, comp)) {
-					comp.jrepo.visitors.add(new VisitInheritance(c, comp, anot));
-										
-				}
-				
+					comp.jrepo.visitors.add(new VisitInheritance(c, comp, anot));										
+				}				
 			}
+			comp.jrepo.classAnnot.put(c, annots);
 			Annotation idClass = annots.stream().filter(a->IdClass.isType(a,comp)).findFirst().orElse(null);
 			if (c.isPersistent()) {			
 				Annotation atab = annots.stream().filter(a->Table.isType(a,comp)).findFirst().orElse(null);
@@ -134,8 +132,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					comp.toTable(c, atab);
 				}			
 			}	
-		}
-		
+		}		
 		super.visit(cd, arg1);
 		List<JCompilationUnit> pending = comp.jrepo.pendingRefs.get(cd.getName());
 		if (pending!=null && c!=null)
@@ -183,8 +180,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			}
 			
 			for (VariableDeclarator var:ctx.getVariables()) {
-				if (!isStatic) {
-					
+				if (!isStatic) {					
 					MProperty prop = daoMProp.persit(clazz.newProperty().setName(var.getId().getName()).setType(typeName));					
 					if (var.getId().getArrayCount()>0) {
 						prop.setMax(-1);
@@ -249,18 +245,20 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	class VisitInheritance implements LateVisitor<MClass> {
 		MClass superClass;
 		JCompilationUnit unit;
-		Annotation inheritance;
+		//Annotation inheritance;
 		
 		public VisitInheritance(MClass superClass, JCompilationUnit unit, Annotation inheritance) {
 			super();
 			this.superClass = superClass;
 			this.unit = unit;
-			this.inheritance = inheritance;
+			//this.inheritance = inheritance;
 		}
 
 		@Override
 		public MClass exec() {
 			MGeneralization gen=null;
+			List<Annotation> annots = unit.jrepo.classAnnot.get(superClass);
+			Annotation inheritance = annots.stream().filter(a->Inheritance.isType(a, unit)).findFirst().orElse(null);
 			String[] type = inheritance.getValue("strategy","").split("\\.");
 			for (MClass sub:superClass.getSpecializations()) {
 				switch (type[type.length-1]){
