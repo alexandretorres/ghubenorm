@@ -40,7 +40,8 @@ public class JavaCrawler {
 			"<artifactId>org.eclipse.persistence.jpa</artifactId>",
 			"<artifactId>datanucleus-jpa</artifactId>"};
 	public static String[] JARS = {
-			"hibernate-core","spring-orm","hibernate-entitymanager","org.eclipse.persistence.jpa","eclipselink","openjpa","datanucleus-jpa"
+			"hibernate-core","spring-orm","hibernate-entitymanager","org.eclipse.persistence.jpa",
+			"eclipselink","openjpa","datanucleus-jpa","javax.persistence"
 	};
 	public static void main(String[] args) {
 		ConfigDAO.config(JPA_DAO.instance);	
