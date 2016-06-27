@@ -5,8 +5,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -192,6 +195,7 @@ class GitHubCaller {
 	 * @return
 	 */
 	public JsonReader callApi(URL url,boolean isSearch) {	
+		HttpURLConnection connection=null;
 		try {
 			if (limits==null)
 				limits = retrieveLimits();
@@ -201,7 +205,7 @@ class GitHubCaller {
 					time = limits.searchReset-time;
 					if (time>0) {
 						time++;
-						LOG.info("Sleeping searches for "+time+" seconds...");
+						LOG.warning("Sleeping searches for "+time+" seconds...");
 						Thread.sleep(time*1000);
 					}
 					limits = retrieveLimits();
@@ -213,7 +217,7 @@ class GitHubCaller {
 					time = limits.coreReset-time;
 					if (time>0) {
 						time++;
-						LOG.info("Sleeping core for "+time+" seconds...");
+						LOG.warning("Sleeping core for "+time+" seconds...");
 						Thread.sleep(time*1000);
 					}
 					limits = retrieveLimits();
@@ -221,7 +225,10 @@ class GitHubCaller {
 				}
 				limits.core--;
 			}
-			InputStream is = url.openStream();
+			connection = (HttpURLConnection)url.openConnection();
+			
+			
+			InputStream is = connection.getInputStream();
 			JsonReader rdr = Json.createReader(is);
 			tries=0;
 			return rdr;
@@ -238,8 +245,39 @@ class GitHubCaller {
 					return callApi(url,isSearch);
 			} catch (Exception tex) {
 				LOG.log(Level.SEVERE,tex.getMessage(),tex);					
-			}*/
+			}*/			
 			LOG.log(Level.WARNING,iex.getMessage(),iex);
+			try {
+				//APILimit curLimits = limits;
+				LOG.warning("Current Limits:" +limits);
+				limits = retrieveLimits();
+				LOG.warning("True Limits:   "+limits);
+			} catch (Exception e) {	}			
+			
+			if (connection!=null) {
+				try {
+					InputStream error = connection.getErrorStream();
+					java.util.Scanner s = new java.util.Scanner(error).useDelimiter("\\A");
+				    if (s.hasNext())
+				    	LOG.warning("Error stream:" +s.next());
+				} catch (Exception e) {	}
+				
+				String st = "Headers:";
+				for (Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
+				    st+=(header.getKey() + "=" + header.getValue())+"\n";
+				}
+				LOG.fine(st);
+				try {
+					LOG.warning("HTTP response:"+connection.getResponseMessage());
+				} catch (IOException e) {	}	
+			
+				
+			}
+			if (limits.core<=1 || limits.search<=1) {
+				tries++;				
+				if (tries<=MAX_TRIES)
+					return callApi(url,isSearch);
+			}
 			return null;
 			//throw new RuntimeException(iex);
 		} catch (Exception ex) {
