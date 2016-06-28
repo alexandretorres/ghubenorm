@@ -79,6 +79,9 @@ public class JavaCrawler {
 			Prof.open("listFileTree");
 			JsonObject result = gh.listFileTree(fullName);
 			Prof.close("listFileTree");
+			boolean truncated = result.getBoolean("truncated");
+			if (truncated)
+				LOG.warning("truncated tree file for repository "+fullName);
 			for (JsonObject res: result.getJsonArray("tree").getValuesAs(JsonObject.class)) {
 				String path  =res.getString("path");
 				if (path.endsWith("persistence.xml"))  {
@@ -237,6 +240,9 @@ public class JavaCrawler {
 		if (unit==null) {
 			return null;
 		}
+		if (unit.getPackageName()==null)
+			return "";
+		
 		return unit.getPackageName().replace('.', '/');
 	}
 	

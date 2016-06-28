@@ -179,7 +179,7 @@ class GitHubCaller {
 	public JsonObject listFileTree(String path) throws IOException {
 		URL url = new URL("https://api.github.com/repos/"+path+"/git/trees/master?recursive=1&access_token="+oauth);
 		
-		try (JsonReader rdr = Json.createReader(url.openStream())) {
+		try (JsonReader rdr = callApi(url,false)) {///Json.createReader(url.openStream())) {
 			JsonObject res = rdr.readObject();
 			return res;
 		}
@@ -207,6 +207,8 @@ class GitHubCaller {
 						time++;
 						LOG.warning("Sleeping searches for "+time+" seconds...");
 						Thread.sleep(time*1000);
+					} else {
+						Thread.sleep(1000);
 					}
 					limits = retrieveLimits();
 				}
@@ -219,6 +221,8 @@ class GitHubCaller {
 						time++;
 						LOG.warning("Sleeping core for "+time+" seconds...");
 						Thread.sleep(time*1000);
+					} else {
+						Thread.sleep(1000);
 					}
 					limits = retrieveLimits();
 					
