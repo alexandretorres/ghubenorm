@@ -33,14 +33,15 @@ class RubyCrawler  {
 				Repo repo = new Repo(Language.RUBY);
 				repo.setLanguage(Language.RUBY);
 				repo.setName(fullName);
-				repo.setUrl(repoJson.getString("html_url"));			
+				repo.setUrl(repoJson.getString("html_url"));
+				repo.setBranch(repoJson.getString("default_branch"));
 				daoRepo.persit(repo);
 				if (rdr==null) { //File not Found
 					LOG.info(" no suitable dbPath for "+fullName);
 					//return;
 				} else {
 					repo.setConfigPath("db/schema.rb");	
-					LOG.info(" dbPath:"+fullName+"/raw/master/"+repo.getConfigPath());
+					LOG.info(" dbPath:"+fullName+"/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath());
 					loadRepo(repo);
 				}
 			}
@@ -83,11 +84,11 @@ class RubyCrawler  {
 							}
 							repo.setConfigPath(dbpath);							
 						} else 
-							LOG.info(" Rejected:"+fullName+"/raw/master/"+dbpath);						
+							LOG.info(" Rejected:"+fullName+"/raw/"+repo.getBranchGit()+"/"+dbpath);						
 					}
 					daoRepo.persit(repo);
 					if (repo.getConfigPath()!=null) {
-						LOG.info(" dbPath:"+fullName+"/raw/master/"+repo.getConfigPath());
+						LOG.info(" dbPath:"+fullName+"/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath());
 						loadRepo(repo);
 					} else {
 						LOG.warning(" no suitable dbPath for "+fullName);
@@ -144,7 +145,7 @@ class RubyCrawler  {
 		}
 		if (rrepo==null) {
 			rrepo = loader.setRepo(repo);	
-			loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/master/"+repo.getConfigPath()));	
+			loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath()));	
 		}		
 		JsonArray results = rdr.readArray();		
 		for (JsonObject result : results.getValuesAs(JsonObject.class)) {			

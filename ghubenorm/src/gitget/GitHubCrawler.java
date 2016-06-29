@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map.Entry;
@@ -41,13 +43,13 @@ public class GitHubCrawler implements Runnable {
 	static GitHubCaller gh = GitHubCaller.instance;
 	public static final long MAX_REPOS=100000;	
 	
+	
 	public static void main(String[] args) {		
 		new Thread(new GitHubCrawler()).start();
 	}	
 	@Override
 	public void run() {			
-		try {
-				
+		try {				
 			URL uauth = new URL("https://api.github.com/?access_token="+gh.oauth);
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
 			try (JsonReader rdr = gh.callApi(uauth,false)) {
@@ -61,9 +63,9 @@ public class GitHubCrawler implements Runnable {
 			ConfigDAO.finish();
 		}
 	}
-
 	
-	private Language mainLanguage(String path) throws MalformedURLException {
+	//TODO: get ALL repo info instead! there is the language
+	private Language mainLanguage_(String path) throws MalformedURLException {
 		URL url = new URL("https://api.github.com/repos/"+path+"/languages?access_token="+gh.oauth);
 		Language lang = null;
 		int cnt=0;
@@ -110,7 +112,7 @@ public class GitHubCrawler implements Runnable {
 					boolean priv = result.getBoolean("private");
 					id = result.getInt("id");
 					LOG.info(cnt+" "+name+":"+fullName+
-							"owner:"+result.getJsonObject("owner").getString("login"));
+							" owner:"+result.getJsonObject("owner").getString("login"));
 					if (priv) {
 						LOG.info("<Private>");
 						continue;
@@ -119,7 +121,14 @@ public class GitHubCrawler implements Runnable {
 					LOG.info("-----------"+gh.limits);
 					cnt++;
 					//----
-					Language lang = mainLanguage(fullName);
+					//Language lang = mainLanguage(fullName);
+					//
+					
+					//
+					result = gh.getRepoInfo(fullName);
+					if (result==null)
+						continue;
+					Language lang = Language.getLanguage(result.getString("language"));
 					if (lang==Language.RUBY) {
 						ruby.processRepo(result,fullName);
 					} else if (lang==Language.JAVA) {
@@ -176,8 +185,26 @@ class GitHubCaller {
 	public static final GitHubCaller instance = new GitHubCaller();
 	private GitHubCaller() {		
 	}	
-	public JsonObject listFileTree(String path) throws IOException {
-		URL url = new URL("https://api.github.com/repos/"+path+"/git/trees/master?recursive=1&access_token="+oauth);
+	public static URL newURL(String host,String path) throws MalformedURLException, URISyntaxException {
+		return (new URI("https","github.com",path,null)).toURL();			
+		
+	}
+	protected JsonObject getRepoInfo(String path)  {
+		try {
+			URL url = newURL("api.github.com","/repos/"+path+"?access_token="+oauth);		
+			try (JsonReader rdr = callApi(url,false)) {
+				JsonObject obj =rdr.readObject();	
+				return obj;
+			}
+		} catch (Exception ex) {
+			LOG.log(Level.WARNING, ex.getMessage(), ex);
+			return null;
+		}
+		
+	}
+	public JsonObject listFileTree(String path,String branch) throws IOException {
+		
+		URL url = new URL("https://api.github.com/repos/"+path+"/git/trees/"+branch+"?recursive=1&access_token="+oauth);
 		
 		try (JsonReader rdr = callApi(url,false)) {///Json.createReader(url.openStream())) {
 			JsonObject res = rdr.readObject();

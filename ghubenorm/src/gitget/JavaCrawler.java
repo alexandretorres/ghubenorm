@@ -45,11 +45,15 @@ public class JavaCrawler {
 	};
 	public static void main(String[] args) {
 		ConfigDAO.config(JPA_DAO.instance);	
+		String repo = "apache/felix";
+		//String repo ="facebook/react-native";
+		//String repo ="kmahaley/MSD_File_Sharing";
+		//String repo ="travis/cosmo";
+		//String repo ="apache/camel";
 		//ConfigDAO.config(new ConfigNop());
 		//https://github.com/rocioemera/SubscriptionSystem
-		//new JavaCrawler().processRepo(null,"facebook/react-native");
-		//new JavaCrawler().processRepo(null,"kmahaley/MSD_File_Sharing");
-		new JavaCrawler().processRepo(null,"travis/cosmo");
+	
+		new JavaCrawler().processRepo(gh.getRepoInfo(repo) ,repo);		
 		ConfigDAO.finish();
 		Prof.print();
 		//new JavaCrawler().processRepo(null,"BorisIvanov/com-iqbuzz-tickets");
@@ -64,12 +68,13 @@ public class JavaCrawler {
 	 * @param fullName
 	 */
 	public void processRepo(JsonObject repoJson,String fullName)  {
-		try {
+		try {			
 			Prof.open("checkIfPersistent");
 			String persistenceXML = null;			
 			if (daoRepo==null)
 				daoRepo = ConfigDAO.getDAO(Repo.class);	
-			Repo repo = new Repo(Language.JAVA);
+			Repo repo = new Repo(Language.JAVA);			
+			repo.setBranch(repoJson.getString("default_branch"));
 			repo.setName(fullName);			
 			JavaRepo jrepo = new JavaRepo(repo);			
 			Dir root = Dir.newRoot();
@@ -77,7 +82,7 @@ public class JavaCrawler {
 			loader.setJrepo(jrepo);
 			//--
 			Prof.open("listFileTree");
-			JsonObject result = gh.listFileTree(fullName);
+			JsonObject result = gh.listFileTree(fullName,repo.getBranchGit());
 			Prof.close("listFileTree");
 			boolean truncated = result.getBoolean("truncated");
 			if (truncated)
@@ -131,7 +136,7 @@ public class JavaCrawler {
 	protected void readAllJavaFiles(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		for (Dir f:jrepo.getRoot().toList()) {
 			if (f.children==null || f.children.isEmpty()) {
-				URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master"+f.getPath(),null)).toURL();			
+				URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+f.getPath(),null)).toURL();			
 				loader.load(url);
 				LOG.info("loaded "+f.getPath());
 			}
@@ -152,7 +157,7 @@ public class JavaCrawler {
 	
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
 					String path = result.getString("path");
-					URL furl = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master/"+path,null)).toURL();			
+					URL furl = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null)).toURL();			
 					loader.load(furl);
 					//TODO: load on demand (?) BUT is it needed? all classes import javax.persistence
 					/**
@@ -177,7 +182,7 @@ public class JavaCrawler {
 			*/
 			//
 			
-			URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master/"+path,null)).toURL();			
+			URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null)).toURL();			
 			try (BufferedReader in = new BufferedReader( new InputStreamReader(url.openStream()))) {	
 				
 				for (String st=in.readLine();st!=null;st=in.readLine()) {				
@@ -234,7 +239,7 @@ public class JavaCrawler {
 		jrepo.setRoot(root2);
 	}
 	protected String findPackage(JavaRepo jrepo,String leafPath) throws MalformedURLException, URISyntaxException {
-		URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/master"+leafPath,null)).toURL();
+		URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+leafPath,null)).toURL();
 		//URL url = new URL("https://github.com/"+jrepo.getRepo().getName()+ "/raw/master"+leafPath);
 		JCompilationUnit unit= loader.load(url);	
 		if (unit==null) {

@@ -31,6 +31,7 @@ public class Repo {
 	private String name;
 	private String url;
 	private Language language;	
+	private String branch;
 	/**
 	 * This is the internal path to the "base" file that defines the repository. For ruby it is the schema.db file,
 	 * for java it may be the presistence.xml. It is used to differentiate what portion of the repository is 
@@ -90,7 +91,19 @@ public class Repo {
 	protected void setDataSources(Set<MDataSource> sources) {
 		this.dataSources = sources;
 	}
-/*	public Set<MDataSource> getTables() {
+	
+	public String getBranch() {
+		return branch;
+	}
+	public void setBranch(String branch) {
+		this.branch = branch;
+	}
+	public String getBranchGit() {
+		if (branch==null || branch.equals(""))
+			return "master";
+		return branch;
+	}
+	/*	public Set<MDataSource> getTables() {
 		return sources;
 	}
 	protected void setTables(Set<MDataSource> sources) {
