@@ -45,11 +45,12 @@ public class JavaCrawler {
 	};
 	public static void main(String[] args) {
 		ConfigDAO.config(JPA_DAO.instance);	
-		String repo = "apache/felix";
+		
 		//String repo ="facebook/react-native";
 		//String repo ="kmahaley/MSD_File_Sharing";
 		//String repo ="travis/cosmo";
-		//String repo ="apache/camel";
+		//String repo = "apache/felix";
+		String repo ="apache/camel";
 		//ConfigDAO.config(new ConfigNop());
 		//https://github.com/rocioemera/SubscriptionSystem
 	
@@ -76,6 +77,7 @@ public class JavaCrawler {
 			Repo repo = new Repo(Language.JAVA);			
 			repo.setBranch(repoJson.getString("default_branch"));
 			repo.setName(fullName);			
+			repo.setPublicId(repoJson.getInt("id"));
 			JavaRepo jrepo = new JavaRepo(repo);			
 			Dir root = Dir.newRoot();
 			jrepo.setRoot(root);
@@ -117,11 +119,14 @@ public class JavaCrawler {
 			daoRepo.persit(repo);
 			Prof.close("checkIfPersistent");
 			if (persistenceXML!=null || !jrepo.JPAArtifacts.isEmpty() || !jrepo.JPAJars.isEmpty()) {
+				/*
 				Prof.open("findBasePaths");
 				findBasePaths(jrepo);
 				Prof.close("findBasePaths");
-				
+				*/
+				Prof.open("findJavaPersistenceRefs");
 				findJavaPersistenceRefs(jrepo);
+				Prof.close("findJavaPersistenceRefs");
 				//readAllJavaFiles(jrepo); or...		
 				
 				jrepo.getRepo().print();
@@ -134,7 +139,7 @@ public class JavaCrawler {
 		}
 	}
 	protected void readAllJavaFiles(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
-		for (Dir f:jrepo.getRoot().toList()) {
+		for (Dir f:jrepo.getRoot().toLeafList()) {
 			if (f.children==null || f.children.isEmpty()) {
 				URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+f.getPath(),null)).toURL();			
 				loader.load(url);
@@ -201,6 +206,7 @@ public class JavaCrawler {
 	
 		}
 	}
+	@Deprecated
 	protected void findBasePaths(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		Dir root = jrepo.getRoot();
 		root.removeTestFolders();

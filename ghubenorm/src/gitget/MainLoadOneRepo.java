@@ -21,7 +21,7 @@ public class MainLoadOneRepo {
 		
 		repo.setConfigPath("db/schema.rb");
 		try {
-			rc.loadRepo(repo);
+			rc.loadRepo_old(repo);
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

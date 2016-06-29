@@ -19,11 +19,15 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.JsonString;
 import javax.json.JsonStructure;
+import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
 
 import dao.ConfigDAO;
 import db.jpa.JPA_DAO;
 import model.Language;
+import sjava.Prof;
 import sruby.TesteJRuby2;
 
 import static gitget.Log.LOG;
@@ -41,7 +45,7 @@ public class GitHubCrawler implements Runnable {
 	RubyCrawler ruby = new RubyCrawler();
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
-	public static final long MAX_REPOS=100000;	
+	public static final long MAX_REPOS=2000;	
 	
 	
 	public static void main(String[] args) {		
@@ -57,9 +61,10 @@ public class GitHubCrawler implements Runnable {
 				LOG.info(obj.toString());				
 			}
 			readByRepo();
-		} catch (Exception ex) {
+		} catch (Throwable ex) {
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);
 		} finally {
+			Prof.print();
 			ConfigDAO.finish();
 		}
 	}
@@ -80,11 +85,11 @@ public class GitHubCrawler implements Runnable {
 				}
 			}			
 		} catch (Exception ex) {
-			return Language.OTHER;
+			return Language.UNKNOWN;
 		}
 		Log.LOG.info("Main language:"+lang);
 		if (lang==null)
-			return Language.OTHER;
+			return Language.UNKNOWN;
 		else
 			return lang;			
 		
@@ -128,7 +133,19 @@ public class GitHubCrawler implements Runnable {
 					result = gh.getRepoInfo(fullName);
 					if (result==null)
 						continue;
-					Language lang = Language.getLanguage(result.getString("language"));
+					
+					JsonValue lang_obj = result.get("language");
+					Language lang =Language.UNKNOWN;
+					if (lang_obj.getValueType()==ValueType.STRING) {
+						lang = Language.getLanguage(((JsonString) lang_obj).getString());
+					} else if (lang_obj.getValueType()==ValueType.ARRAY) {
+						JsonArray array = (JsonArray)lang_obj;
+						lang = Language.getLanguage(array.getString(0));
+					} else if (lang_obj.getValueType()==ValueType.NULL) {
+						// do nothing
+					} else {
+						LOG.info("unexpected language value for repo "+fullName);
+					}
 					if (lang==Language.RUBY) {
 						ruby.processRepo(result,fullName);
 					} else if (lang==Language.JAVA) {
@@ -185,13 +202,13 @@ class GitHubCaller {
 	public static final GitHubCaller instance = new GitHubCaller();
 	private GitHubCaller() {		
 	}	
-	public static URL newURL(String host,String path) throws MalformedURLException, URISyntaxException {
-		return (new URI("https","github.com",path,null)).toURL();			
+	public URL newURL(String host,String path,String query) throws MalformedURLException, URISyntaxException {
+		return (new URI("https",host,path,query,null)).toURL();			
 		
 	}
 	protected JsonObject getRepoInfo(String path)  {
 		try {
-			URL url = newURL("api.github.com","/repos/"+path+"?access_token="+oauth);		
+			URL url = newURL("api.github.com","/repos/"+path,"access_token="+oauth);		
 			try (JsonReader rdr = callApi(url,false)) {
 				JsonObject obj =rdr.readObject();	
 				return obj;
@@ -202,9 +219,9 @@ class GitHubCaller {
 		}
 		
 	}
-	public JsonObject listFileTree(String path,String branch) throws IOException {
-		
-		URL url = new URL("https://api.github.com/repos/"+path+"/git/trees/"+branch+"?recursive=1&access_token="+oauth);
+	public JsonObject listFileTree(String path,String branch) throws IOException, URISyntaxException {
+		URL url =newURL("api.github.com","/repos/"+path+"/git/trees/"+branch,"recursive=1&access_token="+oauth);
+		//URL url = new URL("https://api.github.com/repos/"+path+"/git/trees/"+branch+"?recursive=1&access_token="+oauth);
 		
 		try (JsonReader rdr = callApi(url,false)) {///Json.createReader(url.openStream())) {
 			JsonObject res = rdr.readObject();

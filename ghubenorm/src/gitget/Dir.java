@@ -193,19 +193,28 @@ public class Dir {
 			return "JavaDir "+name+" Exception:"+ex.getMessage();
 		}
 	}
-	public List<Dir> toList() {
+	public List<Dir> toLeafList() {
 		ArrayList<Dir> all = new ArrayList<Dir>();
-		addToList(all);
+		addToList(all,true);
 		return all;
 		
 	}
-	private void addToList(List<Dir> list) {
+	public List<Dir> toAllList() {
+		ArrayList<Dir> all = new ArrayList<Dir>();
+		addToList(all,false);
+		return all;
+		
+	}
+	
+	private void addToList(List<Dir> list,boolean leafOnly) {
 		if (this.children==null || this.children.isEmpty()) {
 			list.add(this);
 			return;
 		}
+		if (!leafOnly)
+			list.add(this);
 		for (Dir child:children) {
-			child.addToList(list);
+			child.addToList(list,leafOnly);
 		}
 	}
 	

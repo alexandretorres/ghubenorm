@@ -47,9 +47,11 @@ public class JavaRepo {
 	public void setRoot(Dir root) {
 		this.root = root;
 	}
+	@Deprecated
 	public List<Dir> getBasePaths() {
 		return basePaths;
 	}
+	@Deprecated
 	public void setBasePaths(List<Dir> basePaths) {
 		this.basePaths = basePaths;
 	}

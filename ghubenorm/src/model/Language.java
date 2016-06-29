@@ -1,10 +1,10 @@
 package model;
 
 public enum Language {
-	JAVA,RUBY,PYTHON,OTHER;
+	JAVA,RUBY,PYTHON,OTHER,UNKNOWN;
 	public static Language getLanguage(String lang) {	
 		if (lang==null)
-			return OTHER;
+			return UNKNOWN;
 		switch (lang) {
 			case "Java":
 				return JAVA;

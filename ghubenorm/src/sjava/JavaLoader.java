@@ -26,8 +26,9 @@ public class JavaLoader {
 				jrepo.getParsed().put(surl, comp);
 			}
 			return comp;				
-	
-		} catch (Exception ex) {	
+		// JavaParser MAY throw an TokenMgrError. This is a BAD design for JavaParser, since it should be a plain exception! I´m too lazy to see how many "errors" this lib is throwing
+		// So we are catching all ERRORS and EXCEPTIONS here. In the future, list all Errors 
+		} catch (Throwable ex) {	
 			LOG.warning("could not visit file "+url);
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);				
 			return null;		

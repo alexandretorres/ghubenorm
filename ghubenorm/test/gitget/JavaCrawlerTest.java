@@ -118,7 +118,7 @@ public class JavaCrawlerTest extends JavaCrawler {
 				for (String rem:results) {
 					fail("Case "+currentCase+" Excpected path '"+rem+"' not in the base paths list");
 				}
-				List<Dir> all =jrepo.getRoot().toList(); 
+				List<Dir> all =jrepo.getRoot().toLeafList(); 
 				results = new ArrayList<String>();
 				Collections.addAll(results, cases[currentCase]);
 				for (Dir d:all) {
@@ -129,7 +129,7 @@ public class JavaCrawlerTest extends JavaCrawler {
 						fail("Case "+currentCase+": Root dir is not the same:'"+p+"' was not in the original root");
 					}
 				}
-				List<String> badFiles = jrepo.getBadFiles().toList().stream().map(d->d.getPath()).collect(Collectors.toCollection(ArrayList::new));
+				List<String> badFiles = jrepo.getBadFiles().toLeafList().stream().map(d->d.getPath()).collect(Collectors.toCollection(ArrayList::new));
 				for (String rem:results) {
 					if (!badFiles.contains(rem))
 						fail("Case "+currentCase+": Root path '"+rem+"' not in the new root");

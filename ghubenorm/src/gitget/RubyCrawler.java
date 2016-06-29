@@ -3,8 +3,12 @@ package gitget;
 import static gitget.Log.LOG;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -14,6 +18,7 @@ import dao.ConfigDAO;
 import dao.DAOInterface;
 import model.Language;
 import model.Repo;
+import sjava.Prof;
 import sruby.RubyRepo;
 import sruby.RubyRepoLoader;
 
@@ -23,6 +28,125 @@ class RubyCrawler  {
 	private static GitHubCaller gh = GitHubCaller.instance;
 	private DAOInterface<Repo> daoRepo;
 	public void processRepo(JsonObject repoJson,String fullName)  {
+		Prof.open("processRubyRepo");
+		try {			
+			if (daoRepo==null)
+				daoRepo = ConfigDAO.getDAO(Repo.class);
+			Repo repo = new Repo(Language.RUBY);
+			repo.setPublicId(repoJson.getInt("id"));
+			repo.setLanguage(Language.RUBY);
+			repo.setName(fullName);
+			repo.setUrl(repoJson.getString("html_url"));
+			repo.setBranch(repoJson.getString("default_branch"));
+			Prof.open("listFileTreeRuby");
+			JsonObject result = gh.listFileTree(fullName,repo.getBranchGit());
+			Prof.close("listFileTreeRuby");
+			boolean truncated = result.getBoolean("truncated");
+			if (truncated)
+				LOG.warning("truncated tree file for repository "+fullName);
+			Dir root = Dir.newRoot();
+			for (JsonObject res: result.getJsonArray("tree").getValuesAs(JsonObject.class)) {
+				String path  =res.getString("path");
+				if (path.equals("db/schema.rb")) {
+					repo.setConfigPath(path);
+				} else if (repo.getConfigPath()==null && path.endsWith("db/schema.rb")) {
+					repo.setConfigPath(path);
+				}
+				if (path.endsWith(".rb")) {
+					root.register(path);
+				}
+			}			
+			daoRepo.beginTransaction();			
+			
+			daoRepo.persit(repo);
+			if (repo.getConfigPath()!=null) {
+				RubyRepo rrepo = loader.setRepo(repo);
+				rrepo.setRoot(root);
+				LOG.info(" dbPath:"+fullName+"/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath());
+				Prof.open("loadRubyRepo");
+				loadRepo(rrepo);
+				Prof.close("loadRubyRepo");
+			} else {
+				LOG.info(" no suitable dbPath for "+fullName);
+			}
+			//----------------------------------x----------------------------
+			
+			daoRepo.commitAndCloseTransaction();
+			
+		} catch (Exception ex) {
+			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);	
+		}
+		Prof.close("processRubyRepo");
+	}
+	
+	public RubyRepo loadRepo(RubyRepo rrepo) throws MalformedURLException, URISyntaxException {	
+		Repo repo = rrepo.getRepo();
+		//readModelEntry(null,repo,"app/models");			
+		Dir modelDir = rrepo.getRoot().get("app/models");
+		if (modelDir==null) {
+			List<Dir> candList = rrepo.getRoot().toAllList();
+			candList = candList.stream().filter(d->d.children!=null && !d.children.isEmpty() && d.getPath().endsWith("app/models")).collect(Collectors.toList());
+			if (!candList.isEmpty()) {
+				modelDir = candList.get(0);
+				if (candList.size()>1) {
+					candList = candList.stream().filter(d->!d.getPath().toLowerCase().contains("test")).collect(Collectors.toList());
+					if (!candList.isEmpty())
+						modelDir = candList.get(0);
+				}
+			}
+		}
+		if (modelDir!=null) {
+			loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath()));	
+			List<Dir> all = modelDir.toLeafList();
+			for (Dir sourceDir:all) {			
+				URL furl = gh.newURL("github.com","/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+sourceDir.getPath(),null);						
+				loader.visitFile(furl);
+			}
+			
+			loader.solveRefs();
+			rrepo.getRepo().print();
+		} else {
+			LOG.info(" no suitable model path for "+repo.getName());
+		}
+		return rrepo;
+	}
+
+	private RubyRepo readModelEntry(RubyRepo rrepo,Repo repo,String path) throws MalformedURLException {
+		URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/"+path
+				+ "?access_token="+gh.oauth);
+		JsonReader rdr = gh.callApi(url,false);
+		if (rdr==null) { //File not Found
+			return null;
+		}
+		if (rrepo==null) {
+			rrepo = loader.setRepo(repo);	
+			loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath()));	
+		}		
+		JsonArray results = rdr.readArray();		
+		for (JsonObject result : results.getValuesAs(JsonObject.class)) {			
+			String type = result.getString("type");
+			if (type.equals("file")) {
+				String fpath = result.getString("download_url");
+				if (fpath.endsWith(".rb")) {
+					URL furl = new URL(fpath);						
+					loader.visitFile(furl);						
+				}
+			} else if (type.equals("dir")) {
+				String dpath=result.getString("path");
+				readModelEntry(rrepo,repo,dpath);
+			}
+		}
+		return rrepo;
+	}
+	public RubyRepo loadRepo_old(Repo repo) throws MalformedURLException {		
+		RubyRepo rrepo=readModelEntry(null,repo,"app/models");	
+		if (rrepo!=null) {
+			loader.solveRefs();
+			rrepo.getRepo().print();
+		}
+		return rrepo;
+	}
+	public void processRepo_old(JsonObject repoJson,String fullName)  {
 		try {
 			if (daoRepo==null)
 				daoRepo = ConfigDAO.getDAO(Repo.class);
@@ -42,7 +166,7 @@ class RubyCrawler  {
 				} else {
 					repo.setConfigPath("db/schema.rb");	
 					LOG.info(" dbPath:"+fullName+"/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath());
-					loadRepo(repo);
+					loadRepo_old(repo);
 				}
 			}
 			daoRepo.commitAndCloseTransaction();
@@ -89,7 +213,7 @@ class RubyCrawler  {
 					daoRepo.persit(repo);
 					if (repo.getConfigPath()!=null) {
 						LOG.info(" dbPath:"+fullName+"/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath());
-						loadRepo(repo);
+						loadRepo_old(repo);
 					} else {
 						LOG.warning(" no suitable dbPath for "+fullName);
 					}
@@ -99,68 +223,5 @@ class RubyCrawler  {
 		} catch (Exception ex) {
 			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);	
 		}
-	}
-
-	public RubyRepo loadRepo(Repo repo) throws MalformedURLException {			
-		//  /repos/:owner/:repo/contents/:path
-		/*
-		URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/app/models"
-				+ "?access_token="+oauth);
-		JsonReader rdr = gh.callApi(url);
-		if (rdr==null) { //File not Found
-			return null;
-		}
-		RubyRepo rrepo = loader.setRepo(repo);			
-		loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/master/"+repo.getConfigPath()));	
-				
-		JsonArray results = rdr.readArray();*/
-		RubyRepo rrepo=readModelEntry(null,repo,"app/models");
-		/*
-		for (JsonObject result : results.getValuesAs(JsonObject.class)) {
-			
-			
-			String type = result.getString("type");
-			if (type.equals("file")) {
-				String fpath = result.getString("download_url");
-				if (fpath.endsWith(".rb")) {
-					URL furl = new URL(fpath);						
-					loader.visitFile(furl);						
-				}
-			} else if (type.equals("dir")) {
-				String path=result.getString("path");
-			}
-		}*/
-		if (rrepo!=null) {
-			loader.solveRefs();
-			rrepo.getRepo().print();
-		}
-		return rrepo;
-	}
-	private RubyRepo readModelEntry(RubyRepo rrepo,Repo repo,String path) throws MalformedURLException {
-		URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/"+path
-				+ "?access_token="+gh.oauth);
-		JsonReader rdr = gh.callApi(url,false);
-		if (rdr==null) { //File not Found
-			return null;
-		}
-		if (rrepo==null) {
-			rrepo = loader.setRepo(repo);	
-			loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath()));	
-		}		
-		JsonArray results = rdr.readArray();		
-		for (JsonObject result : results.getValuesAs(JsonObject.class)) {			
-			String type = result.getString("type");
-			if (type.equals("file")) {
-				String fpath = result.getString("download_url");
-				if (fpath.endsWith(".rb")) {
-					URL furl = new URL(fpath);						
-					loader.visitFile(furl);						
-				}
-			} else if (type.equals("dir")) {
-				String dpath=result.getString("path");
-				readModelEntry(rrepo,repo,dpath);
-			}
-		}
-		return rrepo;
 	}
 }

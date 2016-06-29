@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import org.jruby.ast.ClassNode;
 
 import common.LateVisitor;
+import gitget.Dir;
 import gitget.Log;
 import model.Language;
 import model.MAssociation;
@@ -35,7 +36,7 @@ import model.Repo;
 public class RubyRepo {
 	private Repo repo;
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
-	
+	private Dir root;
 	/**
 	 * Superclass-ClassCode: subclasses waiting for a class definition 
 	 */
@@ -212,6 +213,12 @@ public class RubyRepo {
 	}
 	public void setRepo(Repo repo) {
 		this.repo = repo;
+	}
+	public Dir getRoot() {
+		return root;
+	}
+	public void setRoot(Dir root) {
+		this.root = root;
 	}
 	
 }
