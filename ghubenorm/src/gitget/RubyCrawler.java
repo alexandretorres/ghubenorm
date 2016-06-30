@@ -69,7 +69,7 @@ class RubyCrawler  {
 			} else {
 				LOG.info(" no suitable dbPath for "+fullName);
 			}
-			//----------------------------------x----------------------------
+			
 			
 			daoRepo.commitAndCloseTransaction();
 			
@@ -96,7 +96,8 @@ class RubyCrawler  {
 			}
 		}
 		if (modelDir!=null) {
-			loader.visitSchema(new URL("https://github.com/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath()));	
+			URL urlSchema = gh.newURL("github.com", "/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath(), "");
+			loader.visitSchema(urlSchema);	
 			List<Dir> all = modelDir.toLeafList();
 			for (Dir sourceDir:all) {			
 				URL furl = gh.newURL("github.com","/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+sourceDir.getPath(),null);						

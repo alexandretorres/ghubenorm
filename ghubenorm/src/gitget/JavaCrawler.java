@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -48,9 +49,10 @@ public class JavaCrawler {
 		
 		//String repo ="facebook/react-native";
 		//String repo ="kmahaley/MSD_File_Sharing";
-		//String repo ="travis/cosmo";
+		String repo ="travis/cosmo";
 		//String repo = "apache/felix";
-		String repo ="apache/camel";
+		//String repo ="apache/camel";
+		
 		//ConfigDAO.config(new ConfigNop());
 		//https://github.com/rocioemera/SubscriptionSystem
 	
@@ -141,7 +143,7 @@ public class JavaCrawler {
 	protected void readAllJavaFiles(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		for (Dir f:jrepo.getRoot().toLeafList()) {
 			if (f.children==null || f.children.isEmpty()) {
-				URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+f.getPath(),null)).toURL();			
+				URL url = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+f.getPath(),null);			
 				loader.load(url);
 				LOG.info("loaded "+f.getPath());
 			}
@@ -151,8 +153,12 @@ public class JavaCrawler {
 		int p=1;
 		int total=0;
 		do {
+			URL url = gh.newURL("api.github.com","/search/code", "page=" + p + "&per_page=100"
+					+ "&q=javax.persistence+in:file+language:java+repo:" + jrepo.getRepo().getName() + "&access_token=" + gh.oauth);
+			/*
 			URL url = new URL("https://api.github.com/search/code?page=" + p + "&per_page=100"
 					+ "&q=javax.persistence+in:file+language:java+repo:" + jrepo.getRepo().getName() + "&access_token=" + gh.oauth);
+			*/
 			//try (InputStream is = url.openStream(); JsonReader rdr = Json.createReader(is)) {
 			try (JsonReader rdr = gh.callApi(url,true)) {
 				JsonObject obj = rdr.readObject();
@@ -162,7 +168,7 @@ public class JavaCrawler {
 	
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
 					String path = result.getString("path");
-					URL furl = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null)).toURL();			
+					URL furl = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null);			
 					loader.load(furl);
 					//TODO: load on demand (?) BUT is it needed? all classes import javax.persistence
 					/**
@@ -179,6 +185,7 @@ public class JavaCrawler {
 		
 	}
 	protected void findPOMArtifacts(JavaRepo jrepo,String path) {
+		URLConnection connection = null;
 		try { //https://raw.githubusercontent.com/kmahaley/MSD_File_Sharing/master/WHAM%20project%20war/WHAM/pom.xml
 			/*String fil=Request.Get("https://raw.githubusercontent.com/kmahaley/MSD_File_Sharing/master/WHAM%20project%20war/WHAM/pom.xml")
 	        .connectTimeout(1000)
@@ -187,8 +194,9 @@ public class JavaCrawler {
 			*/
 			//
 			
-			URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null)).toURL();			
-			try (BufferedReader in = new BufferedReader( new InputStreamReader(url.openStream()))) {	
+			URL url = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null);			
+			connection = url.openConnection();
+			try (BufferedReader in = new BufferedReader( new InputStreamReader(connection.getInputStream()))) {	
 				
 				for (String st=in.readLine();st!=null;st=in.readLine()) {				
 					for (String art:ORM_ARTIFACTS) {
@@ -201,6 +209,9 @@ public class JavaCrawler {
 			} 
 			
 		} catch (Exception e) {
+			String msg = gh.getErrorStream(connection);
+			if (msg!=null)
+				LOG.warning("Error stream:" +msg);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 	
@@ -245,7 +256,8 @@ public class JavaCrawler {
 		jrepo.setRoot(root2);
 	}
 	protected String findPackage(JavaRepo jrepo,String leafPath) throws MalformedURLException, URISyntaxException {
-		URL url = (new URI("https","github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+leafPath,null)).toURL();
+		URL url = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+leafPath,null);
+				
 		//URL url = new URL("https://github.com/"+jrepo.getRepo().getName()+ "/raw/master"+leafPath);
 		JCompilationUnit unit= loader.load(url);	
 		if (unit==null) {

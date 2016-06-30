@@ -4,11 +4,15 @@ import static gitget.Log.LOG;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.logging.Level;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
+
+import gitget.GitHubCaller;
 
 
 
@@ -37,14 +41,25 @@ public class JavaLoader {
 		}
 	}
 	protected void doLoad(JCompilationUnit comp,URL url) throws IOException {		    
-		try (InputStream in =  url.openStream()) {	
-			CompilationUnit cu = JavaParser.parse(in);
-	        visitor.setComp(comp);
-	        cu.accept(visitor, null);
+		URLConnection connection=null;
+		try {
+			connection=url.openConnection();
+		
+			try (InputStream in =  connection.getInputStream()) {	
+				CompilationUnit cu = JavaParser.parse(in);
+		        visitor.setComp(comp);
+		        cu.accept(visitor, null);
+				
+			} catch (ParseException pe) {
+				LOG.log(Level.WARNING,pe.getMessage(),pe);
+			}	
+		} catch (IOException iex) {
+			String msg = GitHubCaller.instance.getErrorStream(connection);
+			if (msg!=null)
+				LOG.warning("Error stream:" +msg);
+			throw new IOException(iex);
 			
-		} catch (ParseException pe) {
-			LOG.log(Level.WARNING,pe.getMessage(),pe);
-		}	
+		}
 		//LOG.info("compilation unit:\n"+comp);	    
 	    return;		
 	}

@@ -33,7 +33,7 @@ public class GitCrawlerTest extends GitHubCrawler {
 					String name = result.getString("name");
 					LOG.info(cnt+" "+name+":"+result.getString("full_name")+
 							"owner:"+result.getJsonObject("owner").getString("login"));
-					LOG.info("-----------"+gh.limits);
+					LOG.info("-----------"+gh.getLimits());
 					LOG.info("-----------");
 					cnt++;				
 				}

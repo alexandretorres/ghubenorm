@@ -23,6 +23,7 @@ import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
+import javax.print.attribute.standard.MediaSize.Other;
 
 import dao.ConfigDAO;
 import db.jpa.JPA_DAO;
@@ -45,7 +46,7 @@ public class GitHubCrawler implements Runnable {
 	RubyCrawler ruby = new RubyCrawler();
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
-	public static final long MAX_REPOS=2000;	
+	public static final long MAX_REPOS=5000;	
 	
 	
 	public static void main(String[] args) {		
@@ -113,18 +114,27 @@ public class GitHubCrawler implements Runnable {
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
 					
 					String fullName = result.getString("full_name");
-					String name = result.getString("name");
+					
+					
+					boolean fork = result.getBoolean("fork");
+					
+					
 					boolean priv = result.getBoolean("private");
 					id = result.getInt("id");
-					LOG.info(cnt+" "+name+":"+fullName+
+					LOG.info(cnt+" "+":"+fullName+
 							" owner:"+result.getJsonObject("owner").getString("login"));
+					
+					cnt++;
 					if (priv) {
 						LOG.info("<Private>");
 						continue;
 					}
+					if (fork) {
+						LOG.info(fullName+" is a FORK repo. Skipping");
+						continue;
+					}
+					LOG.info("-----------"+gh.getLimits());
 					
-					LOG.info("-----------"+gh.limits);
-					cnt++;
 					//----
 					//Language lang = mainLanguage(fullName);
 					//
@@ -133,6 +143,11 @@ public class GitHubCrawler implements Runnable {
 					result = gh.getRepoInfo(fullName);
 					if (result==null)
 						continue;
+					JsonValue parent = result.get("parent");
+					if (parent==JsonValue.NULL) {
+						LOG.severe("repo "+fullName+" has a parent but is not FORKED. Skipping");
+						continue;
+					}
 					
 					JsonValue lang_obj = result.get("language");
 					Language lang =Language.UNKNOWN;
@@ -194,188 +209,4 @@ public class GitHubCrawler implements Runnable {
 	}
 
 }
-class GitHubCaller {
-	static String oauth = Auth.getProperty("oauth");
-	public static final int MAX_TRIES=2; 
-	private int tries=0;
-	APILimit limits;
-	public static final GitHubCaller instance = new GitHubCaller();
-	private GitHubCaller() {		
-	}	
-	public URL newURL(String host,String path,String query) throws MalformedURLException, URISyntaxException {
-		return (new URI("https",host,path,query,null)).toURL();			
-		
-	}
-	protected JsonObject getRepoInfo(String path)  {
-		try {
-			URL url = newURL("api.github.com","/repos/"+path,"access_token="+oauth);		
-			try (JsonReader rdr = callApi(url,false)) {
-				JsonObject obj =rdr.readObject();	
-				return obj;
-			}
-		} catch (Exception ex) {
-			LOG.log(Level.WARNING, ex.getMessage(), ex);
-			return null;
-		}
-		
-	}
-	public JsonObject listFileTree(String path,String branch) throws IOException, URISyntaxException {
-		URL url =newURL("api.github.com","/repos/"+path+"/git/trees/"+branch,"recursive=1&access_token="+oauth);
-		//URL url = new URL("https://api.github.com/repos/"+path+"/git/trees/"+branch+"?recursive=1&access_token="+oauth);
-		
-		try (JsonReader rdr = callApi(url,false)) {///Json.createReader(url.openStream())) {
-			JsonObject res = rdr.readObject();
-			return res;
-		}
-		
-	}
-	/**
-	 * TODO: 
-	 * -one minute for search limit reached
-	 * -ten minutes for general limt.
-	 * the reset time is on UTC seconds.
-	 * @param url
-	 * @param isSearch
-	 * @return
-	 */
-	public JsonReader callApi(URL url,boolean isSearch) {	
-		HttpURLConnection connection=null;
-		try {
-			if (limits==null)
-				limits = retrieveLimits();
-			if (isSearch) {				
-				while (limits.search<=0) {
-					long time = System.currentTimeMillis()/1000;
-					time = limits.searchReset-time;
-					if (time>0) {
-						time++;
-						LOG.warning("Sleeping searches for "+time+" seconds...");
-						Thread.sleep(time*1000);
-					} else {
-						Thread.sleep(1000);
-					}
-					limits = retrieveLimits();
-				}
-				limits.search--;
-			} else {				
-				while (limits.core<=0) {
-					long time = System.currentTimeMillis()/1000;
-					time = limits.coreReset-time;
-					if (time>0) {
-						time++;
-						LOG.warning("Sleeping core for "+time+" seconds...");
-						Thread.sleep(time*1000);
-					} else {
-						Thread.sleep(1000);
-					}
-					limits = retrieveLimits();
-					
-				}
-				limits.core--;
-			}
-			connection = (HttpURLConnection)url.openConnection();
-			
-			
-			InputStream is = connection.getInputStream();
-			JsonReader rdr = Json.createReader(is);
-			tries=0;
-			return rdr;
-		} catch (FileNotFoundException fex) {
-			LOG.info("File not found:"+url);
-			return null;
-		} catch (IOException iex) {
-			/*
-			tries++;
-			try {
-				LOG.info("Sleeping for half a minute..."+tries);
-				Thread.sleep(30000);
-				if (tries<=MAX_TRIES)
-					return callApi(url,isSearch);
-			} catch (Exception tex) {
-				LOG.log(Level.SEVERE,tex.getMessage(),tex);					
-			}*/			
-			LOG.log(Level.WARNING,iex.getMessage(),iex);
-			try {
-				//APILimit curLimits = limits;
-				LOG.warning("Current Limits:" +limits);
-				limits = retrieveLimits();
-				LOG.warning("True Limits:   "+limits);
-			} catch (Exception e) {	}			
-			
-			if (connection!=null) {
-				try {
-					InputStream error = connection.getErrorStream();
-					java.util.Scanner s = new java.util.Scanner(error).useDelimiter("\\A");
-				    if (s.hasNext())
-				    	LOG.warning("Error stream:" +s.next());
-				} catch (Exception e) {	}
-				
-				String st = "Headers:";
-				for (Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
-				    st+=(header.getKey() + "=" + header.getValue())+"\n";
-				}
-				LOG.fine(st);
-				try {
-					LOG.warning("HTTP response:"+connection.getResponseMessage());
-				} catch (IOException e) {	}	
-			
-				
-			}
-			if (limits.core<=1 || limits.search<=1) {
-				tries++;				
-				if (tries<=MAX_TRIES)
-					return callApi(url,isSearch);
-			}
-			return null;
-			//throw new RuntimeException(iex);
-		} catch (Exception ex) {
-			throw new RuntimeException(ex);
-		}
-	}
-	public APILimit retrieveLimits() {
-		APILimit ret = null;
-		try {
-			URL url = new URL("https://api.github.com/rate_limit?access_token="+oauth);
-			try (JsonReader rdr = Json.createReader(url.openStream())) {
-				ret = new APILimit(rdr);
-				//JsonObject obj = rdr.readObject();
-				//JsonObject res = obj.getJsonObject("resources");
-				LOG.info(ret.toString());
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			LOG.log(Level.WARNING,e.getMessage(),e);
-		}
-		return ret;
-	}
-}
-class APILimit {
-	long time;
-	int core;
-	int coreLimit;
-	long coreReset;
-	int search;
-	int searchLimit;	
-	long searchReset;
-	public APILimit(JsonReader rdr) {
-		time = System.currentTimeMillis()/1000;
-		JsonObject obj = rdr.readObject();
-		JsonObject res = obj.getJsonObject("resources");
-		JsonObject jcore = res.getJsonObject("core");
-		this.core = jcore.getInt("remaining");
-		this.coreLimit = jcore.getInt("limit");
-		this.coreReset = jcore.getInt("reset");
-		JsonObject s = res.getJsonObject("search");
-		this.search = s.getInt("remaining");
-		this.searchLimit = s.getInt("limit");
-		this.searchReset = s.getInt("reset");
-		
-	}
-	@Override
-	public String toString() {
-		return "APILimit [time=" + time + ", core=" + core + ", coreLimit=" + coreLimit + ", coreReset=" + coreReset
-				+ ", search=" + search + ", searchLimit=" + searchLimit + ", searchReset=" + searchReset + "]";
-	}
-	
-}
+
