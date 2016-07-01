@@ -79,6 +79,7 @@ public class JavaCrawler {
 			Repo repo = new Repo(Language.JAVA);			
 			repo.setBranch(repoJson.getString("default_branch"));
 			repo.setName(fullName);			
+			repo.setUrl(repoJson.getString("html_url"));
 			repo.setPublicId(repoJson.getInt("id"));
 			JavaRepo jrepo = new JavaRepo(repo);			
 			Dir root = Dir.newRoot();

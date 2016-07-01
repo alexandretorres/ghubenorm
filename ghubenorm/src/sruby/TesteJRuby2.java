@@ -113,7 +113,7 @@ public class TesteJRuby2 {
 			dao.beginTransaction();
 			Repo repo = new Repo(Language.RUBY);
             repo.setName("abc123");
-            repo.setUrl("http");
+         //   repo.setUrl("http");
             dao.persit(repo);
             dao.find(repo.getId());
             System.out.println(dao.findByURL("http"));

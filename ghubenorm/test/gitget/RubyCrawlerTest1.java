@@ -18,8 +18,10 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 
 	@Test
 	public void test() {
-		String repo = "francois/acctsoft";
-		processRepo(gh.getRepoInfo(repo) ,repo);		
+		String repo = 
+				"gustin/lovd-by-less";
+				//"francois/acctsoft";
+		processRepo(gh.getRepoInfo(repo) ,repo);
 		
 	}
 

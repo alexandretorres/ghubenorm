@@ -48,7 +48,7 @@ public class JavaLoaderTest {
 			
 			DAOInterface<Repo> daoRepo = ConfigDAO.getDAO(Repo.class);
 			jrepo.getRepo().setName("TEST");
-			jrepo.getRepo().setUrl("");
+			
 			daoRepo.beginTransaction();
 			daoRepo.persit(jrepo.getRepo());
 			//--

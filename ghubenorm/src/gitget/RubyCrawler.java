@@ -47,14 +47,22 @@ class RubyCrawler  {
 			Dir root = Dir.newRoot();
 			for (JsonObject res: result.getJsonArray("tree").getValuesAs(JsonObject.class)) {
 				String path  =res.getString("path");
+				if (path.endsWith(".rb")) {
+					int size = res.getInt("size");
+					if (size==0)
+						continue;			
+					root.register(path);
+				} else 
+					continue;
 				if (path.equals("db/schema.rb")) {
 					repo.setConfigPath(path);
 				} else if (repo.getConfigPath()==null && path.endsWith("db/schema.rb")) {
 					repo.setConfigPath(path);
+				} else if (path.endsWith("db/schema.rb") && repo.getConfigPath()!=null 
+							&& repo.getConfigPath().contains("/test/") && !path.contains("/test/")) {
+					repo.setConfigPath(path);
 				}
-				if (path.endsWith(".rb")) {
-					root.register(path);
-				}
+				
 			}			
 			daoRepo.beginTransaction();			
 			
@@ -82,7 +90,7 @@ class RubyCrawler  {
 	public RubyRepo loadRepo(RubyRepo rrepo) throws MalformedURLException, URISyntaxException {	
 		Repo repo = rrepo.getRepo();
 		//readModelEntry(null,repo,"app/models");			
-		Dir modelDir = rrepo.getRoot().get("app/models");
+		Dir modelDir = rrepo.getRoot().find("app/models");
 		if (modelDir==null) {
 			List<Dir> candList = rrepo.getRoot().toAllList();
 			candList = candList.stream().filter(d->d.children!=null && !d.children.isEmpty() && d.getPath().endsWith("app/models")).collect(Collectors.toList());
@@ -97,7 +105,8 @@ class RubyCrawler  {
 		}
 		if (modelDir!=null) {
 			URL urlSchema = gh.newURL("github.com", "/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath(), "");
-			loader.visitSchema(urlSchema);	
+			if (loader.visitSchema(urlSchema)==null)
+				return rrepo;	
 			List<Dir> all = modelDir.toLeafList();
 			for (Dir sourceDir:all) {			
 				URL furl = gh.newURL("github.com","/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+sourceDir.getPath(),null);						

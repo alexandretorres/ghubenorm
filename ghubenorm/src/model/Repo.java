@@ -168,14 +168,19 @@ public class Repo {
 		}
 	};
 	public void print() {
-		System.out.println("-----------------");
+		
 		StringWriter sw =new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
-		
+		LOG.info("{Repo:Start}{name:"+this.getName()+"}----------------");
 		try {
 			List<MClass> classList = new ArrayList<MClass>(getClasses());
+			if (classList.isEmpty()) {
+				LOG.info("no classes");
+				return;
+			}
 			Collections.sort(classList, mClassComp);
 			//PrintWriter pw =new PrintWriter(System.out);
+			pw.println("{Classes:}");
 			for (MClass cl:classList) {
 				pw.println("=====================================");
 				pw.print((cl.getPackageName()==null ? "" : cl.getPackageName()+".")+cl.getName());
@@ -263,11 +268,13 @@ public class Repo {
 				}
 				pw.flush();
 			}
-		} catch (Exception ex) {
+		} catch (Exception ex) {			
 			LOG.log(Level.SEVERE, ex.getMessage(), ex);
+		} finally {
+			pw.flush();
+			LOG.log(Level.INFO, sw.toString());
+			LOG.info("{Repo:End}----------------");
 		}
-		pw.flush();
-		LOG.log(Level.INFO, sw.toString());
-		//System.out.println(sw.getBuffer());
+			//System.out.println(sw.getBuffer());
 	}
 }

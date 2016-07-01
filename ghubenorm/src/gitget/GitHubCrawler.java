@@ -46,7 +46,7 @@ public class GitHubCrawler implements Runnable {
 	RubyCrawler ruby = new RubyCrawler();
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
-	public static final long MAX_REPOS=5000;	
+	public static final long MAX_REPOS=100000;	
 	
 	
 	public static void main(String[] args) {		
