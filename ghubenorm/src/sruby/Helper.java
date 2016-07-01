@@ -5,8 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
+import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
+import org.jruby.ast.DNode;
 import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FloatNode;
@@ -20,6 +22,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.RationalNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
+import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.util.KeyValuePair;
 
@@ -55,7 +58,7 @@ public class Helper {
 			return s;
 		} else if (node instanceof FixnumNode) {
 			return ""+((FixnumNode)node).getValue();
-		} else if (node instanceof ListNode) {
+		} else if (node instanceof ArrayNode || node instanceof ZArrayNode) { //TODO: Maybe it should be ArrayNode OR ZArrayNode. ListNode is too broad
 			ListNode lst = (ListNode) node;
 			if (lst.children().length==1)
 				return getValue(lst.children()[0]);
@@ -73,7 +76,19 @@ public class Helper {
 					LOG.log(Level.SEVERE,ex.getMessage(),ex);						
 				}
 				return "";
-			}		
+			}	
+		} else if (node instanceof DNode) {
+			DNode dnod = (DNode) node;
+			try {
+				List<Node> children = Arrays.asList(dnod.children());
+				String ret = children.stream().
+						map(n->getValue(n)).
+						reduce(null,(a, b) -> (a==null ? b : a+ b) );
+				return ret;
+			} catch (Exception ex) {
+				LOG.log(Level.SEVERE,ex.getMessage(),ex);						
+			}
+			return "";
 		} else if (node instanceof CallNode) {
 			CallNode cn = (CallNode) node;
 			return getValue(cn.getReceiverNode())+"."+cn.getName();
@@ -118,6 +133,7 @@ public class Helper {
 			buf.append(rn.getDenominator());	
 			return buf.toString();
 		} else {
+			LOG.warning("could not get value for ruby node of type "+node.getClass());
 			return "";  //visit(node);
 			
 		}		

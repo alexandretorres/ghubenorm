@@ -3,6 +3,7 @@ package sruby;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
+import dao.nop.ConfigNop;
 import db.daos.RepoDAO;
 
 import db.jpa.JPA_DAO;
@@ -42,8 +43,9 @@ public class TesteJRuby2 {
 	public static void main(String[] args)  {
 		Node n=null;
 		try {
-			ConfigDAO.config(JPA_DAO.instance);
-			RepoDAO dao = ConfigDAO.getDAO(Repo.class);
+			//ConfigDAO.config(JPA_DAO.instance);
+			ConfigDAO.config(new ConfigNop());
+			DAOInterface<Repo> dao = ConfigDAO.getDAO(Repo.class);
 			
 			dao.beginTransaction();
 			//testeDB();	

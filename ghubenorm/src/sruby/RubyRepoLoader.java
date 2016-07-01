@@ -5,12 +5,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.logging.Level;
 
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.SyntaxException;
 
+import gitget.GitHubCaller;
 import gitget.Log;
 
 import static gitget.Log.LOG;
@@ -53,10 +55,17 @@ public class RubyRepoLoader {
         return n;
 	}
 	public Node visitSchema(URL url) {
-		try (InputStream in =  url.openStream()) {		
-			return visitSchema(in);
-		} catch (Exception ex) {		
+		URLConnection connection=null;
+		try {
+			connection=url.openConnection();
+			try (InputStream in =  connection.getInputStream()) {		
+				return visitSchema(in);
+			}
+		} catch (Exception ex) {	
+			String msg = GitHubCaller.instance.getErrorStream(connection);			
 			LOG.warning("could not visit file "+url);
+			if (msg!=null)
+				LOG.warning("Error stream:" +msg);
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);				
 			return null;		
 		}
@@ -71,15 +80,21 @@ public class RubyRepoLoader {
 	}
 	
 	public Node visitFile(URL url) {
-		try (InputStream in =  url.openStream()) {	
-			return visitFile(in);			
-		} catch (SyntaxException sex) {
-			LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
-			LOG.log(Level.SEVERE,sex.getMessage(),sex);	
-			
+		URLConnection connection=null;
+		try {
+			connection=url.openConnection();
+			try (InputStream in =  connection.getInputStream()) {	
+				return visitFile(in);			
+			} catch (SyntaxException sex) {
+				LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
+				LOG.log(Level.SEVERE,sex.getMessage(),sex);	
+			}	
 			return null;
 		} catch (Exception ex) {	
+			String msg = GitHubCaller.instance.getErrorStream(connection);			
 			LOG.warning("could not visit file "+url);
+			if (msg!=null)
+				LOG.warning("Error stream:" +msg);
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 			
 			return null;		

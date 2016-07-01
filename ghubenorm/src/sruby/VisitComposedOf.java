@@ -58,10 +58,8 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 					col = tab.getColumns().stream().
 						filter(c->c.getName().equalsIgnoreCase(str[0]))
 						.findAny().orElse(null);
-				if (col==null) { // the column may be defined by the specizalizations
-					
+				if (col==null) { // the column may be defined by the specizalizations (like a @Column in a @MappedSuperClass
 					col = daoColumn.persit( MColumn.newMColumn().setName(str[0]));
-					
 				}
 				MProperty embedRef = type.getProperties().stream().
 						filter(p->p.getName().equalsIgnoreCase(str[1])).findAny().orElse(null);
@@ -104,22 +102,25 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 			HashNode hn = (HashNode) arg;
 			for (KeyValuePair<Node, Node> pair:hn.getPairs()) {				
 				String name=Helper.getName(pair.getKey());
-				Node valueNode = pair.getValue();					
-				String value = Helper.getValue(valueNode);
+				Node valueNode = pair.getValue();				
 		
 				MAssociationDef def=null;
 				switch (name.toLowerCase()) {
 					case "mapping": 
 						ArrayNode an = (ArrayNode) valueNode;
-						args = new String[an.childNodes().size()][2];
-						int i=0;
-						for (Node n:an.childNodes()) {
-							String[] values= Helper.getValue(n).split(",");
-							args[i++] = values;					
-							
-							//System.out.println("value:"+value);
+						if (an.children().length==2 && !(an.children()[0] instanceof ArrayNode)) {
+							args = new String[1][2];
+							args[0] = new String[] {Helper.getValue(an.children()[0]),Helper.getValue(an.children()[1])};							
+						} else {
+							args = new String[an.children().length][2];
+							int i=0;
+							for (Node n:an.children()) {
+								String[] values= Helper.getValue(n).split(",");
+								args[i++] = values;					
+								
+								//System.out.println("value:"+value);
+							}
 						}
-					
 						break;
 					
 				}

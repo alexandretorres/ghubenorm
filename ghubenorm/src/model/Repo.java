@@ -7,7 +7,11 @@ import static gitget.Log.LOG;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -120,97 +124,145 @@ public class Repo {
 		this.sources = sources;
 	}*/
 	//--------------------
+	
+	static Comparator<MProperty> mPropComp = new Comparator<MProperty>() {
+		/*Compares its two arguments for order. Returns a negative integer,
+		 *  zero, or a positive integer as the first argument is less than, equal to, or greater than the second.*/
+		@Override
+		public int compare(MProperty p1, MProperty p2) {
+			int ret = p1.getName().compareTo(p2.getName());
+			if (p1.isPk() && p2.isPk()) {
+				return ret;
+			}else if (p1.isPk() && !p2.isPk()) {
+				return -1;
+			}else if (!p1.isPk() && p2.isPk()) {
+				return 1;
+			}else {
+				return ret;
+			}
+			
+		}
+	};
+	
+	static Comparator<MClass> mClassComp = new Comparator<MClass>() {
+		/*Compares its two arguments for order. Returns a negative integer,
+		 *  zero, or a positive integer as the first argument is less than, equal to, or greater than the second.*/
+		@Override
+		public int compare(MClass o1, MClass o2) {
+			int ret =0;
+			//o1<o2 => negative // return "o1-o2"
+			String pak1 = o1.getPackageName();
+			String pak2 = o1.getPackageName();
+			if (pak1!=null) {
+				if (pak2==null)
+					return 1;
+				ret = pak1.compareTo(pak2);
+				if (ret!=0)
+					return ret;
+			}
+			String n1 = o1.getName();
+			String n2 = o2.getName();
+			ret = n1.compareTo(n2);
+			return ret;
+			
+		}
+	};
 	public void print() {
 		System.out.println("-----------------");
 		StringWriter sw =new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
 		
 		try {
-		//PrintWriter pw =new PrintWriter(System.out);
-		for (MClass cl:getClasses()) {
-			pw.println("=====================================");
-			pw.print((cl.getPackageName()==null ? "" : cl.getPackageName()+".")+cl.getName());
-			if (cl.isAbstract())
-				pw.print("[Abstract]");
-			if (cl.getSuperClass()!=null) {
-				pw.print(" extends " + cl.getSuperClass().getName());
-			}
-			MTable tab=null;
-			if (cl.isPersistent()) {
-				pw.print(" | ");
-				if (cl.getPersistence().getSource() instanceof MTable) {
-					tab = (MTable) cl.getPersistence().getSource() ;
-					pw.print(tab.getName());
+			List<MClass> classList = new ArrayList<MClass>(getClasses());
+			Collections.sort(classList, mClassComp);
+			//PrintWriter pw =new PrintWriter(System.out);
+			for (MClass cl:classList) {
+				pw.println("=====================================");
+				pw.print((cl.getPackageName()==null ? "" : cl.getPackageName()+".")+cl.getName());
+				if (cl.isAbstract())
+					pw.print("[Abstract]");
+				if (cl.getSuperClass()!=null) {
+					pw.print(" extends " + cl.getSuperClass().getName());
 				}
-			}
-			pw.println("\n________________________________");
-			for (MProperty p:cl.getProperties()) {
-				if (p.isPk())
-					pw.print("<PK>");
-				pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknow>>"));
-				//TODO:check Java not persitent can have decl.
-				//if (cl.isPersistent()) {					
-					if (p.getColumnMapping()!=null) {
-						MColumnDefinition col = p.getColumnMapping().getColumnDefinition();
-						pw.print(" | "+Optional.ofNullable(col.getName()).orElse(""));
-						if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
-							pw.print(":"+col.getColummnDefinition());
-						pw.print( col.getLength()==null ? "" : "("+col.getLength()+")");
+				MTable tab=null;
+				if (cl.isPersistent()) {
+					pw.print(" | ");
+					if (cl.getPersistence().getSource() instanceof MTable) {
+						tab = (MTable) cl.getPersistence().getSource() ;
+						pw.print(tab.getName());
 					}
-					MAssociation assoc = p.getAssociation();
-					if (assoc==null)
-						assoc = p.getToAssociation();
-					if (assoc!=null) {						
-						MProperty inv = assoc.getInverse(p);
-						if (p.getAssociationMapping()!=null) {
-							pw.print("( ");
-							boolean f=false;
-							for (MJoinColumn jc:p.getAssociationMapping().getValue().getJoinColumns()) {
-								MColumnDefinition colDef = jc.getColumnForProperty(p);
-								MColumnDefinition invColDef = jc.getColumnForProperty(inv);
-								if (f)
-									pw.print(",");
-								if (colDef!=null)
-									pw.print(colDef.getName());
-								if (invColDef!=null)									 
-									pw.print("="+Optional.of(invColDef.getTable()).map(t->t.getName()+".").orElse("")+invColDef.getName());
-								
-								f=true;
+				}
+				pw.println("\n________________________________");
+				List<MProperty> propList = new ArrayList<MProperty>(cl.getProperties());
+				Collections.sort(propList, mPropComp);
+				
+				for (MProperty p:propList) {
+					if (p.isPk())
+						pw.print("<PK>");
+					pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknow>>"));
+					//TODO:check Java not persitent can have decl.
+					//if (cl.isPersistent()) {					
+						if (p.getColumnMapping()!=null) {
+							MColumnDefinition col = p.getColumnMapping().getColumnDefinition();
+							pw.print(" | "+Optional.ofNullable(col.getName()).orElse(""));
+							if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
+								pw.print(":"+col.getColummnDefinition());
+							pw.print( col.getLength()==null ? "" : "("+col.getLength()+")");
+						}
+						MAssociation assoc = p.getAssociation();
+						if (assoc==null)
+							assoc = p.getToAssociation();
+						if (assoc!=null) {						
+							MProperty inv = assoc.getInverse(p);
+							if (p.getAssociationMapping()!=null) {
+								pw.print("( ");
+								boolean f=false;
+								for (MJoinColumn jc:p.getAssociationMapping().getValue().getJoinColumns()) {
+									MColumnDefinition colDef = jc.getColumnForProperty(p);
+									MColumnDefinition invColDef = jc.getColumnForProperty(inv);
+									if (f)
+										pw.print(",");
+									if (colDef!=null)
+										pw.print(colDef.getName());
+									if (invColDef!=null)									 
+										pw.print("="+Optional.of(invColDef.getTable()).map(t->t.getName()+".").orElse("")+invColDef.getName());
+									
+									f=true;
+								}
+								pw.print(") ");							
 							}
-							pw.print(") ");							
+							if (p.isTransient())
+								pw.print("--(transient)---");
+							else
+								pw.print("---------------");
+							try {							
+								pw.print(p.getTypeClass().getName()+(inv==null ? "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
+							} catch (Exception ex) {
+								LOG.log(Level.SEVERE,ex.getMessage(),ex);								
+							}
+						} else if (p.isEmbedded()) {
+							pw.print(" <Embbeded> ");
+							
 						}
-						if (p.isTransient())
-							pw.print("--(transient)---");
-						else
-							pw.print("---------------");
-						try {							
-							pw.print(p.getTypeClass().getName()+(inv==null ? "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
-						} catch (Exception ex) {
-							LOG.log(Level.SEVERE,ex.getMessage(),ex);								
+					//}
+					pw.println();
+				}
+				if (!cl.getOverrides().isEmpty()) {
+					pw.println("____________");				
+					pw.println("Overrides:");			
+					for (MOverride ov: cl.getOverrides()) {
+						if (ov instanceof MAttributeOverride) {
+							MAttributeOverride ao = (MAttributeOverride) ov;	
+							Stream<String> st1 = ao.getProperties().stream().map(MProperty::getName);
+							pw.print(String.join(".",  st1.toArray(String[]::new)));					
+							pw.println(" to column "+ao.getColumn().getName());
+						} else {
+							
 						}
-					} else if (p.isEmbedded()) {
-						pw.print(" <Embbeded> ");
-						
-					}
-				//}
-				pw.println();
-			}
-			if (!cl.getOverrides().isEmpty()) {
-				pw.println("____________");				
-				pw.println("Overrides:");			
-				for (MOverride ov: cl.getOverrides()) {
-					if (ov instanceof MAttributeOverride) {
-						MAttributeOverride ao = (MAttributeOverride) ov;	
-						Stream<String> st1 = ao.getProperties().stream().map(MProperty::getName);
-						pw.print(String.join(".",  st1.toArray(String[]::new)));					
-						pw.println(" to column "+ao.getColumn().getName());
-					} else {
-						
 					}
 				}
+				pw.flush();
 			}
-			pw.flush();
-		}
 		} catch (Exception ex) {
 			LOG.log(Level.SEVERE, ex.getMessage(), ex);
 		}

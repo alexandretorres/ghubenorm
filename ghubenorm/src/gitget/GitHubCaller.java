@@ -176,18 +176,20 @@ public class GitHubCaller {
 		}
 	}
 	public String getErrorStream(URLConnection conn) {
-		if (conn!=null && conn instanceof HttpURLConnection) {
-			HttpURLConnection connection = (HttpURLConnection) conn;
-			
-			InputStream error = connection.getErrorStream();
-			try (java.util.Scanner s = new java.util.Scanner(error)) {
-				s.useDelimiter("\\A");
-			    if (s.hasNext()) {
-			    	String msg = s.next();
-			    	return msg;		    	
+		try {
+			if (conn!=null && conn instanceof HttpURLConnection) {
+				HttpURLConnection connection = (HttpURLConnection) conn;
+				
+				InputStream error = connection.getErrorStream();
+				try (java.util.Scanner s = new java.util.Scanner(error)) {
+					s.useDelimiter("\\A");
+				    if (s.hasNext()) {
+				    	String msg = s.next();
+				    	return msg;		    	
+				    }
 			    }
-		    }
-		}
+			}
+		} catch (Exception ex) {}
 		return null;
 	}
 	public APILimit retrieveLimits() {
