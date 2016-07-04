@@ -47,6 +47,7 @@ public class GitHubCrawler implements Runnable {
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
 	public static final long MAX_REPOS=100000;	
+	public static final long MAX_ERRORS=10;	
 	
 	
 	public static void main(String[] args) {		
@@ -61,7 +62,7 @@ public class GitHubCrawler implements Runnable {
 				JsonObject obj = rdr.readObject();
 				LOG.info(obj.toString());				
 			}
-			readByRepo();
+			readByRepo(0);
 		} catch (Throwable ex) {
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);
 		} finally {
@@ -95,9 +96,15 @@ public class GitHubCrawler implements Runnable {
 			return lang;			
 		
 	}
-	private void readByRepo() throws MalformedURLException {
+	/**
+	 * first id, usually zero.
+	 * @param id
+	 * @throws MalformedURLException
+	 */
+	private void readByRepo(long id) throws MalformedURLException {
 		long cnt=0,p=1;
-		long id=0;
+		long errorCount=0;
+		//long id=0;
 		do {
 			//GitHubCaller.instance.limits = gh.retrieveLimits();
 			URL url = new URL("https://api.github.com/repositories?since="+id+"&access_token="+gh.oauth);
@@ -110,63 +117,67 @@ public class GitHubCrawler implements Runnable {
 				if (results.isEmpty()) {
 					LOG.warning("empty results. Error? "+rdr.read());
 				}
-				
+				String fullName=null;
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
-					
-					String fullName = result.getString("full_name");
-					
-					
-					boolean fork = result.getBoolean("fork");
-					
-					
-					boolean priv = result.getBoolean("private");
-					id = result.getInt("id");
-					LOG.info(cnt+" "+":"+fullName+
-							" owner:"+result.getJsonObject("owner").getString("login"));
-					
-					cnt++;
-					if (priv) {
-						LOG.info("<Private>");
-						continue;
+					try {
+						fullName = result.getString("full_name");					
+						boolean fork = result.getBoolean("fork");					
+						boolean priv = result.getBoolean("private");
+						id = result.getInt("id");
+						LOG.info(cnt+" (ID:"+id+")"+":"+fullName+
+								" owner:"+result.getJsonObject("owner").getString("login"));
+						
+						cnt++;
+						if (priv) {
+							LOG.info("<Private>");
+							continue;
+						}
+						if (fork) {
+							LOG.info(fullName+" is a FORK repo. Skipping");
+							continue;
+						}
+						LOG.info("-----------"+gh.getLimits());					
+						//----
+						//Language lang = mainLanguage(fullName);
+						//
+						
+						//
+						result = gh.getRepoInfo(fullName);
+						if (result==null)
+							continue;
+						JsonValue parent = result.get("parent");
+						if (parent==JsonValue.NULL) {
+							LOG.severe("repo "+fullName+" has a parent but is not FORKED. Skipping");
+							continue;
+						}					
+						JsonValue lang_obj = result.get("language");
+						Language lang =Language.UNKNOWN;
+						if (lang_obj.getValueType()==ValueType.STRING) {
+							lang = Language.getLanguage(((JsonString) lang_obj).getString());
+						} else if (lang_obj.getValueType()==ValueType.ARRAY) {
+							JsonArray array = (JsonArray)lang_obj;
+							lang = Language.getLanguage(array.getString(0));
+						} else if (lang_obj.getValueType()==ValueType.NULL) {
+							// do nothing
+						} else {
+							LOG.info("unexpected language value for repo "+fullName);
+						}
+						if (lang==Language.RUBY) {
+							ruby.processRepo(result,fullName);
+						} else if (lang==Language.JAVA) {
+							java.processRepo(result, fullName);
+						}
+						fullName=null;
+					} catch (Exception ex) {
+						LOG.severe("Exception reading repo list, repo '"+fullName+"'");
+						LOG.log(Level.SEVERE,ex.getMessage(),ex);
+						LOG.info(result.toString());
+						errorCount++;
+						if (errorCount>MAX_ERRORS) {
+							LOG.severe("Error count exceeded MAX. Exiting");
+							return;
+						}
 					}
-					if (fork) {
-						LOG.info(fullName+" is a FORK repo. Skipping");
-						continue;
-					}
-					LOG.info("-----------"+gh.getLimits());
-					
-					//----
-					//Language lang = mainLanguage(fullName);
-					//
-					
-					//
-					result = gh.getRepoInfo(fullName);
-					if (result==null)
-						continue;
-					JsonValue parent = result.get("parent");
-					if (parent==JsonValue.NULL) {
-						LOG.severe("repo "+fullName+" has a parent but is not FORKED. Skipping");
-						continue;
-					}
-					
-					JsonValue lang_obj = result.get("language");
-					Language lang =Language.UNKNOWN;
-					if (lang_obj.getValueType()==ValueType.STRING) {
-						lang = Language.getLanguage(((JsonString) lang_obj).getString());
-					} else if (lang_obj.getValueType()==ValueType.ARRAY) {
-						JsonArray array = (JsonArray)lang_obj;
-						lang = Language.getLanguage(array.getString(0));
-					} else if (lang_obj.getValueType()==ValueType.NULL) {
-						// do nothing
-					} else {
-						LOG.info("unexpected language value for repo "+fullName);
-					}
-					if (lang==Language.RUBY) {
-						ruby.processRepo(result,fullName);
-					} else if (lang==Language.JAVA) {
-						java.processRepo(result, fullName);
-					}
-					
 				}
 			}
 			p++;

@@ -19,7 +19,10 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 	@Test
 	public void test() {
 		String repo = 
-				"gustin/lovd-by-less";
+				//"fernandomachado/crm";
+				"ferblape/query_memcached";
+				//"fabioespindula/crm";
+				//"gustin/lovd-by-less";
 				//"francois/acctsoft";
 		processRepo(gh.getRepoInfo(repo) ,repo);
 		

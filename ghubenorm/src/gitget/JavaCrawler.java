@@ -49,10 +49,10 @@ public class JavaCrawler {
 		
 		//String repo ="facebook/react-native";
 		//String repo ="kmahaley/MSD_File_Sharing";
-		String repo ="travis/cosmo";
+		//String repo ="travis/cosmo";
 		//String repo = "apache/felix";
 		//String repo ="apache/camel";
-		
+		String repo = "mheath/adbcj"; //503 error?
 		//ConfigDAO.config(new ConfigNop());
 		//https://github.com/rocioemera/SubscriptionSystem
 	

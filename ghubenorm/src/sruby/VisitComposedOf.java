@@ -23,6 +23,7 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 	private MClass clazz;
 	private IArgumentNode node;
 	private String[][] args;
+	private MClass type ;
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
 	
@@ -42,7 +43,7 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 		String pname = Helper.getValue(nameNode);
 		String typeName = pname;
 		MProperty prop=daoProp.persit(clazz.newProperty().setName(pname).setMax(1));
-		MClass type = repo.getClazzFromUnderscore(typeName);
+		type = repo.getClazzFromUnderscore(typeName);
 		if (type!=null)
 			prop.setTypeClass(type);
 		prop.setEmbedded(true);
@@ -52,7 +53,17 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 			// search for inverse_of and other stuff
 		}
 		if (type!=null) {
-			for (String[] str:this.args) {				
+			if (args==null) { //No mapping, args is the property list
+				args = new String[type.getProperties().size()][1];
+				int i=0;
+				for (MProperty p:type.getProperties()) {
+					args[i][0] = p.getName();
+					i++;
+				}
+			}
+			for (int i=0;i<args.length;i++) {
+				String[] str = args[i];
+				//for (String[] str:this.args) {				
 				MColumn col=null;
 				if (tab!=null)
 					col = tab.getColumns().stream().
@@ -61,9 +72,29 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 				if (col==null) { // the column may be defined by the specizalizations (like a @Column in a @MappedSuperClass
 					col = daoColumn.persit( MColumn.newMColumn().setName(str[0]));
 				}
-				MProperty embedRef = type.getProperties().stream().
+				MProperty embedRef=null;
+				final String delName= str[0];
+				if (str.length>1) {
+					embedRef = type.getProperties().stream().
 						filter(p->p.getName().equalsIgnoreCase(str[1])).findAny().orElse(null);
-				clazz.override(MAttributeOverride.newMAttributeOverride(col,prop,embedRef));
+								
+				} else if (type.getProperties().size()>i) {
+					embedRef = type.getProperties().get(i);
+				}
+				
+				//--
+				
+				if (embedRef!=null) {
+					clazz.override(MAttributeOverride.newMAttributeOverride(col,prop,embedRef));
+					//remove the property
+					
+					MProperty delProp = clazz.getProperties().stream().
+							filter(p->p.getName().equalsIgnoreCase(delName) && !p.equals(prop)).
+							findFirst().orElse(null);
+					if (delProp!=null) {
+						delProp.getParent().getProperties().remove(delProp);						
+					}
+				}
 			}
 			for (MClass sub:clazz.getSpecializations()) {
 				checkSubClass(clazz,sub,prop);
@@ -106,6 +137,12 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 		
 				MAssociationDef def=null;
 				switch (name.toLowerCase()) {
+					case "class_name": 
+						String value= Helper.getValue(valueNode);
+						this.type = repo.getClazz(value);						
+						if (type!=null)
+							prop.setTypeClass(type);
+						break;
 					case "mapping": 
 						ArrayNode an = (ArrayNode) valueNode;
 						if (an.children().length==2 && !(an.children()[0] instanceof ArrayNode)) {

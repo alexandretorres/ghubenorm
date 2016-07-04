@@ -37,7 +37,8 @@ public class Log {
 				
 				sb.append(record.getMessage());
 				sb.append("\n");
-				if (record.getThrown()!=null) {					
+				if (record.getThrown()!=null) {			
+					sb.append("Exception: ");
 			    	PrintWriter pw = new PrintWriter(sb);
 					record.getThrown().printStackTrace(pw);
 					pw.flush();

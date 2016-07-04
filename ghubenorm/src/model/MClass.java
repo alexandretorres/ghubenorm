@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderBy;
 @Entity
 public class MClass {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -30,6 +31,7 @@ public class MClass {
 	private MClass superClass;
 	private String superClassName;
 	@OneToMany(mappedBy="parent",cascade=CascadeType.PERSIST)
+	@OrderBy
 	private List<MProperty> properties = new ArrayList<MProperty>();
 	@OneToMany(mappedBy="clazz",cascade=CascadeType.ALL)
 	private Set<MOverride> overrides = new HashSet<MOverride>();
