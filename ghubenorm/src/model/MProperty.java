@@ -31,7 +31,8 @@ public class MProperty {
 	private MClass parent;	
 	@OneToOne(fetch=FetchType.LAZY,cascade=CascadeType.ALL)
 	private MAssociation association;
-	@OneToOne(mappedBy="to",cascade=CascadeType.PERSIST)
+	//Lazy Fetch prevents duplicate loading due to outer join
+	@OneToOne(fetch=FetchType.LAZY,mappedBy="to",cascade=CascadeType.PERSIST)
 	private MAssociation toAssociation;
 	
 	protected MProperty() {

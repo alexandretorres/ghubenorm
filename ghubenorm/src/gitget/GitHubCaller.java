@@ -62,6 +62,8 @@ public class GitHubCaller {
 		//URL url = new URL("https://api.github.com/repos/"+path+"/git/trees/"+branch+"?recursive=1&access_token="+oauth);
 		
 		try (JsonReader rdr = callApi(url,false)) {///Json.createReader(url.openStream())) {
+			if (rdr==null)
+				return null;
 			JsonObject res = rdr.readObject();
 			return res;
 		}

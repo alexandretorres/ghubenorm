@@ -41,6 +41,10 @@ class RubyCrawler  {
 			Prof.open("listFileTreeRuby");
 			JsonObject result = gh.listFileTree(fullName,repo.getBranchGit());
 			Prof.close("listFileTreeRuby");
+			if (result==null) {
+				LOG.info("no files at the branch "+repo.getBranchGit()+". Skipping repo.");
+				return;
+			}
 			boolean truncated = result.getBoolean("truncated");
 			if (truncated)
 				LOG.warning("truncated tree file for repository "+fullName);

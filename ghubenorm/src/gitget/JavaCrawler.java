@@ -46,13 +46,14 @@ public class JavaCrawler {
 	};
 	public static void main(String[] args) {
 		ConfigDAO.config(JPA_DAO.instance);	
+		String repo=
+				"android/platform_packages_apps_phone";
+		// "facebook/react-native";
+		// "kmahaley/MSD_File_Sharing";
+		// "travis/cosmo";
+		//  "apache/felix";
+		//  "apache/camel";
 		
-		//String repo ="facebook/react-native";
-		//String repo ="kmahaley/MSD_File_Sharing";
-		//String repo ="travis/cosmo";
-		//String repo = "apache/felix";
-		//String repo ="apache/camel";
-		String repo = "mheath/adbcj"; //503 error?
 		//ConfigDAO.config(new ConfigNop());
 		//https://github.com/rocioemera/SubscriptionSystem
 	
@@ -88,6 +89,10 @@ public class JavaCrawler {
 			//--
 			Prof.open("listFileTree");
 			JsonObject result = gh.listFileTree(fullName,repo.getBranchGit());
+			if (result==null) {
+				LOG.info("no files at the branch "+repo.getBranchGit()+". Skipping repo.");
+				return;
+			}
 			Prof.close("listFileTree");
 			boolean truncated = result.getBoolean("truncated");
 			if (truncated)
