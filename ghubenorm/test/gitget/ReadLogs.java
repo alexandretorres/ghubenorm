@@ -14,7 +14,7 @@ public class ReadLogs {
 		StringBuffer buf = new StringBuffer();
 		boolean record=false;
 		try {
-			while (cnt>0) {
+			while (cnt>=0) {
 				File file = new File(path+"java0."+cnt+".log");	
 		        Scanner sc = new Scanner(file);
 		        while (sc.hasNextLine()) {

@@ -334,7 +334,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			switch (type){
 				case "JOINED":
 					gen = subClass.addGeneralization(MVertical.class);
-					Annotation pkJoins = PrimaryKeyJoinColumn.findAnnotation(annots, unit);					
+					Annotation pkJoins = PrimaryKeyJoinColumns.findAnnotation(annots, unit);					
 										
 					if (pkJoins==null) {
 						Annotation pkJoin=PrimaryKeyJoinColumn.findAnnotation(annots, unit);

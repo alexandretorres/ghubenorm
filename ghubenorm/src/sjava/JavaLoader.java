@@ -51,6 +51,7 @@ public class JavaLoader {
 		        cu.accept(visitor, null);
 				
 			} catch (ParseException pe) {
+				LOG.log(Level.WARNING,"could not parse "+url);
 				LOG.log(Level.WARNING,pe.getMessage(),pe);
 			}	
 		} catch (IOException iex) {

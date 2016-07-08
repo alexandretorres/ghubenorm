@@ -11,6 +11,8 @@ import org.junit.Test;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
+import dao.nop.ConfigNop;
+import dao.nop.DAONop;
 import db.jpa.JPA_DAO;
 import model.Language;
 import model.MClass;
@@ -19,7 +21,8 @@ import model.Repo;
 
 public class JavaLoaderTest {
 	static {
-		ConfigDAO.config(JPA_DAO.instance);	
+		//ConfigDAO.config(JPA_DAO.instance);	
+		ConfigDAO.config(new ConfigNop());	
 	}
 	private JavaLoader loader = new JavaLoader();
 	JavaRepo jrepo=new JavaRepo(new Repo(Language.JAVA));
@@ -56,7 +59,10 @@ public class JavaLoaderTest {
 			//File baseFile = new File("trash/SmallTest.java");
 			//File baseFile = new File("repos/MSD_File_Sharing-e1d5650d8cf477355ebe69b52f507c85c12b2ba6/WHAM project war/WHAM/src");
 			//File baseFile = new File("src/");
-			File baseFile = new File("repos/cosmo-master");
+			//File baseFile = new File("repos/cosmo-master");
+			File baseFile = new File(
+					"C:\\Users\\torres\\Downloads\\javarepos\\PDFFilter-master\\PDFFilter-master"
+					);
 			Prof.open("loadDir");
 			loadDir(baseFile);
 			Prof.close("loadDir");
