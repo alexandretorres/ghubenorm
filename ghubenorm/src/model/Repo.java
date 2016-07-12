@@ -168,7 +168,7 @@ public class Repo {
 		}
 	};
 	public void print() {
-		
+		//TODO: rethink this print to better reuse. 
 		StringWriter sw =new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
 		LOG.info("{Repo:Start}{name:"+this.getName()+"}----------------");
@@ -187,6 +187,41 @@ public class Repo {
 				if (cl.isAbstract())
 					pw.print("[Abstract]");
 				if (cl.getSuperClass()!=null) {
+					if (!cl.getGeneralization().isEmpty()) {
+						MGeneralization gen = cl.getGeneralization().iterator().next();
+						if (gen instanceof MHorizontal) {
+							pw.print(" ▤");
+						} else if (gen instanceof MVertical) {
+							MVertical vert = (MVertical) gen;
+							pw.print(" ▥");
+							if (vert.getDiscriminatorValue()!=null) {
+								pw.print("("+vert.getDiscriminatorValue()+")");
+							}
+							for (MJoinColumn jc:vert.getJoinCols()) {
+								pw.print("[");
+								MColumnDefinition col = jc.getColumn();
+								if (col.getTable()!=null)
+									pw.print(col.getTable().getName()+".");
+								pw.print(col.getName());
+								col=jc.getInverse();
+								if (col!=null) {
+									if (col.getTable()!=null)
+										pw.print(col.getTable().getName()+".");
+									
+									pw.print(col.getName());
+								}
+								pw.print("]");
+							}
+						} else if (gen instanceof MFlat) {
+							MFlat flat = (MFlat) gen;							
+							pw.print(" ▣");
+							if (flat.getDiscriminatorValue()!=null) {
+								pw.print("("+flat.getDiscriminatorValue()+")");
+							}
+						}
+					} else if (cl.isPersistent()) {
+						pw.print(" △");
+					}
 					pw.print(" extends " + cl.getSuperClass().getName());
 				}
 				MTable tab=null;
@@ -197,6 +232,7 @@ public class Repo {
 						pw.print(tab.getName());
 					}
 				}
+				
 				pw.println("\n________________________________");
 				List<MProperty> propList = new ArrayList<MProperty>(cl.getProperties());
 				Collections.sort(propList, mPropComp);

@@ -18,7 +18,7 @@ public class MVertical extends MDiscrminableGeneralization {
 	}
 
 	protected void setJoinCols(Set<MJoinColumn> joinCols) {
-		this.joinCols = joinCols;
+		this.joinCols = joinCols; 
 	}
 	
 }
