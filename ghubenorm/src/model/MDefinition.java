@@ -13,6 +13,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 @Entity
+/**
+ * Constraints and indexes definitions
+ * @author torres
+ *
+ */
 public class MDefinition {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;

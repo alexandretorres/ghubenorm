@@ -6,8 +6,15 @@ import javax.persistence.OneToMany;
 
 import common.LateVisitor;
 import model.MAssociation;
+import model.MAssociationDef;
 import model.MClass;
+import model.MColumn;
+import model.MColumnMapping;
+import model.MJoinColumn;
+import model.MOverride;
 import model.MProperty;
+import model.MTable;
+
 import static sjava.JPATags.*;
 
 public class VisitAssociation implements LateVisitor<MProperty> {
@@ -91,7 +98,122 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 		if (massoc==null)
 			MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 		//TODO: all other association parameters
+		//TODO: all other annotations that affect associations
+		for (Annotation an:annotations) {
+			if (JoinTable.isType(an,unit)) {
+				MAssociationDef adef = prop.getOrInitAssociationDef();
+				String name = an.getValueAsString("name");				
+				MTable tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(unit.jrepo.getRepo(),name));
+				tab.setCatalog(an.getValueAsString("catalog"));
+				tab.setSchema(an.getValueAsString("schema"));
+				
+				adef.setDataSource(tab);
+				for (ElementValue ev:an.getListValue("joinColumns")) {
+					Annotation ajc = ev.annotation;
+					MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),tab,adef,ajc);
+					
+				}
+			}
+		}
 		return null;
 	}
+	public static MJoinColumn createJoinColumn(JavaRepo repo,MClass clazz,MTable toTable,MAssociationDef adef,Annotation ajoin) {
+		MColumn col = MColumn.newMColumn();					
+		JavaVisitor.daoMCol.persit(col);
+		MJoinColumn jc = MJoinColumn.newMJoinColumn(adef, col);
+		adef.getJoinColumns().add(jc);
+		JavaVisitor.daoJoinCol.persit(jc);
+		loadJoinColumn(repo,clazz,toTable,jc, ajoin);
+		
+		return jc;
+	}
+	public static void loadJoinColumn(JavaRepo repo,MClass fromClazz,MTable toTable,MJoinColumn jcol,Annotation ajoin) {
+		
+		MColumn col = jcol.getColumn().getColumn();
+		col.setName(ajoin.getValue("name", ""));		
+		//
+		col.setUnique(ajoin.getValue("unique",Boolean.FALSE));
+		col.setNullable(ajoin.getValue("nullable",Boolean.TRUE));
+		col.setInsertable(ajoin.getValue("insertable",Boolean.TRUE));
+		col.setUpdatable(ajoin.getValue("updatable",Boolean.TRUE));
+		col.setColummnDefinition(ajoin.getValue("columnDefinition", null)); 
+		//TODO: foreignKey
+		String tabName=ajoin.getValueAsString("table");
+		String refColName = ajoin.getValue("referencedColumnName", null); 
+		//
+		col.setTable(toTable);
+		//--------------------------
+		if (refColName!=null) { //TODO: create main table if absent
+			MTable tab=fromClazz.getPersistence().getTableSource(tabName);
+			MColumn refCol=null;
+			if (tab!=null) {
+				refCol = tab.findColumn(refColName);				
+			}			
+			if (refCol!=null)
+				jcol.setInverse(refCol);	
+			else
+				repo.visitors.add(new VisitColumnRef(refColName,fromClazz,jcol));
+						
+		}
+		
+		
+	}
+}
+class VisitColumnRef implements LateVisitor<MColumn> {
+	// for properties, including inherited ones:
+		// - The class has a overriden prop with this col. Last override wins
+		// - The prop has a column mapping
+		// - The prop is embedded and one of the "subprops" has a default column mapping
+		// - The prop has an AssociationDef attached: check the joinCols
+		// - The column could not be found, but is the default for property
+		// - The column could not be found, but is the default for association
+		// - The column could not be found, but is the default for embedded prop
+	String refColName;
+	MClass fromClazz;
+	MJoinColumn jcol;
+	
+	
+	public VisitColumnRef(String refColName, MClass fromClazz, MJoinColumn jcol) {
+		super();
+		this.refColName = refColName;
+		this.fromClazz = fromClazz;
+		this.jcol = jcol;
+	}
 
+
+	@Override
+	public MColumn exec() {
+		MColumn refCol = fromClazz.findColumnByName(refColName);
+		
+		MTable tab=fromClazz.getPersistence().getMainTable();
+		if (refCol==null) {
+			List<MProperty> allProps = fromClazz.getAllProperties();
+			for (MProperty cp:allProps) {		
+				if (cp.isEmbedded()) {
+					// This is incorrect. Check pkjoincols. It should create associationdef,
+					// The associationDef then refers to joinCols that define the columns mapping the composite key
+					for (MProperty embp:cp.getTypeClass().getProperties()) {
+						if (embp.getName().equals(refColName)) {
+							refCol = MColumn.newMColumn().setName(refColName).setTable(tab);
+							//embp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));								
+							break;
+						}
+					}
+					if (refCol!=null)
+						break;
+				} else {
+					if (cp.getName().equals(refColName)) {
+						refCol = MColumn.newMColumn().setName(refColName).setTable(tab);
+						if (cp.getColumnMapping()==null)
+							cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
+						break;
+					}						
+				}
+			}
+		}
+		// Now we have created the reference column
+		jcol.setInverse(refCol);
+		return refCol;
+	}
+	
 }

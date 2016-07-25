@@ -9,7 +9,18 @@ public enum JPATags {
 	Entity,Id,IdClass,EmbeddedId,
 	Column,Table,SecondaryTable,SecondaryTables,PrimaryKeyJoinColumn,PrimaryKeyJoinColumns,
 	OneToMany,ManyToOne,OneToOne,ManyToMany,Embedded,
-	Inheritance,MappedSuperclass,DiscriminatorValue,DiscriminatorColumn;
+	Inheritance,MappedSuperclass,DiscriminatorValue,DiscriminatorColumn,
+	//parei aqui de olhar
+	AssociationOverride,AssociationOverrides,AttributeOverride,AttributeOverrides,CollectionTable,
+	JoinColumn,JoinColumns,JoinTable,
+	ElementCollection,Embeddable,Temporal,Basic,Transient,
+	ForeignKey,Index,OrderBy,OrderColumn,UniqueConstraint,
+	GeneratedValue,SequenceGenerator,TableGenerator,
+	MapKey,MapKeyClass,MapKeyColumn,MapKeyEnumerated,MapKeyJoinColumn,MapKeyJoinColumns,MapKeyTemporal,MapsId,
+	
+	;
+	
+	//And the BASIC that has fetch for properties?
 	String path;
 	JPATags() {
 		path="javax.persistence";

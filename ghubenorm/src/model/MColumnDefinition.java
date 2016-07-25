@@ -34,4 +34,6 @@ public abstract class MColumnDefinition {
 	public abstract boolean isUnique();
 	
 	public abstract MTable getTable();
+	
+	public abstract MColumn getColumn();
 }

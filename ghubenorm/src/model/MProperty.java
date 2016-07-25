@@ -86,6 +86,11 @@ public class MProperty {
 	public MColumnMapping getColumnMapping() {
 		return columnMapping;
 	}
+	public MColumnDefinition getColumnDef() {
+		if (columnMapping!=null && columnMapping.columnDefinition!=null)
+			return columnMapping.columnDefinition;
+		return null;
+	}
 	public MProperty setColumnMapping(MColumnMapping columnMapping) {
 		//if (columnMapping!=null)
 		//	columnMapping.setProperty(null);
@@ -109,6 +114,11 @@ public class MProperty {
 	public MProperty setEmbedded(boolean embedded) {
 		this.embedded = embedded;
 		return this;
+	}
+	public MAssociationDef getAssociationDef() {
+		if (associationMapping!=null)
+			return associationMapping.getValue();
+		return null;
 	}
 	public MAssociationDef getOrInitAssociationDef() {
 		if (associationMapping==null)

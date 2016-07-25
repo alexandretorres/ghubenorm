@@ -29,6 +29,8 @@ import dao.ConfigDAO;
 import dao.DAOInterface;
 
 import static gitget.Log.LOG;
+
+import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
@@ -41,6 +43,7 @@ import model.MGeneralization;
 import model.MHorizontal;
 import model.MJoinColumn;
 import model.MJoinedSource;
+import model.MOverride;
 import model.MProperty;
 import model.MTable;
 import model.MTableRef;
@@ -103,15 +106,19 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				//System.out.println("class has annotation "+tokens.getText(mod.annotation().getSourceInterval()));
 				if (Entity.isType(anot,comp)) {
 					c.setPersistent();					
-				}
-				if (MappedSuperclass.isType(anot,comp)) {
+				} else if (MappedSuperclass.isType(anot,comp)) {
 					comp.jrepo.mappedSuperClasses.add(c);
-				}				
-					//DiscriminatorColumn
+				} else if (AttributeOverride.isType(anot,comp)) {
+					comp.jrepo.visitors.add(new VisitOverrides(c, comp, anot, null));				
+				} else if (AttributeOverrides.isType(anot,comp)) {
+					comp.jrepo.visitors.add(new VisitOverrides(c, comp, null,anot));				
+				}					//DiscriminatorColumn
 							
 			}
 			comp.jrepo.classAnnot.put(c, annots);
 			Annotation idClass = annots.stream().filter(a->IdClass.isType(a,comp)).findFirst().orElse(null);
+			
+		
 			if (c.isPersistent()) {			
 				Annotation atab = annots.stream().filter(a->Table.isType(a,comp)).findFirst().orElse(null);
 				Annotation asecTab = annots.stream().filter(a->SecondaryTable.isType(a,comp)).findFirst().orElse(null);
@@ -164,9 +171,14 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					filter(a->OneToMany.isType(a,comp) || ManyToMany.isType(a,comp) || ManyToOne.isType(a,comp) || OneToOne.isType(a,comp)).
 					findFirst().orElse(null);
 			Annotation embed = annots.stream().filter(a->Embedded.isType(a,comp)).findFirst().orElse(null);
+			Annotation override = annots.stream().filter(a->AttributeOverride.isType(a,comp)).findFirst().orElse(null);
+			Annotation overrides = annots.stream().filter(a->AttributeOverrides.isType(a,comp)).findFirst().orElse(null);
+			
 			Annotation column = annots.stream().filter(a->Column.isType(a,comp)).findFirst().orElse(null);
 			//
 			Annotation id = annots.stream().filter(a->Id.isType(a,comp)).findFirst().orElse(null);
+			Annotation joinTable = annots.stream().filter(a->JoinTable.isType(a,comp)).findFirst().orElse(null);
+			Annotation colTable = annots.stream().filter(a->CollectionTable.isType(a,comp)).findFirst().orElse(null);
 			
 			Annotation embeddedId = annots.stream().filter(a->EmbeddedId.isType(a,comp)).findFirst().orElse(null);
 			//------
@@ -188,7 +200,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						prop.setMax(-1);
 						prop.setTransient(true);
 					} else if (assoc!=null) {
-						comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));
+						comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));		
+							
 					} else if (embed!=null) {
 						prop.setEmbedded(true);
 					}
@@ -197,9 +210,13 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					} else if (embeddedId!=null) {
 						prop.setPk(true);
 					}
+					if (override!=null || overrides!=null) {
+						comp.jrepo.visitors.add(new VisitOverrides(prop, comp, override, overrides));
+					}
 					if (column!=null) {
 						daoMCol.persit(createColumnMapping(prop,column));											
 					}				
+				
 				}
 			}
 		}
@@ -210,6 +227,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		col.setName(column.getValue("name",null));
 		col.setUnique(column.getValue("unique",Boolean.FALSE));
 		col.setNullable(column.getValue("nullable",Boolean.TRUE));
+		col.setInsertable(column.getValue("insertable",Boolean.TRUE));
+		col.setUpdatable(column.getValue("updatable",Boolean.TRUE));
 		col.setColummnDefinition(column.getValue("columnDefinition",null));
 		col.setLength(column.getValue("length",null,Integer.class));
 		col.setPrecision(column.getValue("precision",null,Integer.class));
@@ -217,22 +236,10 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		//--
 		String tabname = column.getValueAsString("table");
 		//--
-		MDataSource source = clazz.getPersistence().getSource();
-		if (source instanceof MTableRef)
-			source = ((MTableRef)source).getTable();
-		if (source instanceof MJoinedSource) {
-			for (MTable tab:((MJoinedSource)source).getDefines()) {
-				if (tabname==null || tab.getName().equalsIgnoreCase(tabname)) {
-					col.setTable(tab);
-					break;
-				}
-			}
-		} else if (source instanceof MTable) {
-			//TODO: if tablename does not match this would be an error.			
-			col.setTable((MTable) source);			
-			if (tabname!=null && !col.getTable().getName().equalsIgnoreCase(tabname))
-				LOG.info("JPA Column refers to table not declared by the class");
-		}
+		
+		col.setTable(clazz.getPersistence().getTableSource(tabname));
+		if (tabname!=null && (col.getTable()!=null && !col.getTable().getName().equalsIgnoreCase(tabname)))
+			LOG.info("JPA Column refers to table not declared by the class");
 		return col;
 	}
 	public  MColumn createColumnMapping(MProperty prop,Annotation column) {
@@ -260,13 +267,14 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		}
 		private void loadPKJoin(MClass superClass,MClass subClass,MVertical gen,Annotation pkJoin,Annotation fk) {
 			//TODO: create a MDefinition object for FK defs 
-			List<MProperty> superPK = subClass.getPK(); //TODO: get defaultnames...			
+			List<MProperty> superPK = superClass.findPK(); //TODO: get defaultnames...			
 			String name = pkJoin.getValue("name", ""); 
 			String colDef = pkJoin.getValue("columnDefinition", null); 
 			String refColName = pkJoin.getValue("referencedColumnName", null); 
 			if (fk==null) {
 				fk = (Annotation)pkJoin.getValue("foreignKey");
 			}
+			
 			MColumn col = MColumn.newMColumn();
 			col.setName(name);
 			col.setColummnDefinition(colDef);
@@ -278,6 +286,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			MJoinColumn jc = MJoinColumn.newMJoinColumn(gen, col);
 			daoJoinCol.persit(jc);
 			mainTab = superClass.getPersistence().getMainTable();
+			//TODO: this is a mess! question: can I DECLARE a column by referencing? don´t think so
+			//TODO: what is the order? Maybe references should be treated in a third stage, after declarations
 			if (refColName!=null) { //TODO: create main table if absent
 				MColumn refCol=null;
 				if (mainTab!=null) {
@@ -289,29 +299,47 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						}
 					}
 				}
+				//TODO: What about overriden attributes??
+				
+				// first pass is on column mappings
 				if (refCol==null) {	// Creates the reference column, if it does not exists				
 					for (MProperty cp:superPK) {
-						if (cp.isEmbedded()) {
-							for (MProperty embp:cp.getTypeClass().getProperties()) {
-								if (embp.getName().equals(refCol)) {
-									refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
-									embp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));								
-									break;
+						if (cp.isEmbedded()) {//This is unusual for ENORM, but normal for JPA
+							for (MOverride ov:cp.getParent().getOverrides()) {
+								if (ov instanceof MAttributeOverride) {
+									MAttributeOverride mao = (MAttributeOverride) ov;
+									if (refColName.equals(mao.getColumn().getName())) {
+										refCol = mao.getColumn().getColumn();									
+										break;
+									}
 								}
-							}
-							if (refCol!=null)
-								break;
-						} else {
-							if (cp.getName().equals(refCol)) {
-								refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
-								cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
-								break;
-							}
-							
+							}														
+						} else if (cp.getColumnMapping()!=null 
+								&& cp.getColumnMapping().getColumnDefinition().getName().equals(refCol)) {
+							refCol = cp.getColumnMapping().getColumnDefinition().getColumn();
+							break;
 						}
 					}
 				}
-				// Now we have created the reference column
+				if (refCol==null) { //second pass is on property names
+					for (MProperty cp:superClass.getProperties()) { //TODO: get "ALL" properties	
+						if (cp.isEmbedded()) { 							
+							for (MProperty embp:cp.getTypeClass().getProperties()) {
+								if (embp.getName().equals(refCol)) {
+									refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
+									//TODO: Add an AttributeOverride?
+									//TODO: Could this recurse by using "."?								
+									break;
+								}
+							}
+						} else if (cp.getName().equals(refCol)) {
+							refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
+							cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
+							break;							
+						}
+					}
+				}
+				// Now we have "created"??? the reference column
 				jc.setInverse(refCol);				
 				gen.getJoinCols().add(jc);
 			}

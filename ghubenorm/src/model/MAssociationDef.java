@@ -27,6 +27,10 @@ public class MAssociationDef {
 	
 	/**
 	 * Association table used on many to many
+	 * OR
+	 * Table used on OneToMany unidirectional
+	 * OR
+	 * Table used for storing collections of embedded elements 
 	 */
 	@ManyToOne
 	private MDataSource dataSource;

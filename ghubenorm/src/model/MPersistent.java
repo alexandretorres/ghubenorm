@@ -1,5 +1,7 @@
 package model;
 
+import static gitget.Log.LOG;
+
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Entity;
@@ -47,6 +49,30 @@ public class MPersistent {
 	protected MPersistent setPersistent(boolean persistent) {
 		this.persistent = persistent;
 		return this;
+	}
+	/**
+	 * Return the tableSource that refers to the tabname hint. It will return the main table if there is a single table
+	 * or if the tabname parameter is null. If the tabname is not null, the source is joined, and there is no such table,
+	 * it returns null. It also returns null if there is no source.
+	 * @param tabname
+	 * @return
+	 */
+	public MTable getTableSource(String tabname) {		
+		if (source instanceof MTableRef)
+			return ((MTableRef)source).getTable();
+		if (source instanceof MJoinedSource) {
+			for (MTable tab:((MJoinedSource)source).getDefines()) {
+				if (tabname==null || tab.getName().equalsIgnoreCase(tabname)) {
+					return tab;
+					
+				}
+			}
+		} else if (source instanceof MTable) {
+			//TODO: if tablename does not match this would be an error.			
+			return ((MTable) source);			
+			
+		}
+		return null;
 	}
 	
 }

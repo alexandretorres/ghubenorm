@@ -119,6 +119,10 @@ public class MColumn extends MColumnDefinition{
 		this.table = table;
 		return this;
 	}
+	@Override
+	public MColumn getColumn() {		
+		return this;
+	}
 	
 	
 }

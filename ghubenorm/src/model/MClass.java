@@ -177,6 +177,48 @@ public class MClass {
 	public Set<MOverride> getOverrides() {
 		return overrides;
 	}
+	public MColumn findOverridenColumn(String colName) {
+		for (MOverride ov:getOverrides()) {
+			if (ov instanceof MAttributeOverride) {
+				MColumn col = ((MAttributeOverride) ov).getColumn().getColumn();				
+				if (colName.equals(col.getName())) {
+					return col;
+				}
+			}			
+		}
+		if (superClass!=null)
+			return superClass.findOverridenColumn(colName);
+		return null;
+	}
+	public MColumn findColumnByName(String colName) {
+		MColumn ret = findOverridenColumn(colName);
+		if (ret!=null)
+			return ret;
+		
+		List<MProperty> allProps = getAllProperties();
+		for (MProperty cp:allProps) {
+			if (cp.getColumnDef()!=null) {
+				if (cp.getColumnDef().getName().equals(colName)) {
+					return cp.getColumnDef().getColumn();					
+				}
+			}
+			if (cp.isEmbedded() && cp.getTypeClass()!=null) {
+				ret = cp.getTypeClass().findColumnByName(colName);
+				if (ret!=null)
+					return ret;
+			}
+			if (cp.getAssociationDef()!=null) {
+				for ( MJoinColumn jc:cp.getAssociationDef().getJoinColumns()) {
+					if (jc.getColumn()!=null && jc.getColumn().getName().equals(colName)) {
+						return jc.getColumn().getColumn();//does it depends? inverse sometimes is in the source
+					}
+					
+				}
+			}
+		}
+		return null;
+		
+	}
 	public Set<MClass> getSpecializations() {
 		return specializations;
 	}
@@ -211,8 +253,8 @@ public class MClass {
 	}
 	/**
 	 * SE superclasse for abstrata e for persistente, filho tem tabela
-	 * SE superclasse não for abstrata for persistente, filho não tem tabela
-	 * SE superclasse não for persistente, e filho persistente, tem tabela -so que não, 
+	 * SE superclasse nï¿½o for abstrata for persistente, filho nï¿½o tem tabela
+	 * SE superclasse nï¿½o for persistente, e filho persistente, tem tabela -so que nï¿½o, 
 	 *   pq tem que extender active:record!
 	 * @return
 	 */
@@ -229,11 +271,37 @@ public class MClass {
 	public boolean isPersistent() {
 		return persistence.isPersistent();
 	}
+	public List<MProperty> findPK() {
+		List<MProperty> ret = getPK();
+		if (ret.isEmpty() && superClass!=null)
+			return superClass.findPK();
+		else
+			return ret;
+	}
 	public List<MProperty> getPK() {
 		return getProperties().stream().filter(p->p.isPk()).collect(Collectors.toList());
 	}
 	public String toString() {
 		return (repo!=null ? "Repo:"+repo.getName()+" - " : "" ) + this.getName();
 	}
-	
+	public MProperty findProperty(String name) {
+		return getProperties().stream().filter(p->p.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+	}
+	public MProperty findInheritedProperty(String name) {
+		MProperty res= getProperties().stream().filter(p->p.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+		if (res==null && getSuperClass()!=null) {
+			res = superClass.findInheritedProperty(name);
+		}
+		return res;
+	}
+	public List<MProperty> getAllProperties() {
+		List<MProperty> ret=null;
+		if (superClass!=null) {
+			ret=superClass.getAllProperties();
+		} else {
+			ret = new ArrayList<MProperty>();
+		}
+		ret.addAll(0,properties); //Add to the start!
+		return ret;			
+	}
 }
