@@ -73,13 +73,16 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	}
 	@Override
 	public void visit(ImportDeclaration n, Object arg) {
-		String from = n.getName().toString();
-		if (n.isAsterisk())
-			from=from+".*";
-		if (!n.isStatic())
-			comp.imports.add(Import.newImport(from));
-		// TODO Auto-generated method stub
-		super.visit(n, arg);
+		if (!n.isEmptyImportDeclaration()) {
+			String from = n.getName().toString();
+			if (n.isAsterisk())
+				from=from+".*";
+			if (!n.isStatic())
+				comp.imports.add(Import.newImport(from));
+		
+			// TODO Auto-generated method stub
+			super.visit(n, arg);
+		}
 	}
 	@Override
 	public void visit(ClassOrInterfaceDeclaration cd, Object arg1) {
