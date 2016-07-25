@@ -108,11 +108,13 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 				tab.setSchema(an.getValueAsString("schema"));
 				
 				adef.setDataSource(tab);
-				for (ElementValue ev:an.getListValue("joinColumns")) {
-					Annotation ajc = ev.annotation;
-					MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),tab,adef,ajc);
-					
-				}
+				List<ElementValue> jcs = an.getListValue("joinColumns");
+				if (jcs!=null)
+					for (ElementValue ev:jcs) {
+						Annotation ajc = ev.annotation;
+						MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),tab,adef,ajc);
+						
+					}
 			}
 		}
 		return null;

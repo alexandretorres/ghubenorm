@@ -143,6 +143,19 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			}	
 		}		
 		super.visit(cd, arg1);
+		//pending refs
+		if (c!=null)
+			for (MProperty p:c.getProperties()) {
+				if (p.getTypeClass()==null) {
+					String name = p.getType();
+					MClass clazz = comp.getClazz(name);
+					if (clazz==null) {
+						comp.jrepo.addPendingRef(name, c, comp);
+					} else
+						p.setTypeClass(clazz);
+				}
+			}
+		
 		List<JCompilationUnit> pending = comp.jrepo.pendingRefs.get(cd.getName());
 		if (pending!=null && c!=null)
 			for (Iterator<JCompilationUnit> it =pending.iterator();it.hasNext();) {

@@ -37,10 +37,12 @@ public class VisitOverrides implements LateVisitor<MProperty> {
 		MProperty[] propPath = new MProperty[path.length+1]; // if MAP, length-1
 		propPath[0]=target;
 		for (int i=0;i<path.length;i++) {
-			target = target.getParent().findProperty(path[i]);
+			if ( target.getTypeClass()==null)
+				return null;
+			target = target.getTypeClass().findProperty(path[i]);
 			if (target==null)
 				return null;
-			propPath[i]=target;
+			propPath[i+1]=target;
 		}
 		return propPath;
 	}

@@ -93,14 +93,17 @@ public class JavaRepo {
 			}
 		}
 	}
-	public void addLateSubclass(String supername,MClass clazz,JCompilationUnit comp) {
-		clazz.setSuperClassName(supername);
-		List<JCompilationUnit> list = pendingRefs.get(supername);
+	public void addPendingRef(String name,MClass clazz,JCompilationUnit comp) {
+		List<JCompilationUnit> list = pendingRefs.get(name);
 		if (list==null) {
 			list = new ArrayList<>();
-			pendingRefs.put(supername, list);
+			pendingRefs.put(name, list);
 		}
 		list.add(comp);
+	}
+	public void addLateSubclass(String supername,MClass clazz,JCompilationUnit comp) {
+		clazz.setSuperClassName(supername);
+		addPendingRef(supername, clazz, comp);
 	}
 	private Set<MTable> getTables() {
 		return getDataSources().stream().filter(ds -> ds instanceof MTable).map(t -> (MTable) t).collect(Collectors.toSet());

@@ -61,7 +61,8 @@ public class JavaLoaderTest {
 			//File baseFile = new File("src/");
 			//File baseFile = new File("repos/cosmo-master");
 			File baseFile = new File(
-					"C:\\repos\\PDFFilter-master" 
+					"C:\\dev\\eclipselink_test_src"
+					//"C:\\repos\\PDFFilter-master" 
 					//"C:\\Users\\torres\\Downloads\\javarepos\\PDFFilter-master\\PDFFilter-master"
 					);
 			Prof.open("loadDir");

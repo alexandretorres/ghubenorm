@@ -282,7 +282,7 @@ public class MClass {
 		return getProperties().stream().filter(p->p.isPk()).collect(Collectors.toList());
 	}
 	public String toString() {
-		return (repo!=null ? "Repo:"+repo.getName()+" - " : "" ) + this.getName();
+		return (repo!=null ? "Repo:"+repo.getName()+" - " : "" ) + this.getFullName();
 	}
 	public MProperty findProperty(String name) {
 		return getProperties().stream().filter(p->p.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
