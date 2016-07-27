@@ -33,6 +33,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>eclipseLinkSrc</name>
+			<type>2</type>
+			<location>C:/java/eclipselink/eclipselink_test_src/org</location>
+		</link>
+		<link>
 			<name>jpasrc</name>
 			<type>2</type>
 			<location>C:/java/hibernate-release-5.1.0.Final/javax.persistence-2.1.0-sources</location>

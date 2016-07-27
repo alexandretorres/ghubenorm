@@ -2,15 +2,19 @@ package sjava;
 
 import static sjava.JPATags.*;
 
-
+import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
+import com.github.javaparser.ast.body.AnnotableNode;
+import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -61,9 +65,11 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	public void setComp(JCompilationUnit comp) {
 		this.comp=comp;
 	}
+	Map<MClass,ClassInfo> classInfo = new HashMap<MClass,ClassInfo>();
 	@Override
 	public void visit(CompilationUnit cu, Object arg1) {
 		classStack.removeAll(classStack);	
+		classInfo.clear();
 		if (cu.getPackage()==null) {
 			comp.packageName=null;
 		} else {
@@ -87,9 +93,12 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	@Override
 	public void visit(ClassOrInterfaceDeclaration cd, Object arg1) {
 		MClass c =null;
+		ClassInfo info=null;
 		if (!cd.isInterface()) {
 			c = comp.createClass(cd.getName());
 			classStack.push(c);
+			info = new ClassInfo();
+			classInfo.put(c, info);
 			List<Annotation> annots = new ArrayList<Annotation>();
 			c.setAbstract(ModifierSet.isAbstract(cd.getModifiers()));		
 			for (ClassOrInterfaceType scls:cd.getExtends()) {
@@ -115,7 +124,10 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					comp.jrepo.visitors.add(new VisitOverrides(c, comp, anot, null));				
 				} else if (AttributeOverrides.isType(anot,comp)) {
 					comp.jrepo.visitors.add(new VisitOverrides(c, comp, null,anot));				
-				}					//DiscriminatorColumn
+				} else if (Access.isType(anot, comp)) {
+					comp.propertyAccess=true;
+				}
+				//DiscriminatorColumn
 							
 			}
 			comp.jrepo.classAnnot.put(c, annots);
@@ -146,8 +158,16 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			}	
 		}		
 		super.visit(cd, arg1);
-		//pending refs
-		if (c!=null)
+		if (c!=null) {
+			//process properties
+			procClassInfo(c, info);
+			for (PropInfo pinf:info.propInfo) {
+				if (!pinf.skip)
+					procFieldOrMethod(c,pinf,pinf.ctx,pinf.annots, pinf.type, pinf.modifiers);
+			}
+		
+			//pending refs
+		
 			for (MProperty p:c.getProperties()) {
 				if (p.getTypeClass()==null) {
 					String name = p.getType();
@@ -158,7 +178,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						p.setTypeClass(clazz);
 				}
 			}
-		
+		}
 		List<JCompilationUnit> pending = comp.jrepo.pendingRefs.get(cd.getName());
 		if (pending!=null && c!=null)
 			for (Iterator<JCompilationUnit> it =pending.iterator();it.hasNext();) {
@@ -171,70 +191,148 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		if (c!=null)
 			classStack.pop(); //??
 	}
-
-	
+	private List<Annotation> procAnnotations(AnnotableNode ctx) {
+		List<Annotation> annots = new ArrayList<Annotation>();
+		for (AnnotationExpr mod:ctx.getAnnotations()) {
+			Annotation a = Annotation.newAnnotation(mod);
+			for (JPATags t:JPATags.values()) {
+				if (t.isType(a, comp)) {
+					annots.add(a);
+					break;
+				}
+			}								
+		}
+		return annots;
+	}
+	private String getBeanName(String methodName)
+	{
+		if (methodName==null)
+			return null;
+		String ret = null;
+		if (methodName.startsWith("is")) 
+			ret = methodName.substring(2);
+		else if (methodName.startsWith("get")) 
+			ret = methodName.substring(3);
+		else 
+			return null;
+	    // Assume the method starts with either get or is.
+	    return Introspector.decapitalize(ret);
+	}
+	private void procClassInfo(MClass clazz,ClassInfo info) {
+		//TODO: hasFieldAnnotations should be inherited... please kill me! Who invented JPA?
+		comp.propertyAccess = comp.propertyAccess || !comp.hasFieldAnnotations;
+		//default pass: Skip all properties or fields, depending on annotation position (SHOULD BE INHERITED! OH NO!)
+		for (PropInfo pinf:info.propInfo) {
+			if (comp.propertyAccess) {
+				if (pinf.ctx instanceof FieldDeclaration)
+					pinf.skip=true;
+			} else {
+				if (pinf.ctx instanceof MethodDeclaration)
+					pinf.skip=true;
+			}			
+		}// Access fields
+		for (PropInfo pinf:info.propInfo) {
+			Annotation access = pinf.annots.stream().filter(a->Access.isType(a,comp)).findFirst().orElse(null);
+			if (access!=null) {	
+				//if (!access.getSingleValue(null).contains("FIELD")) {
+				info.setProperty(pinf);				
+			}		
+		}
+		
+	}
+	private void procFieldOrMethod(MClass clazz,PropInfo pinf,BodyDeclaration ctx, List<Annotation> annots,Type type, int modifiers) {
+		boolean trans = ModifierSet.isTransient(modifiers);
+		boolean isStatic=false;
+		isStatic = ModifierSet.isStatic(modifiers);
+		
+		
+		Annotation assoc = annots.stream().
+				filter(a->OneToMany.isType(a,comp) || ManyToMany.isType(a,comp) || ManyToOne.isType(a,comp) || OneToOne.isType(a,comp)).
+				findFirst().orElse(null);
+		Annotation embed = annots.stream().filter(a->Embedded.isType(a,comp)).findFirst().orElse(null);
+		Annotation override = annots.stream().filter(a->AttributeOverride.isType(a,comp)).findFirst().orElse(null);
+		Annotation overrides = annots.stream().filter(a->AttributeOverrides.isType(a,comp)).findFirst().orElse(null);
+		
+		Annotation column = annots.stream().filter(a->Column.isType(a,comp)).findFirst().orElse(null);
+		//
+		Annotation id = annots.stream().filter(a->Id.isType(a,comp)).findFirst().orElse(null);
+		Annotation joinTable = annots.stream().filter(a->JoinTable.isType(a,comp)).findFirst().orElse(null);
+		Annotation colTable = annots.stream().filter(a->CollectionTable.isType(a,comp)).findFirst().orElse(null);
+		
+		Annotation embeddedId = annots.stream().filter(a->EmbeddedId.isType(a,comp)).findFirst().orElse(null);
+		//------
+		
+		
+		String typeName=null;
+		
+		if (type instanceof PrimitiveType) {
+			typeName = ((PrimitiveType)type).toString();
+		} else if (type instanceof ReferenceType) {
+			ReferenceType utype = (ReferenceType) type;
+			//UnannReferenceTypeContext utype = ctx.unannType().unannReferenceType();  
+			//ctx.unannType().unannReferenceType().unannClassOrInterfaceType().unannClassType_lfno_unannClassOrInterfaceType().typeArguments().getText()
+			typeName = utype.getType().toString();
+		}	
+		if (!isStatic) {			
+			MProperty prop = daoMProp.persit(clazz.newProperty().setName(pinf.name).setType(typeName));					
+			prop.setTransient(trans);
+			if (pinf.var!=null && pinf.var.getId().getArrayCount()>0) {
+				prop.setMax(-1);
+				prop.setTransient(true);
+			} else if (assoc!=null) {
+				comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));		
+					
+			} else if (embed!=null) {
+				prop.setEmbedded(true);
+			}
+			if (id!=null) {
+				prop.setPk(true);
+			} else if (embeddedId!=null) {
+				prop.setPk(true);
+			}
+			if (override!=null || overrides!=null) {
+				comp.jrepo.visitors.add(new VisitOverrides(prop, comp, override, overrides));
+			}
+			if (column!=null) {
+				daoMCol.persit(createColumnMapping(prop,column));											
+			}				
+		
+		}
+	}
+	@Override
+	public void visit(MethodDeclaration ctx, Object arg1) {
+		if (!classStack.isEmpty()) {			
+			MClass clazz = classStack.peek();	
+			ClassInfo info = classInfo.get(clazz);
+			//
+			int modifiers = ctx.getModifiers();
+			Type type = ctx.getType();
+			List<Annotation> annots = procAnnotations(ctx);
+			String bname = getBeanName(ctx.getName());
+			if (bname!=null)
+				info.propInfo.add(new PropInfo(bname,ctx, annots, type, modifiers, null));
+			//if (comp.propertyAccess || !comp.hasFieldAnnotations)
+			//ONLY IF USING METHOD ANNOTATION
+			//visitFieldOrMethod(ctx, type, modifiers, null, arg1);
+		}
+		super.visit(ctx, arg1);
+	}
 	@Override
 	public void visit(FieldDeclaration ctx, Object arg1) {
 		if (!classStack.isEmpty()) {			
-			MClass clazz = classStack.peek();
-			List<Annotation> annots = new ArrayList<Annotation>();
-			boolean isStatic=false;
-			isStatic = ModifierSet.isStatic(ctx.getModifiers());
-			for (AnnotationExpr mod:ctx.getAnnotations()) {		 
-				annots.add(Annotation.newAnnotation(mod));					
-			}
-			Annotation assoc = annots.stream().
-					filter(a->OneToMany.isType(a,comp) || ManyToMany.isType(a,comp) || ManyToOne.isType(a,comp) || OneToOne.isType(a,comp)).
-					findFirst().orElse(null);
-			Annotation embed = annots.stream().filter(a->Embedded.isType(a,comp)).findFirst().orElse(null);
-			Annotation override = annots.stream().filter(a->AttributeOverride.isType(a,comp)).findFirst().orElse(null);
-			Annotation overrides = annots.stream().filter(a->AttributeOverrides.isType(a,comp)).findFirst().orElse(null);
+			MClass clazz = classStack.peek();	
+			ClassInfo info = classInfo.get(clazz);
 			
-			Annotation column = annots.stream().filter(a->Column.isType(a,comp)).findFirst().orElse(null);
-			//
-			Annotation id = annots.stream().filter(a->Id.isType(a,comp)).findFirst().orElse(null);
-			Annotation joinTable = annots.stream().filter(a->JoinTable.isType(a,comp)).findFirst().orElse(null);
-			Annotation colTable = annots.stream().filter(a->CollectionTable.isType(a,comp)).findFirst().orElse(null);
-			
-			Annotation embeddedId = annots.stream().filter(a->EmbeddedId.isType(a,comp)).findFirst().orElse(null);
-			//------
-			String typeName=null;
+			int modifiers = ctx.getModifiers();
 			Type type = ctx.getType();
-			if (type instanceof PrimitiveType) {
-				typeName = ((PrimitiveType)type).toString();
-			} else if (type instanceof ReferenceType) {
-				ReferenceType utype = (ReferenceType) type;
-				//UnannReferenceTypeContext utype = ctx.unannType().unannReferenceType();  
-				//ctx.unannType().unannReferenceType().unannClassOrInterfaceType().unannClassType_lfno_unannClassOrInterfaceType().typeArguments().getText()
-				typeName = utype.getType().toString();
-			}
-			
-			for (VariableDeclarator var:ctx.getVariables()) {
-				if (!isStatic) {					
-					MProperty prop = daoMProp.persit(clazz.newProperty().setName(var.getId().getName()).setType(typeName));					
-					if (var.getId().getArrayCount()>0) {
-						prop.setMax(-1);
-						prop.setTransient(true);
-					} else if (assoc!=null) {
-						comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));		
-							
-					} else if (embed!=null) {
-						prop.setEmbedded(true);
-					}
-					if (id!=null) {
-						prop.setPk(true);
-					} else if (embeddedId!=null) {
-						prop.setPk(true);
-					}
-					if (override!=null || overrides!=null) {
-						comp.jrepo.visitors.add(new VisitOverrides(prop, comp, override, overrides));
-					}
-					if (column!=null) {
-						daoMCol.persit(createColumnMapping(prop,column));											
-					}				
-				
-				}
-			}
+			List<VariableDeclarator> vars = ctx.getVariables();
+			List<Annotation> annots = procAnnotations(ctx);
+			if (!annots.isEmpty())
+				comp.hasFieldAnnotations=true;
+			for (VariableDeclarator var:vars) {
+				String bname = var.getId().getName();
+				info.propInfo.add(new PropInfo(bname,ctx, annots, type, modifiers, var));
+			}						
 		}
 		super.visit(ctx, arg1);
 	}
@@ -265,11 +363,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		return col;
 		//set table... late!?
 	}
-	@Override
-	public void visit(MethodDeclaration arg0, Object arg1) {
-		// TODO Auto-generated method stub
-		super.visit(arg0, arg1);
-	}
+	
 	
 	class VisitInheritance implements LateVisitor<MClass> {
 		MClass subClass;
@@ -447,4 +541,36 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		}
 		
 	}
+	private class ClassInfo {
+		List<PropInfo> propInfo = new ArrayList<PropInfo>();
+		public void setProperty(PropInfo pinf) {
+			pinf.skip=false;
+			for (PropInfo p:propInfo) {
+				if (p!=pinf && p.name!=null && p.name.equals(pinf.name))
+					p.skip=true;					
+			}
+		}
+	}
+	private class PropInfo {
+		String name;
+		BodyDeclaration ctx;
+		List<Annotation> annots;
+		Type type; 
+		int modifiers;
+		VariableDeclarator var;
+		boolean skip=false;
+		public PropInfo(String name,BodyDeclaration ctx,List<Annotation> annots, Type type, int modifiers, VariableDeclarator var) {
+			super();
+			this.name=name;
+			this.ctx = ctx;
+			this.annots=annots;
+			this.type = type;
+			this.modifiers = modifiers;
+			this.var = var;
+			
+			
+		}
+		
+	}
 }
+

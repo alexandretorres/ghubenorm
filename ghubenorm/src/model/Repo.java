@@ -240,6 +240,8 @@ public class Repo {
 				for (MProperty p:propList) {
 					if (p.isPk())
 						pw.print("<PK>");
+					if (p.isTransient())
+						pw.print("θ ");
 					pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknow>>"));
 					//TODO:check Java not persitent can have decl.
 					//if (cl.isPersistent()) {					

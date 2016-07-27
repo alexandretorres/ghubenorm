@@ -46,6 +46,9 @@ public class JCompilationUnit {
 	static DAOInterface<MClass> daoMClass = ConfigDAO.getDAO(MClass.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	
+	public boolean propertyAccess=false;
+	public boolean hasFieldAnnotations=false;
+	
 	public JCompilationUnit(JavaRepo jrepo, String url) {
 		this.url=url;
 		this.jrepo=jrepo;

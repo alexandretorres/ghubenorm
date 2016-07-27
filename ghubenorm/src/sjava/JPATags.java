@@ -17,7 +17,7 @@ public enum JPATags {
 	ForeignKey,Index,OrderBy,OrderColumn,UniqueConstraint,
 	GeneratedValue,SequenceGenerator,TableGenerator,
 	MapKey,MapKeyClass,MapKeyColumn,MapKeyEnumerated,MapKeyJoinColumn,MapKeyJoinColumns,MapKeyTemporal,MapsId,
-	
+	Access,
 	;
 	
 	//And the BASIC that has fetch for properties?
