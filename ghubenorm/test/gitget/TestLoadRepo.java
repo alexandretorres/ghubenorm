@@ -14,7 +14,7 @@ import db.jpa.JPA_DAO;
 import model.Repo;
 
 public class TestLoadRepo {
-	final int LOAD_ID=1278;
+	final int LOAD_ID=1;//1278;
 	@Test	
 	public void testOne() {
 		try {
