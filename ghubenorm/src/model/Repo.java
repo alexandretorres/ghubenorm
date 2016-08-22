@@ -261,14 +261,15 @@ public class Repo {
 								pw.print("( ");
 								boolean f=false;
 								for (MJoinColumn jc:p.getAssociationMapping().getValue().getJoinColumns()) {
-									MColumnDefinition colDef = jc.getColumnForProperty(p);
-									MColumnDefinition invColDef = jc.getColumnForProperty(inv);
+									//TODO:Check with ruby this change. This will never work with Java and looks fishy
+									MColumnDefinition colDef = jc.getColumn(); //jc.getColumnForProperty(p); 
+									MColumnDefinition invColDef = jc.getInverse(); //jc.getColumnForProperty(inv);
 									if (f)
 										pw.print(",");
 									if (colDef!=null)
 										pw.print(colDef.getName());
 									if (invColDef!=null)									 
-										pw.print("="+Optional.of(invColDef.getTable()).map(t->t.getName()+".").orElse("")+invColDef.getName());
+										pw.print("="+Optional.ofNullable(invColDef.getTable()).map(t->t.getName()+".").orElse("")+invColDef.getName());
 									
 									f=true;
 								}

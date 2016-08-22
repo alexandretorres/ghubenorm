@@ -35,7 +35,12 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 	public MProperty exec() {
 		String inverse = assoc.getValueAsString("mappedBy");
 		boolean optional = !(assoc.getValue("optional")==Boolean.FALSE); //NULL,TRUE=>False otherwise True
-		String targetEntity = assoc.getValueAsString("targetEntity");
+		String targetEntity=null;
+		try {
+			targetEntity = assoc.getValueAsString("targetEntity");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 		if (targetEntity!=null) {
 			int idx = targetEntity.indexOf(".class");
 			if (idx>0) {
@@ -124,8 +129,17 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 						
 					}
 			} else if (JoinColumns.isType(an,unit)) {
-				
+				MAssociationDef adef = prop.getOrInitAssociationDef();
+				List<ElementValue> jcs = an.getListValue();
+				if (jcs!=null)
+					for (ElementValue ev:jcs) {
+						Annotation ajc = ev.annotation;
+						MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),null,adef,ajc);
+						
+					}
 			} else if (JoinColumn.isType(an,unit)) {
+				MAssociationDef adef = prop.getOrInitAssociationDef();
+				MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),null,adef,an);
 				
 			}
 		}
@@ -173,6 +187,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 		
 	}
 }
+//TODO: This looks incomplete, and I think this is done elsewhere.
 class VisitColumnRef implements LateVisitor<MColumn> {
 	// for properties, including inherited ones:
 		// - The class has a overriden prop with this col. Last override wins
@@ -197,8 +212,13 @@ class VisitColumnRef implements LateVisitor<MColumn> {
 
 	@Override
 	public MColumn exec() {
-		MColumn refCol = fromClazz.findColumnByName(refColName);
-		
+		MColumn refCol=null;
+		try {
+			refCol = fromClazz.findColumnByName(refColName);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			
+		}
 		MTable tab=fromClazz.getPersistence().getMainTable();
 		if (refCol==null) {
 			List<MProperty> allProps = fromClazz.getAllProperties();
@@ -215,7 +235,7 @@ class VisitColumnRef implements LateVisitor<MColumn> {
 					}
 					if (refCol!=null)
 						break;
-				} else {
+				} else {					
 					if (cp.getName().equals(refColName)) {
 						refCol = MColumn.newMColumn().setName(refColName).setTable(tab);
 						if (cp.getColumnMapping()==null)

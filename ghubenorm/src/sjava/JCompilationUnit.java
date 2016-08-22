@@ -369,8 +369,14 @@ class ExprEval {
 	private static ScriptEngine jsEngine = mgr.getEngineByName("JavaScript");
 	public static Object evaluate(String expr)  {
 		Prof.open("ExprEval.eval");
-		try {				   
-			return jsEngine.eval(expr);
+		try {		
+			Object ret = jsEngine.eval(expr);
+			if (ret!=null && !(ret instanceof String) && !(ret instanceof Number) && !(ret instanceof Boolean) && !(ret instanceof Class)) {
+				if (ret.getClass().getSimpleName().equals("ScriptObjectMirror"))
+					return expr;
+				System.out.println("strange evaluation for"+expr+":"+ret);
+			}
+			return ret;
 		} catch (ScriptException e) {
 			LOG.fine("Java expression was not evaluated:"+expr);
 			// TODO Auto-generated catch block

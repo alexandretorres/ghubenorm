@@ -309,7 +309,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			Type type = ctx.getType();
 			List<Annotation> annots = procAnnotations(ctx);
 			if (!annots.isEmpty())
-				comp.hasFieldAnnotations=true;
+				comp.hasMethodAnnotations=true;
 			String bname = getBeanName(ctx.getName());
 			if (bname!=null)
 				info.propInfo.add(new PropInfo(bname,ctx, annots, type, modifiers, null));

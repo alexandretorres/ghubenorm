@@ -198,8 +198,12 @@ public class MClass {
 		List<MProperty> allProps = getAllProperties();
 		for (MProperty cp:allProps) {
 			if (cp.getColumnDef()!=null) {
-				if (cp.getColumnDef().getName().equals(colName)) {
+				String cdName = cp.getColumnDef().getName();
+				
+				if (colName.equals(cdName)) {
 					return cp.getColumnDef().getColumn();					
+				} else if (cdName==null && colName.equalsIgnoreCase(cp.getName())){
+					return cp.getColumnDef().getColumn();
 				}
 			}
 			if (cp.isEmbedded() && cp.getTypeClass()!=null) {
