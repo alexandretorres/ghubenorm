@@ -48,6 +48,7 @@ public class JCompilationUnit {
 	
 	public boolean propertyAccess=false;
 	public boolean hasFieldAnnotations=false;
+	public boolean hasMethodAnnotations=false;
 	
 	public JCompilationUnit(JavaRepo jrepo, String url) {
 		this.url=url;

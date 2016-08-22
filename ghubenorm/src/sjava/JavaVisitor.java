@@ -220,7 +220,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	}
 	private void procClassInfo(MClass clazz,ClassInfo info) {
 		//TODO: hasFieldAnnotations should be inherited... please kill me! Who invented JPA?
-		comp.propertyAccess = comp.propertyAccess || !comp.hasFieldAnnotations;
+		comp.propertyAccess = comp.propertyAccess || (!comp.hasFieldAnnotations && comp.hasMethodAnnotations);
 		//default pass: Skip all properties or fields, depending on annotation position (SHOULD BE INHERITED! OH NO!)
 		for (PropInfo pinf:info.propInfo) {
 			if (comp.propertyAccess) {
@@ -308,6 +308,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			int modifiers = ctx.getModifiers();
 			Type type = ctx.getType();
 			List<Annotation> annots = procAnnotations(ctx);
+			if (!annots.isEmpty())
+				comp.hasFieldAnnotations=true;
 			String bname = getBeanName(ctx.getName());
 			if (bname!=null)
 				info.propInfo.add(new PropInfo(bname,ctx, annots, type, modifiers, null));

@@ -35,11 +35,19 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 	public MProperty exec() {
 		String inverse = assoc.getValueAsString("mappedBy");
 		boolean optional = !(assoc.getValue("optional")==Boolean.FALSE); //NULL,TRUE=>False otherwise True
+		String targetEntity = assoc.getValueAsString("targetEntity");
+		if (targetEntity!=null) {
+			int idx = targetEntity.indexOf(".class");
+			if (idx>0) {
+				targetEntity = targetEntity.substring(0, idx);
+			}
+		}
 		if (!optional)
 			prop.setMin(1);
 		MClass typeClass = prop.getTypeClass();
+		
 		if (OneToMany.isType(assoc,unit) || ManyToMany.isType(assoc,unit)) {
-			prop.setMax(-1);
+			prop.setMax(-1);			
 			int[] interval = new int[] {prop.getType().indexOf("<"),prop.getType().indexOf(">")};
 			if (interval[0]>=0 && interval[1]>=0 && interval[0]<interval[1]) {
 				String typeName = prop.getType().substring(interval[0]+1,interval[1]);
@@ -60,15 +68,15 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 				prop.setTypeClass(typeClass);
 			}
 		}
-		if (typeClass==null) {
-			String targetEntity = assoc.getValueAsString("targetEntity");
-			if (targetEntity!=null) {
-				typeClass = unit.getClazz(targetEntity);
-				if (typeClass!=null) {
+		if (targetEntity!=null) {
+			MClass targetTypeClass = unit.getClazz(targetEntity);
+			if (targetTypeClass!=null) {
+				typeClass = targetTypeClass;
+				if (prop.getTypeClass()==null)
 					prop.setTypeClass(typeClass);
-				}
 			}
-		}
+		}	
+	
 		MAssociation massoc=prop.getAssociation();
 		massoc = massoc==null ? prop.getToAssociation() : massoc;
 		if (inverse!=null && inverse.length()>0 && typeClass!=null) {			
@@ -115,6 +123,10 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 						MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),tab,adef,ajc);
 						
 					}
+			} else if (JoinColumns.isType(an,unit)) {
+				
+			} else if (JoinColumn.isType(an,unit)) {
+				
 			}
 		}
 		return null;
