@@ -10,6 +10,7 @@ import model.MAssociation;
 import model.MAssociationDef;
 import model.MClass;
 import model.MColumn;
+import model.MColumnDefinition;
 import model.MColumnMapping;
 import model.MJoinColumn;
 import model.MOverride;
@@ -53,8 +54,9 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 			prop.setMin(1);
 		MClass typeClass = prop.getTypeClass();
 		
-		if (OneToMany.isType(assoc,unit) || ManyToMany.isType(assoc,unit)) {
+		if (OneToMany.isType(assoc,unit) || ManyToMany.isType(assoc,unit) || ElementCollection.isType(assoc,unit)) {
 			//TODO: if NO JoinColumn, and unidirectional, there is a JoinTable!
+			
 			prop.setMax(-1);			
 			int[] interval = new int[] {prop.getType().indexOf("<"),prop.getType().lastIndexOf(">")};
 			if (interval[0]>=0 && interval[1]>=0 && interval[0]<interval[1]) {
@@ -70,6 +72,13 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 					prop.setTypeClass(typeClass);
 				} else {
 					Log.LOG.warning("could not find type '"+typeName+"' on ToMany association " +prop.getParent()+"."+prop.getName());
+				}
+			}	
+			if ( ElementCollection.isType(assoc,unit)) {
+				prop.setEmbedded(true);
+				MColumnDefinition cdef = prop.getColumnDef();
+				if (cdef!=null && cdef.getTable()!=null && cdef.getTable().equals(prop.getParent().getPersistence().getMainTable())) {
+					cdef.getColumn().setTable(null); //RESET table def!
 				}
 			}
 		} else {
@@ -120,8 +129,11 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 				}
 			}
 		}
-		if (massoc==null)
-			MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
+		if (massoc==null) { 
+			if (!(ElementCollection.isType(assoc,unit) && typeClass==null)) {
+				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
+			}
+		}
 		//---
 		MClass fromClass = prop.getParent();  // Where the Foreign Key points, if Join Column exists
 		if (typeClass==null)
@@ -160,6 +172,26 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 				MAssociationDef adef = prop.getOrInitAssociationDef();
 				MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,an);
 				
+			} else if (CollectionTable.isType(an, unit)) {
+				MAssociationDef adef = prop.getOrInitAssociationDef();
+				String name = an.getValueAsString("name");				
+				MTable tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(unit.jrepo.getRepo(),name));
+				tab.setCatalog(an.getValueAsString("catalog"));
+				tab.setSchema(an.getValueAsString("schema"));
+				
+				adef.setDataSource(tab);
+				MColumnDefinition cdef = prop.getColumnDef();
+				if (cdef!=null) {
+					cdef.getColumn().setTable(tab); //@Column used by element collection is at the collection table
+				}
+				
+				List<ElementValue> jcs = an.getListValue("joinColumns");
+				if (jcs!=null)
+					for (ElementValue ev:jcs) {
+						Annotation ajc = ev.annotation;
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc);
+						
+					}
 			}
 		}
 		return null;
@@ -245,13 +277,14 @@ class VisitColumnRef implements LateVisitor<MColumn> {
 				if (cp.isEmbedded()) {
 					// This is incorrect. Check pkjoincols. It should create associationdef,
 					// The associationDef then refers to joinCols that define the columns mapping the composite key
-					for (MProperty embp:cp.getTypeClass().getProperties()) {
-						if (embp.getName().equals(refColName)) {
-							refCol = MColumn.newMColumn().setName(refColName).setTable(tab);
-							//embp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));								
-							break;
+					if (cp.getTypeClass()!=null)
+						for (MProperty embp:cp.getTypeClass().getProperties()) {
+							if (embp.getName().equals(refColName)) {
+								refCol = MColumn.newMColumn().setName(refColName).setTable(tab);
+								//embp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));								
+								break;
+							}
 						}
-					}
 					if (refCol!=null)
 						break;
 				} else {					

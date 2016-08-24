@@ -253,52 +253,61 @@ public class Repo {
 						pw.print("θ ");
 					pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknow>>"));
 					//TODO:check Java not persitent can have decl.
-					//if (cl.isPersistent()) {					
-						if (p.getColumnMapping()!=null) {
-							MColumnDefinition col = p.getColumnMapping().getColumnDefinition();
-							String colTab = mainTab==null || col.getTable()==null || col.getTable().getName().equals(mainTab.getName())? "" : col.getTable().getName()+".";
-							pw.print(" | "+colTab+Optional.ofNullable(col.getName()).orElse(""));
-							if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
-								pw.print(":"+col.getColummnDefinition());
-							pw.print( col.getLength()==null ? "" : "("+col.getLength()+")");
-						}
-						MAssociation assoc = p.getAssociation();
-						if (assoc==null)
-							assoc = p.getToAssociation();
-						if (assoc!=null) {						
-							MProperty inv = assoc.getInverse(p);
-							if (p.getAssociationMapping()!=null) {
-								pw.print("( ");
-								boolean f=false;
-								for (MJoinColumn jc:p.getAssociationMapping().getValue().getJoinColumns()) {
-									//TODO:Check with ruby this change. This will never work with Java and looks fishy
-									MColumnDefinition colDef = jc.getColumn(); //jc.getColumnForProperty(p); 
-									MColumnDefinition invColDef = jc.getInverse(); //jc.getColumnForProperty(inv);
-									if (f)
-										pw.print(",");
-									if (colDef!=null)
-										pw.print(colDef.getName());
-									if (invColDef!=null)									 
-										pw.print("="+Optional.ofNullable(invColDef.getTable()).map(t->t.getName()+".").orElse("")+invColDef.getName());
 									
-									f=true;
+					if (p.isEmbedded()) {
+						pw.print(" <Embbeded> ");
+						
+					}	
+					if (p.getColumnMapping()!=null) {
+						MColumnDefinition col = p.getColumnMapping().getColumnDefinition();
+						String colTab = mainTab==null || col.getTable()==null || col.getTable().getName().equals(mainTab.getName())? "" : col.getTable().getName()+".";
+						pw.print(" | "+colTab+Optional.ofNullable(col.getName()).orElse(""));
+						if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
+							pw.print(":"+col.getColummnDefinition());
+						pw.print( col.getLength()==null ? "" : "("+col.getLength()+")");
+					}
+						
+					if (p.getAssociationMapping()!=null) {
+						pw.print("( ");
+						boolean f=false;
+						for (MJoinColumn jc:p.getAssociationMapping().getValue().getJoinColumns()) {
+							//TODO:Check with ruby this change. This will never work with Java and looks fishy
+							MColumnDefinition colDef = jc.getColumn(); //jc.getColumnForProperty(p); 
+							MColumnDefinition invColDef = jc.getInverse(); //jc.getColumnForProperty(inv);
+							if (f)
+								pw.print(",");
+							if (colDef!=null)
+								if (colDef.getTable()!=null && !colDef.getTable().equals(cl.getPersistence().getMainTable())) {
+									pw.print(colDef.getTable().getName());
+									pw.print(".");
 								}
-								pw.print(") ");							
-							}
-							if (p.isTransient())
-								pw.print("--(transient)---");
-							else
-								pw.print("---------------");
-							try {							
-								pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getName())+(inv==null ? "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
-							} catch (Exception ex) {
-								LOG.log(Level.SEVERE,ex.getMessage(),ex);		 						
-							}
-						} else if (p.isEmbedded()) {
-							pw.print(" <Embbeded> ");
+								pw.print(colDef.getName());
+							if (invColDef!=null)									 
+								pw.print("="+Optional.ofNullable(invColDef.getTable()).map(t->t.getName()+".").orElse("")+invColDef.getName());
 							
+							f=true;
 						}
-					//}
+						pw.print(") ");							
+					}
+					MAssociation assoc = p.getAssociation();
+					if (assoc==null)
+						assoc = p.getToAssociation();
+					
+					
+					if (assoc!=null) {						
+						MProperty inv = assoc.getInverse(p);
+						
+						if (p.isTransient())
+							pw.print("--(transient)---");
+						else
+							pw.print("---------------");
+						try {							
+							pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getName())+(inv==null ? "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
+						} catch (Exception ex) {
+							LOG.log(Level.SEVERE,ex.getMessage(),ex);		 						
+						}
+					}  
+					
 					pw.println();
 				}
 				if (!cl.getOverrides().isEmpty()) {

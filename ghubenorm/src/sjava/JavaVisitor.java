@@ -124,8 +124,9 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					comp.jrepo.visitors.add(new VisitOverrides(c, comp, anot, null));				
 				} else if (AttributeOverrides.isType(anot,comp)) {
 					comp.jrepo.visitors.add(new VisitOverrides(c, comp, null,anot));				
-				} else if (Access.isType(anot, comp)) {
-					comp.propertyAccess=true;
+				} else if (Access.isType(anot, comp)) {	
+					if (!anot.getSingleValue("").contains("FIELD"))
+						comp.propertyAccess=true;
 				}
 				//DiscriminatorColumn
 							
@@ -245,6 +246,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		boolean isStatic=false;
 		isStatic = ModifierSet.isStatic(modifiers);
 		
+		Annotation elementCol = annots.stream().filter(a->ElementCollection.isType(a,comp)).findFirst().orElse(null);
 		
 		Annotation assoc = annots.stream().
 				filter(a->OneToMany.isType(a,comp) || ManyToMany.isType(a,comp) || ManyToOne.isType(a,comp) || OneToOne.isType(a,comp)).
@@ -281,7 +283,9 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				prop.setTransient(true);
 			} else if (assoc!=null) {
 				comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));		
-					
+			} else if (elementCol!=null) {
+				comp.jrepo.visitors.add(new VisitAssociation(prop, comp, elementCol, annots));
+				
 			} else if (embed!=null) {
 				prop.setEmbedded(true);
 			}
