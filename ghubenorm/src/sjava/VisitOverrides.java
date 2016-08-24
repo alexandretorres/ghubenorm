@@ -69,7 +69,7 @@ public class VisitOverrides implements LateVisitor<MProperty> {
 			
 			MProperty[] propPath = findPropPath(path, prop);
 			if (propPath==null) {				
-				LOG.info("Could not find Override path "+aname+" for property "+prop.getName()+" in class "+prop.getParent());
+				LOG.info("Could not find Override path  "+aname+" for property "+prop.getName()+" in class "+prop.getParent());
 				return;
 			}
 			MColumn col = JavaVisitor.createMColumn(clazz,acol);

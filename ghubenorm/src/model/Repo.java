@@ -224,12 +224,21 @@ public class Repo {
 					}
 					pw.print(" extends " + cl.getSuperClass().getName());
 				}
-				MTable tab=null;
+				MTable mainTab=null;
 				if (cl.isPersistent()) {
 					pw.print(" | ");
 					if (cl.getPersistence().getSource() instanceof MTable) {
-						tab = (MTable) cl.getPersistence().getSource() ;
-						pw.print(tab.getName());
+						mainTab = (MTable) cl.getPersistence().getSource() ;
+						pw.print(mainTab.getName());
+					} else if (cl.getPersistence().getSource() instanceof MJoinedSource) {
+						MJoinedSource source = (MJoinedSource) cl.getPersistence().getSource();
+						for (MTable stab:source.getDefines()) {
+							if (mainTab==null)
+								mainTab=stab;
+							else
+								pw.print(", ");
+							pw.print(stab.getName());
+						}
 					}
 				}
 				
@@ -247,7 +256,8 @@ public class Repo {
 					//if (cl.isPersistent()) {					
 						if (p.getColumnMapping()!=null) {
 							MColumnDefinition col = p.getColumnMapping().getColumnDefinition();
-							pw.print(" | "+Optional.ofNullable(col.getName()).orElse(""));
+							String colTab = mainTab==null || col.getTable()==null || col.getTable().getName().equals(mainTab.getName())? "" : col.getTable().getName()+".";
+							pw.print(" | "+colTab+Optional.ofNullable(col.getName()).orElse(""));
 							if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
 								pw.print(":"+col.getColummnDefinition());
 							pw.print( col.getLength()==null ? "" : "("+col.getLength()+")");

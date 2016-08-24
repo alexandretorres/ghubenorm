@@ -5,6 +5,7 @@ import java.util.List;
 import javax.persistence.OneToMany;
 
 import common.LateVisitor;
+import gitget.Log;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MClass;
@@ -34,6 +35,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 	@Override
 	public MProperty exec() {
 		String inverse = assoc.getValueAsString("mappedBy");
+		
 		boolean optional = !(assoc.getValue("optional")==Boolean.FALSE); //NULL,TRUE=>False otherwise True
 		String targetEntity=null;
 		try {
@@ -52,16 +54,26 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 		MClass typeClass = prop.getTypeClass();
 		
 		if (OneToMany.isType(assoc,unit) || ManyToMany.isType(assoc,unit)) {
+			//TODO: if NO JoinColumn, and unidirectional, there is a JoinTable!
 			prop.setMax(-1);			
-			int[] interval = new int[] {prop.getType().indexOf("<"),prop.getType().indexOf(">")};
+			int[] interval = new int[] {prop.getType().indexOf("<"),prop.getType().lastIndexOf(">")};
 			if (interval[0]>=0 && interval[1]>=0 && interval[0]<interval[1]) {
 				String typeName = prop.getType().substring(interval[0]+1,interval[1]);
+				
+				typeName = unit.stripGenericType(typeName);
+				int comma = typeName.indexOf(',');
+				if (comma>=0) {
+					typeName = typeName.substring(comma+1).trim();
+				}
 				typeClass = unit.getClazz(typeName);
 				if (typeClass!=null) {
 					prop.setTypeClass(typeClass);
+				} else {
+					Log.LOG.warning("could not find type '"+typeName+"' on ToMany association " +prop.getParent()+"."+prop.getName());
 				}
 			}
 		} else {
+			
 			prop.setMax(1);
 			String typeName = prop.getType();
 			int pos = typeName.indexOf("<");
@@ -110,6 +122,13 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 		}
 		if (massoc==null)
 			MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
+		//---
+		MClass fromClass = prop.getParent();  // Where the Foreign Key points, if Join Column exists
+		if (typeClass==null)
+			Log.LOG.warning("Null destination type for association "+prop.getName()+" at "+prop.getParent());
+		if ((ManyToOne.isType(assoc,unit) || OneToOne.isType(assoc,unit)) && typeClass!=null) {
+			fromClass = typeClass;
+		}
 		//TODO: all other association parameters
 		//TODO: all other annotations that affect associations
 		for (Annotation an:annotations) {
@@ -125,7 +144,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),tab,adef,ajc);
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc);
 						
 					}
 			} else if (JoinColumns.isType(an,unit)) {
@@ -134,12 +153,12 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),null,adef,ajc);
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,ajc);
 						
 					}
 			} else if (JoinColumn.isType(an,unit)) {
 				MAssociationDef adef = prop.getOrInitAssociationDef();
-				MJoinColumn jc= createJoinColumn(unit.jrepo,prop.getParent(),null,adef,an);
+				MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,an);
 				
 			}
 		}
@@ -187,7 +206,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 		
 	}
 }
-//TODO: This looks incomplete, and I think this is done elsewhere.
+
 class VisitColumnRef implements LateVisitor<MColumn> {
 	// for properties, including inherited ones:
 		// - The class has a overriden prop with this col. Last override wins
@@ -236,7 +255,7 @@ class VisitColumnRef implements LateVisitor<MColumn> {
 					if (refCol!=null)
 						break;
 				} else {					
-					if (cp.getName().equals(refColName)) {
+					if (cp.getName().equalsIgnoreCase(refColName)) {
 						refCol = MColumn.newMColumn().setName(refColName).setTable(tab);
 						if (cp.getColumnMapping()==null)
 							cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));

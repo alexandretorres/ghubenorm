@@ -54,6 +54,22 @@ public class JCompilationUnit {
 		this.url=url;
 		this.jrepo=jrepo;
 	}
+	public String stripGenericType(String typeName) {
+		int idx = typeName.indexOf('<');
+		if (idx<0) {
+			return typeName;
+		}
+		String prefix = typeName.substring(0,idx);
+		
+		int end = typeName.indexOf('>');
+		if (end<0 || end<idx)
+			return prefix;
+		if (typeName.length()>end) {
+			String tail = typeName.substring(end+1);
+			return prefix + stripGenericType(tail);
+		} else
+		return prefix;
+	}
 	public MClass createClass(String name) {		
 		MClass c = daoMClass.persit(MClass.newMClass(jrepo.getRepo()).setName(name));
 		//new MClass(comp,ctx.Identifier().getText());
