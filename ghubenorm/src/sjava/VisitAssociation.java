@@ -71,7 +71,8 @@ public class VisitAssociation implements LateVisitor {
 				if (typeClass!=null) {
 					prop.setTypeClass(typeClass);
 				} else {
-					Log.LOG.warning("could not find type '"+typeName+"' on ToMany association " +prop.getParent()+"."+prop.getName());
+					if (!BaseType.isBaseType(typeName))
+						Log.LOG.warning("could not find type '"+typeName+"' on ToMany association " +prop.getParent()+"."+prop.getName());
 				}
 			}	
 			if ( ElementCollection.isType(assoc,unit)) {
@@ -136,7 +137,7 @@ public class VisitAssociation implements LateVisitor {
 		}
 		//---
 		MClass fromClass = prop.getParent();  // Where the Foreign Key points, if Join Column exists
-		if (typeClass==null)
+		if (typeClass==null && !(ElementCollection.isType(assoc,unit)))
 			Log.LOG.warning("Null destination type for association "+prop.getName()+" at "+prop.getParent());
 		if ((ManyToOne.isType(assoc,unit) || OneToOne.isType(assoc,unit)) && typeClass!=null) {
 			fromClass = typeClass;

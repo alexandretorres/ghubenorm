@@ -38,7 +38,9 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	static DAOInterface<MClass> daoMClass = ConfigDAO.getDAO(MClass.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	static DAOInterface<MProperty> daoMProp = ConfigDAO.getDAO(MProperty.class);
-	public void reset() {
+	String currentURL;
+	public void reset(String url) {
+		this.currentURL=url;
 		stack.removeAll(stack);
 	}
 	
@@ -65,7 +67,8 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		
 		
 		String name = n.getCPath().getName();
-		MClass clazz = daoMClass.persit(MClass.newMClass(repo.getRepo()).setName(name));
+		MClass clazz = daoMClass.persit(MClass.newMClass(currentURL,repo.getRepo()).setName(name));
+	
 		stack.push(clazz);
 		repo.getClasses().add(clazz);
 		clazz.setSuperClass(superclazz);

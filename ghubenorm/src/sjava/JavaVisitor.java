@@ -16,6 +16,7 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.AnnotableNode;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.ModifierSet;
@@ -89,6 +90,12 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			// TODO Auto-generated method stub
 			super.visit(n, arg);
 		}
+	}
+	
+	@Override
+	public void visit(EnumDeclaration cd, Object arg1) {
+		MClass c = comp.createClass(cd.getName());
+		//super.visit(arg0, arg1);
 	}
 	@Override
 	public void visit(ClassOrInterfaceDeclaration cd, Object arg1) {

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
@@ -41,11 +42,13 @@ public class MClass {
 	private Set<MGeneralization> generalization= new HashSet<MGeneralization>();
 	@Embedded
 	private MDiscriminator discriminatorColumn;
-	
-	public static MClass newMClass(Repo repo) {
-		return new MClass(repo);
+	@Basic(optional=false)
+	private String filePath;
+	public static MClass newMClass(String path,Repo repo) {
+		return new MClass(path,repo);
 	}
-	protected MClass(Repo repo) {
+	protected MClass(String path,Repo repo) {
+		this.filePath=path;
 		this.repo=repo;
 	}	
 	protected MClass() {
@@ -308,4 +311,11 @@ public class MClass {
 		ret.addAll(0,properties); //Add to the start!
 		return ret;			
 	}
+	public String getFilePath() {
+		return filePath;
+	}
+	public void setFilePath(String filePath) {
+		this.filePath = filePath;
+	}
+	
 }

@@ -103,7 +103,7 @@ public class TesteJRuby2 {
 		ConfigDAO.finish();
 	}
 	public static void read(File f) throws Exception {	
-		loader.visitFile(new FileInputStream(f));		
+		loader.visitFile(f.getPath(),new FileInputStream(f));		
 	}
 	private static void testeDB() {	
 		ConfigDAO.config(JPA_DAO.instance);

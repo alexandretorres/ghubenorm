@@ -71,7 +71,8 @@ public class JCompilationUnit {
 		return prefix;
 	}
 	public MClass createClass(String name) {		
-		MClass c = daoMClass.persit(MClass.newMClass(jrepo.getRepo()).setName(name));
+		MClass c = daoMClass.persit(MClass.newMClass(this.url,jrepo.getRepo()).setName(name));
+	
 		//new MClass(comp,ctx.Identifier().getText());
 		c.setPackageName(packageName);
 		classes.add(c);

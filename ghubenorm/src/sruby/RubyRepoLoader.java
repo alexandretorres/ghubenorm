@@ -70,10 +70,10 @@ public class RubyRepoLoader {
 			return null;		
 		}
 	}
-	public Node visitFile(InputStream in) {			
+	public Node visitFile(String url,InputStream in) {			
 		Node n = parse(in);
 		//rubyParser.parse("", in, config);		
-		fileVisitor.reset();
+		fileVisitor.reset(url);
         n.accept(fileVisitor); 
         return n;
 	    
@@ -84,7 +84,7 @@ public class RubyRepoLoader {
 		try {
 			connection=url.openConnection();
 			try (InputStream in =  connection.getInputStream()) {	
-				return visitFile(in);			
+				return visitFile(url.toString(),in);			
 			} catch (SyntaxException sex) {
 				LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
 				LOG.log(Level.SEVERE,sex.getMessage(),sex);	
