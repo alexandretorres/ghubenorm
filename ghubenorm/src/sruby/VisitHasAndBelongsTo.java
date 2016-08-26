@@ -33,17 +33,17 @@ import model.MTable;
  * :foreign_key
  * 
  * Specify the foreign key used for the association. By default this is guessed
- * to be the name of this class in lower-case and “_id” suffixed. So a Person
+ * to be the name of this class in lower-case and ï¿½_idï¿½ suffixed. So a Person
  * class that makes a has_and_belongs_to_many association to Project will use
- * “person_id” as the default :foreign_key. 
+ * ï¿½person_idï¿½ as the default :foreign_key. 
  * 
  * :association_foreign_key
  * 
  * Specify the foreign key used for the association on the receiving side of the
  * association. By default this is guessed to be the name of the associated
- * class in lower-case and “_id” suffixed. So if a Person class makes a
+ * class in lower-case and ï¿½_idï¿½ suffixed. So if a Person class makes a
  * has_and_belongs_to_many association to Project, the association will use
- * “project_id” as the default :association_foreign_key. 
+ * ï¿½project_idï¿½ as the default :association_foreign_key. 
  * 
  * :readonly
  * 
@@ -66,7 +66,7 @@ import model.MTable;
  * @author torres
  *
  */
-public class VisitHasAndBelongsTo implements LateVisitor<MProperty> {
+public class VisitHasAndBelongsTo implements LateVisitor {
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
@@ -78,7 +78,7 @@ public class VisitHasAndBelongsTo implements LateVisitor<MProperty> {
 	}
 
 	@Override
-	public MProperty exec() {
+	public boolean exec() {
 		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
 		Node nameNode = it.next();
 		String pname = Helper.getValue(nameNode);
@@ -115,10 +115,10 @@ public class VisitHasAndBelongsTo implements LateVisitor<MProperty> {
 				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
-			//não tem inversa se não especifica com inverse_of, a não ser que tenha sido especificado do outro lado
+			//nï¿½o tem inversa se nï¿½o especifica com inverse_of, a nï¿½o ser que tenha sido especificado do outro lado
 
 		}
-		return prop;
+		return true;
 	}
 	private void visitArg(MProperty prop,Node arg) {
 		if (arg instanceof HashNode) {

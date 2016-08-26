@@ -19,7 +19,7 @@ import model.MTable;
 
 import static sjava.JPATags.*;
 
-public class VisitAssociation implements LateVisitor<MProperty> {
+public class VisitAssociation implements LateVisitor {
 	MProperty prop;
 	JCompilationUnit unit;
 	Annotation assoc;
@@ -34,7 +34,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 	}
 
 	@Override
-	public MProperty exec() {
+	public boolean exec() {
 		String inverse = assoc.getValueAsString("mappedBy");
 		
 		boolean optional = !(assoc.getValue("optional")==Boolean.FALSE); //NULL,TRUE=>False otherwise True
@@ -186,7 +186,12 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 				}
 				
 				List<ElementValue> jcs = an.getListValue("joinColumns");
-				if (jcs!=null)
+				if (jcs==null) {
+					ElementValue ev = an.getElementValue("joinColumns");
+					if (ev!=null && ev.annotation!=null) {
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ev.annotation);						
+					}
+				} else
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
 						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc);
@@ -194,7 +199,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 					}
 			}
 		}
-		return null;
+		return true;
 	}
 	public static MJoinColumn createJoinColumn(JavaRepo repo,MClass clazz,MTable toTable,MAssociationDef adef,Annotation ajoin) {
 		MColumn col = MColumn.newMColumn();					
@@ -239,7 +244,7 @@ public class VisitAssociation implements LateVisitor<MProperty> {
 	}
 }
 
-class VisitColumnRef implements LateVisitor<MColumn> {
+class VisitColumnRef implements LateVisitor {
 	// for properties, including inherited ones:
 		// - The class has a overriden prop with this col. Last override wins
 		// - The prop has a column mapping
@@ -262,7 +267,13 @@ class VisitColumnRef implements LateVisitor<MColumn> {
 
 
 	@Override
-	public MColumn exec() {
+	public int getOrder() {		
+		return 2;
+	}
+
+
+	@Override
+	public boolean exec() {
 		MColumn refCol=null;
 		try {
 			refCol = fromClazz.findColumnByName(refColName);
@@ -299,7 +310,7 @@ class VisitColumnRef implements LateVisitor<MColumn> {
 		}
 		// Now we have created the reference column
 		jcol.setInverse(refCol);
-		return refCol;
+		return true;
 	}
 	
 }

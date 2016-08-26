@@ -9,8 +9,8 @@ import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
 import model.MProperty;
-
-public class VisitOverrides implements LateVisitor<MProperty> {
+//Overrides after Associations?
+public class VisitOverrides implements LateVisitor {
 	MClass clazz;
 	MProperty prop;
 	Annotation override;
@@ -79,10 +79,15 @@ public class VisitOverrides implements LateVisitor<MProperty> {
 	}
 
 	@Override
-	public MProperty exec() {
+	public boolean exec() {
 		this.loadOverrides(override, overrides);
 		
-		return prop;
+		return true;
+	}
+	@Override
+	public int getOrder() {
+	
+		return 1;
 	}
 
 }

@@ -1,5 +1,8 @@
 package common;
 
-public interface LateVisitor<T> {
-	public T exec();
+public interface LateVisitor {
+	public boolean exec();
+	public default int getOrder() {
+		return 0;
+	};
 }

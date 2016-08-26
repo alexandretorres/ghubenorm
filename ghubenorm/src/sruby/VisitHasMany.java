@@ -25,17 +25,17 @@ import model.MProperty;
  * :foreign_key
  * 
  * Specify the foreign key used for the association. By default this is guessed
- * to be the name of this class in lower-case and “_id” suffixed. So a Person
- * class that makes a has_many association will use “person_id” as the default
+ * to be the name of this class in lower-case and ï¿½_idï¿½ suffixed. So a Person
+ * class that makes a has_many association will use ï¿½person_idï¿½ as the default
  * :foreign_key. 
  * 
  * :foreign_type
  * 
  * Specify the column used to store the associated object's type, if this is a
  * polymorphic association. By default this is guessed to be the name of the
- * polymorphic association specified on “as” option with a “_type” suffix. So a
+ * polymorphic association specified on ï¿½asï¿½ option with a ï¿½_typeï¿½ suffix. So a
  * class that defines a has_many :tags, as: :taggable association will use
- * “taggable_type” as the default :foreign_type. 
+ * ï¿½taggable_typeï¿½ as the default :foreign_type. 
  * 
  * :primary_key
  * 
@@ -134,7 +134,7 @@ import model.MProperty;
  * @author torres
  *
  */
-public class VisitHasMany implements LateVisitor<MProperty> {
+public class VisitHasMany implements LateVisitor {
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
@@ -145,7 +145,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 		this.node = node;
 	}
 	@Override
-	public MProperty exec() { 
+	public boolean exec() { 
 		//TODO: This is ALL WRONG! creating duplicated associations
 		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
 		Node nameNode = it.next();
@@ -166,7 +166,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 		}
 		//remove properties for fks
 		
-		//Uma PROP so tem uma assoc no lado from(?), mas uma coluna pode ter várias(?)
+		//Uma PROP so tem uma assoc no lado from(?), mas uma coluna pode ter vï¿½rias(?)
 		type = prop.getTypeClass();
 		if (prop.getAssociation()==null && type!=null) {
 			String clazz_under = JRubyInflector.getInstance().underscore(clazz.getName());
@@ -189,10 +189,10 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
-			//não tem inversa se não especifica com inverse_of, a não ser que tenha sido especificado do outro lado
+			//nï¿½o tem inversa se nï¿½o especifica com inverse_of, a nï¿½o ser que tenha sido especificado do outro lado
 
 		}
-		return prop;
+		return true;
 	}
 	private void visitArg(MProperty prop,Node arg) {
 		if (arg instanceof HashNode) {
@@ -245,7 +245,7 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 									
 									MAssociation.newMAssociation(inverse, prop).setNavigableFrom(true).setNavigableTo(true);
 								} else {
-									//neste caso o inverse é ao contrário, definido do outro lado
+									//neste caso o inverse ï¿½ ao contrï¿½rio, definido do outro lado
 									inverse.getAssociation().setTo(prop);
 								}
 							}
@@ -258,12 +258,12 @@ public class VisitHasMany implements LateVisitor<MProperty> {
 	}
 }
 /*
- * Inverso: has_many e belongs_to precisa especificar inverse para ser a mesma associação.
- * porém, se você não especifica a foreign_key, ele acaba usando a mesma FK, pois o padrao é o nome da classe+id
- * Na prática seria a mesma coluna.
- * No modelo ENORM existe a figura do "não especificado" que significa o valor default. Então não podemos
- * definir que a FK é "o nome da classe + id" pois a FK é não especificada. 
- * Acredito que a associação terá uma propriedade "to" APENAS no caso dela ser explicitamente bidirecional, já
+ * Inverso: has_many e belongs_to precisa especificar inverse para ser a mesma associaï¿½ï¿½o.
+ * porï¿½m, se vocï¿½ nï¿½o especifica a foreign_key, ele acaba usando a mesma FK, pois o padrao ï¿½ o nome da classe+id
+ * Na prï¿½tica seria a mesma coluna.
+ * No modelo ENORM existe a figura do "nï¿½o especificado" que significa o valor default. Entï¿½o nï¿½o podemos
+ * definir que a FK ï¿½ "o nome da classe + id" pois a FK ï¿½ nï¿½o especificada. 
+ * Acredito que a associaï¿½ï¿½o terï¿½ uma propriedade "to" APENAS no caso dela ser explicitamente bidirecional, jï¿½
  * que o Ruby assim exige.
  * MAS!
  * "Every association will attempt to automatically find the inverse association and set the :inverse_of option 

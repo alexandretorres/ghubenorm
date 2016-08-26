@@ -1,6 +1,7 @@
 package sjava;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +27,7 @@ public class JavaRepo {
 	public Stack<String> JPAArtifacts = new Stack<String>();
 	public Stack<String> JPAJars = new Stack<String>();
 	public Set<MClass> mappedSuperClasses = new HashSet<MClass>();
-	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
+	List<LateVisitor> visitors = new ArrayList<LateVisitor>() ;
 	
 	Map<String,List<JCompilationUnit>> pendingRefs = new HashMap<String,List<JCompilationUnit>>();
 	Map<MClass,List<Annotation>> classAnnot = new HashMap<MClass,List<Annotation>>();
@@ -86,7 +87,16 @@ public class JavaRepo {
 		}
 		
 		while(!visitors.isEmpty()) {
-			Stack<LateVisitor> procList = visitors; 
+			List<LateVisitor> procList = visitors;
+			procList.sort(new Comparator<LateVisitor>() {
+
+				@Override
+				public int compare(LateVisitor o1, LateVisitor o2) {
+					
+					return o1.getOrder()-o2.getOrder();
+				}
+				
+			});
 			visitors= new Stack<LateVisitor>() ;
 			for (LateVisitor v:procList) {
 				v.exec();

@@ -325,6 +325,12 @@ class Annotation {
 	public List<ElementValue> getListValue() {
 		return getListValue(DEFAULT_KEY);
 	}
+	public ElementValue getElementValue(String name) {
+		if (values.containsKey(name)) {
+			return values.get(name);
+		}
+		return null;
+	}
 	public List<ElementValue> getListValue(String name) {
 		if (values.containsKey(name)) {
 			return values.get(name).values;

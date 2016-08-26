@@ -39,17 +39,17 @@ import model.MTable;
  * :foreign_key
  * 
  * Specify the foreign key used for the association. By default this is guessed
- * to be the name of the association with an “_id” suffix. So a class that
- * defines a belongs_to :person association will use “person_id” as the default
+ * to be the name of the association with an ï¿½_idï¿½ suffix. So a class that
+ * defines a belongs_to :person association will use ï¿½person_idï¿½ as the default
  * :foreign_key. Similarly, belongs_to :favorite_person, class_name: "Person"
- * will use a foreign key of “favorite_person_id”. 
+ * will use a foreign key of ï¿½favorite_person_idï¿½. 
  * 
  * :foreign_type
  * 
  * Specify the column used to store the associated object's type, if this is a
  * polymorphic association. By default this is guessed to be the name of the
- * association with a “_type” suffix. So a class that defines a belongs_to
- * :taggable, polymorphic: true association will use “taggable_type” as the
+ * association with a ï¿½_typeï¿½ suffix. So a class that defines a belongs_to
+ * :taggable, polymorphic: true association will use ï¿½taggable_typeï¿½ as the
  * default :foreign_type. 
  * 
  * :primary_key
@@ -121,7 +121,7 @@ import model.MTable;
  * @author torres
  *
  */
-public class VisitBelongsTo implements LateVisitor<MProperty> {
+public class VisitBelongsTo implements LateVisitor {
 	//public static final VisitBelongsTo instance = new VisitBelongsTo();
 	// arguments:-----------
 	private RubyRepo repo;
@@ -143,7 +143,7 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 		this.node = node;
 	}
 	
-	public MProperty exec() {
+	public boolean exec() {
 		
 		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
 		Node nameNode = it.next();
@@ -203,10 +203,10 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
-			//não tem inversa se não especifica com inverse_of, a não ser que tenha sido especificado do outro lado
+			//nï¿½o tem inversa se nï¿½o especifica com inverse_of, a nï¿½o ser que tenha sido especificado do outro lado
 
 		}
-		return prop;
+		return true;
 		
 	}
 	private void createFKs() {
@@ -264,7 +264,7 @@ public class VisitBelongsTo implements LateVisitor<MProperty> {
 				if (inverse.getAssociation()==null) {									
 					MAssociation.newMAssociation(prop, inverse).setNavigableFrom(true).setNavigableTo(true);
 				} else {
-					//neste caso o inverse é ao contrário, definido do outro lado
+					//neste caso o inverse ï¿½ ao contrï¿½rio, definido do outro lado
 					inverse.getAssociation().setTo(prop);
 				}
 			}

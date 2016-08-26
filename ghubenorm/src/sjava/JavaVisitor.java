@@ -371,7 +371,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	}
 	
 	
-	class VisitInheritance implements LateVisitor<MClass> {
+	class VisitInheritance implements LateVisitor {
 		MClass subClass;
 		JCompilationUnit unit;
 		//Annotation inheritance;
@@ -461,10 +461,10 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			}
 		}
 		@Override
-		public MClass exec() {
+		public boolean exec() {
 			MClass superClass = subClass.getSuperClass();
 			if (superClass==null || !subClass.isPersistent())
-				return null;
+				return true;
 			//--
 			MGeneralization gen=null;
 			List<Annotation> sannots = unit.jrepo.classAnnot.get(superClass);
@@ -543,7 +543,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			
 			
 			
-			return superClass;
+			return true;
 		}
 		
 	}

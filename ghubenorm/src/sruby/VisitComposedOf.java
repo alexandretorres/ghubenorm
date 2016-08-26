@@ -18,7 +18,7 @@ import model.MOverride;
 import model.MProperty;
 import model.MTable;
 
-public class VisitComposedOf implements LateVisitor<MProperty> {
+public class VisitComposedOf implements LateVisitor {
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
@@ -33,9 +33,9 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 		this.node = node;
 	}
 
-	public MProperty exec() { 		
+	public boolean exec() { 		
 		if (!clazz.isPersistent())
-			return null;
+			return true;
 		//Only Tables sources on activerec. ruby
 		MTable tab = (MTable) clazz.getPersistence().getSource();
 		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
@@ -100,7 +100,7 @@ public class VisitComposedOf implements LateVisitor<MProperty> {
 				checkSubClass(clazz,sub,prop);
 			}
 		}
-		return prop;
+		return true;
 	}
 	/** 
 	 * For overrides at abstract super-classes or overrides of overrides(?) remove property columns, fix the local overriding
