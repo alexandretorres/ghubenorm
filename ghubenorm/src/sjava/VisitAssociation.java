@@ -116,7 +116,7 @@ public class VisitAssociation implements LateVisitor {
 						setNavigableFrom(true).
 						setNavigableTo(true);						
 					} else if (invProp.getAssociation().getTo()==null) {
-						massoc=invProp.getAssociation().setTo(prop);					
+						massoc=invProp.getAssociation().setTo(prop).setNavigableTo(true);//why not set navigation to? 						
 					}
 				} else {				
 					if (invProp.getAssociation()==null) {

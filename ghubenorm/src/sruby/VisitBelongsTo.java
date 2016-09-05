@@ -265,7 +265,7 @@ public class VisitBelongsTo implements LateVisitor {
 					MAssociation.newMAssociation(prop, inverse).setNavigableFrom(true).setNavigableTo(true);
 				} else {
 					//neste caso o inverse � ao contr�rio, definido do outro lado
-					inverse.getAssociation().setTo(prop);
+					inverse.getAssociation().setTo(prop).setNavigableTo(true);
 				}
 			}
 		}

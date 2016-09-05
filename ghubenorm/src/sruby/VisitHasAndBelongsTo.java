@@ -106,7 +106,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 						setNavigableTo(true);
 						break;
 					} else if (p.getAssociation().getTo()==null) {
-						p.getAssociation().setTo(prop);
+						p.getAssociation().setTo(prop).setNavigableTo(true);
 						break;
 					}
 				} 

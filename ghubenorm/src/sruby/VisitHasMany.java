@@ -180,7 +180,7 @@ public class VisitHasMany implements LateVisitor {
 						setNavigableTo(true);
 						break;
 					} else if (p.getAssociation().getTo()==null) {
-						p.getAssociation().setTo(prop);
+						p.getAssociation().setTo(prop).setNavigableTo(true);
 						break;
 					}
 				} 
@@ -189,7 +189,7 @@ public class VisitHasMany implements LateVisitor {
 				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
-			//n�o tem inversa se n�o especifica com inverse_of, a n�o ser que tenha sido especificado do outro lado
+			//não tem inversa se não especifica com inverse_of, a não ser que tenha sido especificado do outro lado
 
 		}
 		return true;
@@ -246,7 +246,7 @@ public class VisitHasMany implements LateVisitor {
 									MAssociation.newMAssociation(inverse, prop).setNavigableFrom(true).setNavigableTo(true);
 								} else {
 									//neste caso o inverse � ao contr�rio, definido do outro lado
-									inverse.getAssociation().setTo(prop);
+									inverse.getAssociation().setTo(prop).setNavigableTo(true);
 								}
 							}
 						}
