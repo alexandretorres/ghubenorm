@@ -26,8 +26,10 @@ import javax.json.JsonValue.ValueType;
 import javax.print.attribute.standard.MediaSize.Other;
 
 import dao.ConfigDAO;
+import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
 import model.Language;
+import model.Repo;
 import sjava.Prof;
 import sruby.TesteJRuby2;
 
@@ -62,7 +64,18 @@ public class GitHubCrawler implements Runnable {
 				JsonObject obj = rdr.readObject();
 				LOG.info(obj.toString());				
 			}
-			readByRepo(0);
+			//select...
+			RepoDAO dao = ConfigDAO.getDAO(Repo.class);
+			dao.beginTransaction();
+			int lastId = 0;
+			try {
+				lastId = dao.findMaxPublicId();
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+			dao.rollbackAndCloseTransaction();
+			LOG.info("Starting at public id "+lastId);
+			readByRepo(lastId);
 		} catch (Throwable ex) {
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);
 		} finally {
@@ -121,7 +134,7 @@ public class GitHubCrawler implements Runnable {
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
 					try {
 						fullName = result.getString("full_name");					
-						boolean fork = result.getBoolean("fork");					
+						boolean fork = result.containsKey("fork") ?  result.getBoolean("fork") : false;					
 						boolean priv = result.getBoolean("private");
 						id = result.getInt("id");
 						LOG.info(cnt+" (ID:"+id+")"+":"+fullName+
@@ -169,10 +182,10 @@ public class GitHubCrawler implements Runnable {
 						}
 						fullName=null;
 					} catch (Exception ex) {
-						LOG.severe("Exception reading repo list, repo '"+fullName+"'");
-						LOG.log(Level.SEVERE,ex.getMessage(),ex);
-						LOG.info(result.toString());
 						errorCount++;
+						LOG.severe("Exception reading repo list ("+errorCount+"), repo '"+fullName+"'");
+						LOG.log(Level.SEVERE,ex.getMessage(),ex);
+						LOG.info(result.toString());						
 						if (errorCount>MAX_ERRORS) {
 							LOG.severe("Error count exceeded MAX. Exiting");
 							return;

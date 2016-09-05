@@ -38,5 +38,7 @@ class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 	public List<Repo> findAll() {
 		return getEm().createQuery("SELECT r FROM Repo r order by id",Repo.class).getResultList();
 	}
-	
+	public int findMaxPublicId() {
+		return (int) getEm().createQuery("SELECT max(r.publicId) FROM Repo r").getSingleResult();
+	}
 }

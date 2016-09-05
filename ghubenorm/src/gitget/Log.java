@@ -50,7 +50,7 @@ public class Log {
 		};
 		FileHandler fhandler;
 		try {
-			fhandler = new FileHandler("logs/java%u.%g.log", 1024*1024, 200);
+			fhandler = new FileHandler("logs/java%u.%g.log", 1024*1024, 1000);
 			fhandler.setLevel(Level.ALL);
 			fhandler.setFormatter(formatter);
 			LOG.addHandler(fhandler);
