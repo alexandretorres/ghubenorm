@@ -154,6 +154,24 @@ where p.pk is true
 and p.association_id is not null
 group by p.parent_id
 
+select c.name,p.parent_id,p.name
+from mclass c join mproperty p on c.id=p.parent_id
+where p.pk is true
+and p.association_id is not null
+
+--surrogate keys with two properties (special case)
+
+select c.name,p1.parent_id,p1.name 
+from mclass c,mproperty p1, mproperty p2, mcolumn col1,mcolumn col2
+where p1.pk is true
+and p2.association_id is not null
+and p1.parent_id=p2.parent_id
+and c.id=p1.parent_id
+and p1.id<>p2.id
+and p1.columndefinition_id=col1.id
+and p2.columndefinition_id=col2.id
+and upper(col1.name) = upper(col2.name)
+
 --Averages (std deviation, variance, max) persistent classes per repository/language (that has persistent classes):
 
 select r.language,avg(cls.cnt),stddev_samp(cls.cnt),var_samp(cls.cnt),max(cls.cnt) 
@@ -224,6 +242,13 @@ from mclass c join repo r on r.id=c.repo_id
 where superclass_id is not null
 and persistent is true
 group by language
+
+select sup.name,sup.persistent,count(*)
+from mclass c join repo r on r.id=c.repo_id join mclass sup on c.superclass_id=sup.id
+where c.superclass_id is not null
+and c.persistent is true
+group by sup.name,sup.persistent
+order by count(*) DESC
 
 -- top discriminator values for child classes
 select discriminatorvalue,count(*)
