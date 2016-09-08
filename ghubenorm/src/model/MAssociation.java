@@ -1,5 +1,6 @@
 package model;
 
+import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -18,6 +19,11 @@ public class MAssociation {
 	private MProperty to;	
 	private boolean navigableFrom;
 	private boolean navigableTo;
+	/**
+	 * this is the (..)ToOne/Many in case this is an unidirectional association. 1 is one, -1 is many
+	 */
+	@Basic(optional=false)
+	private int max=1;
 	
 	protected MAssociation() {}
 	public static MAssociation newMAssociation(MProperty from) {
@@ -33,6 +39,7 @@ public class MAssociation {
 		this.to = to;
 		from.setAssociation(this);
 		to.setToAssociation(this);
+		max = to.getMax();
 		//to.setAssociation(this); //This violates ONE TO ONE
 	}
 	private MAssociation(MProperty from) {
@@ -93,6 +100,14 @@ public class MAssociation {
 		from=tmp;
 		from.setAssociation(this);
 		from.setToAssociation(null);
+		max = to.getMax();
 		return this;
 	}
+	public int getMax() {
+		return max;
+	}
+	public void setMax(int max) {
+		this.max = max;
+	}
+	
 }

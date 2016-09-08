@@ -16,7 +16,7 @@ ALTER TABLE Embeddable
 
 
 --====
---Repositorios selecionados que possuem classes:
+--Repositorios selecionados que possuem classes: (relevant repositories)
 
 select language,count(*) from repo r
 where 
@@ -25,6 +25,22 @@ configpath is not null and
 select 1 from mclass
 where repo_id=r.id)
 group by language
+
+-- Classes persistentes por repositório , o total de classes (nem todas as classes são lidas!)
+select sum(all_c.cnt), sum(per.cnt), avg(all_c.cnt), avg(per.cnt)
+from
+repo r join
+(select repo_id,count(*) cnt
+from mclass c
+group by repo_id) all_c on r.id=all_c.repo_id
+join
+(select repo_id,count(*) cnt
+from mclass c
+where persistent is true
+group by repo_id) per
+on r.id=per.repo_id
+
+
 
 --Nomes de classes persistentes mais comuns por linguagem:
 
@@ -94,6 +110,14 @@ select 1 from mproperty p
 where p.embedded is true
 and p.typeclass_id=c.id
 )
+-- Classes embutidas, totais
+select language,count(*)
+from (
+select language,count(*)
+from embeddable
+group by language, repo_id
+) tab
+group by tab.language
 
 --Propriedades que embutem classes desconhecidas (erro, QUANDO n�o s�o tipos b�sicos): 
 
@@ -184,3 +208,82 @@ and ds.dtype='MTable'
 and upper(ds.name)<>upper(c.name)
 and language=0
 
+--Joined data source 
+select language,c.name,ds.name
+from mclass c join repo r on r.id=c.repo_id join mdatasource ds on ds.id=c.source_id
+where ds.dtype<>'MTable'
+
+-- child classes
+select count(*)
+from mclass
+where superclass_id is not null
+and persistent is true
+
+select language,count(*)
+from mclass c join repo r on r.id=c.repo_id
+where superclass_id is not null
+and persistent is true
+group by language
+
+-- top discriminator values for child classes
+select discriminatorvalue,count(*)
+from mgeneralization
+where discriminatorvalue is not null
+group by discriminatorvalue
+having count(*)>1
+order by count(*) DESC
+--TODO: sum with discriminator for parents at the mclass
+-- preferred strategy
+select dtype,count(*)
+from mgeneralization
+group by dtype
+
+-- Subclasses by relevant repository
+select language,r.id,coalesce(cnt,0) 
+from repo r left outer join  
+(select c.repo_id,count(*) as cnt
+from mclass c 
+where superclass_id is not null
+and persistent is true
+group by c.repo_id
+) as subc on r.id=subc.repo_id
+where configpath is not null 
+and exists (
+select 1 from mclass m2
+where m2.repo_id=r.id)
+order by coalesce(cnt,0)  DESC
+
+-- number of repos with subclasses x total number of relevant repos
+
+select cnt_sub,cnt_r
+from
+(select count(*) as cnt_sub
+from 
+(select distinct c.repo_id
+from mclass c 
+where superclass_id is not null
+and persistent is true
+) as s1) as srepos ,
+(select count(*) as cnt_r
+from repo r
+where configpath is not null 
+and exists (
+select 1 from mclass m2
+where m2.repo_id=r.id)) as repos
+
+--many to many (bidirectional)
+select count(*) 
+from mproperty p1 join massociation a on p1.association_id=a.id and p1.id<>a.to_id
+join mproperty p2 on a.to_id=p2.id
+where
+p1.max<0 and p2.max<0
+
+--many to many (unidir 1)
+select count(*) 
+from mproperty p1 join massociation a on p1.association_id=a.id and a.to_id is null
+join massociationdef adef on p1.value_id=adef.id
+where
+p1.max<0 
+and adef.datasource_id is not null
+-- strange association data (1)
+-- ERROR: ON UNIDIRECTIONAL MANY-TO-MANY, MASSOCIATION SHOULD INDICATE IT. IN UML IT HAS A HIDDEN PROPERTY.

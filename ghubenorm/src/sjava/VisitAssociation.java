@@ -53,7 +53,7 @@ public class VisitAssociation implements LateVisitor {
 		if (!optional)
 			prop.setMin(1);
 		MClass typeClass = prop.getTypeClass();
-		
+	
 		if (OneToMany.isType(assoc,unit) || ManyToMany.isType(assoc,unit) || ElementCollection.isType(assoc,unit)) {
 			//TODO: if NO JoinColumn, and unidirectional, there is a JoinTable!
 			
@@ -131,8 +131,9 @@ public class VisitAssociation implements LateVisitor {
 			}
 		}
 		if (massoc==null) { 
-			if (!(ElementCollection.isType(assoc,unit) && typeClass==null)) {
-				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
+			if (!(ElementCollection.isType(assoc,unit) && typeClass==null)) {			
+				int max = ManyToMany.isType(assoc,unit) ||  ManyToOne.isType(assoc,unit) ? -1 : 1;
+				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false).setMax(max);
 			}
 		}
 		//---

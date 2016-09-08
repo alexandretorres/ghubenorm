@@ -111,8 +111,9 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 					}
 				} 
 			}
-			if (prop.getAssociation()==null && prop.getToAssociation()==null)
-				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
+			if (prop.getAssociation()==null && prop.getToAssociation()==null) {
+				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false).setMax(-1);
+			}
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
 			//n�o tem inversa se n�o especifica com inverse_of, a n�o ser que tenha sido especificado do outro lado
