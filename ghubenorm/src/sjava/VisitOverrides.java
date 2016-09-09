@@ -5,6 +5,8 @@ import static gitget.Log.LOG;
 import java.util.Arrays;
 
 import common.LateVisitor;
+import dao.ConfigDAO;
+import dao.DAOInterface;
 import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
@@ -17,6 +19,7 @@ public class VisitOverrides implements LateVisitor {
 	Annotation overrides;
 	JCompilationUnit unit;
 
+	static DAOInterface<MAttributeOverride> daoMAttrOverride = ConfigDAO.getDAO(MAttributeOverride.class);
 	
 	public VisitOverrides(MClass clazz, JCompilationUnit unit, Annotation override, Annotation overrides) {
 		super();
@@ -72,9 +75,10 @@ public class VisitOverrides implements LateVisitor {
 				LOG.info("Could not find Override path  "+aname+" for property "+prop.getName()+" in class "+prop.getParent());
 				return;
 			}
-			MColumn col = JavaVisitor.createMColumn(clazz,acol);
+			MColumn col = JavaVisitor.daoMCol.persit(JavaVisitor.createMColumn(clazz,acol));
 			MAttributeOverride over = MAttributeOverride.newMAttributeOverride(col, propPath);
 			clazz.override(over);
+			daoMAttrOverride.persit(over);
 		}
 	}
 

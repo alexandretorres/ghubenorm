@@ -14,14 +14,34 @@ public class JavaCrawlerOneTest {
 
 	@Before
 	public void setUp() throws Exception {
-		ConfigDAO.config(new ConfigNop());
+		//ConfigDAO.config(new ConfigNop());
+		ConfigDAO.config(JPA_DAO.instance);
 	}
 
 	@Test
 	public void test() {
 		
-		String repo=
-				"EthanWint/PDFFilter";
+		String repos[]= new String[] {
+				"khaya/acm","vusa/Placd","rangalo/Seam2Examples","felipero/examples","ifischer/getabike",
+				"tjcampos/TPW","rafabene/XSeam2","johnragan/johnragan_org","myabc/opendls"
+				/*"sirgwain/CraigStars-"
+				"martijnblankestijn/javaee6-demo",
+				"OpenAMEE/amee.platform.domain",
+				"dshaish/Delegator_base",
+				"jraduget/kaleido-repository",
+				"cgreenhalgh/lobbyservice",
+				"dtrott/mdtracker",
+				"KhurtinDN/AdmissionDepartment",
+			
+				"jsmadja/fluxx"*/
+				//"pedrotoliveira/smartproject",
+				//"guruzu/Hibernate-recipes-JPA";
+				//"ihilt/echarts";
+				//"RaviH/MavenSpringHibernateMockito";
+				//"kgbu/boothmgr";
+				//"emacadie/James-Admin-Web-App";
+				//"adelinojr/BookStoreClienteEJB";
+				//	"EthanWint/PDFFilter";
 				//"myabc/appfuse";
 				//		"android/platform_packages_apps_phone";
 		// "facebook/react-native";
@@ -29,8 +49,11 @@ public class JavaCrawlerOneTest {
 		// "travis/cosmo";
 		//  "apache/felix";
 		//  "apache/camel";
+		};
 		try {
-			new JavaCrawler().processRepo(GitHubCaller.instance.getRepoInfo(repo) ,repo);	
+			for (String repo:repos) {
+				new JavaCrawler().processRepo(GitHubCaller.instance.getRepoInfo(repo) ,repo);	
+			}
 			Prof.print();
 		} finally {
 			ConfigDAO.finish();

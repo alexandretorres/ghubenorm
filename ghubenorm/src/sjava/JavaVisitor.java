@@ -61,6 +61,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	static DAOInterface<MProperty> daoMProp = ConfigDAO.getDAO(MProperty.class);	
 	static DAOInterface<MColumn> daoMCol = ConfigDAO.getDAO(MColumn.class);
 	static DAOInterface<MJoinColumn> daoJoinCol = ConfigDAO.getDAO(MJoinColumn.class);
+
 	private JCompilationUnit comp;
 	private Stack<MClass> classStack = new Stack<MClass>();
 	public void setComp(JCompilationUnit comp) {

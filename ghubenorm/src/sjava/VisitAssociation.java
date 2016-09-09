@@ -293,7 +293,7 @@ class VisitColumnRef implements LateVisitor {
 					if (cp.getTypeClass()!=null)
 						for (MProperty embp:cp.getTypeClass().getProperties()) {
 							if (embp.getName().equals(refColName)) {
-								refCol = MColumn.newMColumn().setName(refColName).setTable(tab);
+								refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setName(refColName).setTable(tab));
 								//embp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));								
 								break;
 							}
@@ -302,7 +302,7 @@ class VisitColumnRef implements LateVisitor {
 						break;
 				} else {					
 					if (cp.getName().equalsIgnoreCase(refColName)) {
-						refCol = MColumn.newMColumn().setName(refColName).setTable(tab);
+						refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setName(refColName).setTable(tab));
 						if (cp.getColumnMapping()==null)
 							cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
 						break;
