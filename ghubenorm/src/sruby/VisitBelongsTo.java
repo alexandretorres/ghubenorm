@@ -186,7 +186,7 @@ public class VisitBelongsTo implements LateVisitor {
 			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName()));
 			for (MProperty p:type.getProperties()) {
 				// this is for has_many in the other side
-				if (p.getName().equals(clazz_under)) {
+				if (p.getName().equals(clazz_under) && !p.equals(prop)) {
 					if (p.getAssociation()==null) {
 						MAssociation.newMAssociation(prop,p).
 						setNavigableFrom(true).
@@ -286,11 +286,11 @@ public class VisitBelongsTo implements LateVisitor {
 						//if (type!=null)
 						//	prop.setTypeClass(type);
 						break;
-					case "inverse_of": 
-						this.inverseOf = value;						
+					case "inverse_of":
+						this.inverseOf = value;
 						break;
-					case "foreign_key":						
-						this.fks = value.split(",");					
+					case "foreign_key":				
+						this.fks = value.split(",");
 						break;
 				}
 				

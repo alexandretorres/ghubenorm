@@ -312,3 +312,14 @@ p1.max<0
 and adef.datasource_id is not null
 -- strange association data (1)
 -- ERROR: ON UNIDIRECTIONAL MANY-TO-MANY, MASSOCIATION SHOULD INDICATE IT. IN UML IT HAS A HIDDEN PROPERTY.
+
+-- Association between the SAME properties (it is a bug. If autoassoc, should relate to another property of the same class)
+select a1.id,a1.to_id,a1.max,a2.id,a2.to_id,a2.max 
+from MAssociation a1 join MProperty tp on tp.id=a1.to_id join MAssociation a2 on a1.id=tp.association_id 
+where a2.to_id=tp.id
+and a1.id=a2.id
+-- Problematic ruby associations
+select c.filepath,tp.name,a1.id,a1.to_id,a1.max,a2.id,a2.to_id,a2.max 
+from MAssociation a1 join MProperty tp on tp.id=a1.to_id join MAssociation a2 on a1.id=tp.association_id join mclass c on tp.parent_id=c.id
+where a2.to_id=tp.id
+and a1.id=a2.id

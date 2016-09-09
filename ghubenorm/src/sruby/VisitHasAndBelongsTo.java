@@ -1,5 +1,7 @@
 package sruby;
 
+import static gitget.Log.LOG;
+
 import java.util.Iterator;
 
 import org.jruby.ast.*;
@@ -11,6 +13,9 @@ import dao.DAOInterface;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MClass;
+import model.MColumn;
+import model.MColumnDefinition;
+import model.MJoinColumn;
 import model.MProperty;
 import model.MTable;
 
@@ -71,6 +76,10 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 	private MClass clazz;
 	private IArgumentNode node;
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
+	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
+	MTable tab=null;
+	private String[] fks=null;
+	private String[] assoc_fks=null;
 	public VisitHasAndBelongsTo(RubyRepo repo, MClass clazz, IArgumentNode node) {
 		this.repo = repo;
 		this.clazz = clazz;
@@ -95,11 +104,28 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 			// search for inverse_of and other stuff
 		}
 		//-------
+		
 		type = prop.getTypeClass();
+		// seek for the association table
+		if (tab==null && type!=null) {
+			MTable t1 = clazz.getPersistence().getMainTable();
+			MTable t2 = clazz.getPersistence().getMainTable();
+			if (t1!=null && t2!=null) {
+				String tabName = JRubyInflector.getInstance().deriveJoinTable(t1.getName(), t2.getName());
+				tab = repo.getTable(tabName);
+				if (tab!=null) {
+					MAssociationDef def = prop.getOrInitAssociationDef();
+					def.setDataSource(tab);
+				}
+			}
+		}
+		if (tab!=null) {
+			createFKs(prop);
+		}
 		if (prop.getAssociation()==null && type!=null) {
 			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName()));
-			for (MProperty p:type.getProperties()) {
-				if (p.getName().equals(clazz_under)) {
+			for (MProperty p:type.getProperties()) {				
+				if (p.getName().equals(clazz_under) && !p.equals(prop)) {
 					if (p.getAssociation()==null) {
 						MAssociation.newMAssociation(p,prop).
 						setNavigableFrom(true).
@@ -121,6 +147,50 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 		}
 		return true;
 	}
+	
+	private void createFKs(MProperty prop) {
+		MAssociationDef def = prop.getOrInitAssociationDef();
+		int len = fks==null ?  1  : fks.length;
+		//MClass parent = prop.getParent();		
+		
+		for (int i=0;i<len;i++) {
+			String fk = fks==null ? JRubyInflector.instance.foreignKey(clazz.getName()) : fks[i];
+			MJoinColumn jc = def.findJoinColumn(fk);
+			MColumn col = tab.findColumn(fk);
+			if (col==null) {								
+				col =  daoColumn.persit(tab.addColumn().setName(fk));		
+			}
+			if (jc==null) {
+				jc=def.newJoingColumn(col);				
+			}
+			
+			if (clazz.getPK().size()>i) {
+				MColumnDefinition idef = clazz.getPK().get(i).getColumnDef();
+				jc.setInverse(idef);
+			}
+			
+		}
+		len = assoc_fks==null ? 1 : assoc_fks.length;
+		MClass tclass = prop.getTypeClass();
+		if (tclass!=null) {
+			for (int i=0;i<len;i++) {
+				String fk = fks==null ? JRubyInflector.instance.foreignKey(tclass.getName()) : fks[i];
+				MJoinColumn jc = def.findJoinColumn(fk);
+				MColumn col = tab.findColumn(fk);
+				if (col==null) {								
+					col =  daoColumn.persit(tab.addColumn().setName(fk));		
+				}
+				if (jc==null) {
+					jc=def.newJoingColumn(col);				
+				}	
+				if (tclass.getPK().size()>i) {
+					MColumnDefinition idef =tclass.getPK().get(i).getColumnDef();
+					jc.setInverse(idef);
+				}
+			}
+		}
+		
+	}
 	private void visitArg(MProperty prop,Node arg) {
 		if (arg instanceof HashNode) {
 			HashNode hn = (HashNode) arg;
@@ -136,12 +206,19 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 							prop.setTypeClass(type);
 						break;
 					case "join_table": 
-						MTable tab = repo.getTable(value);
+						tab = repo.getTable(value);
 						if (tab!=null) {
 							def = prop.getOrInitAssociationDef();
 							def.setDataSource(tab);
 						}
 						break;
+					case "foreign_key":				
+						this.fks = value.split(",");
+						break;
+					case "association_foreign_key":				
+						this.assoc_fks = value.split(",");
+						break;							
+						
 				}
 			}
 		}

@@ -20,6 +20,7 @@ import org.jruby.ast.visitor.AbstractNodeVisitor;
 import dao.ConfigDAO;
 import dao.DAOInterface;
 import model.MClass;
+import model.MColumn;
 import model.MColumnDefinition;
 import model.MColumnMapping;
 import model.MProperty;
@@ -38,6 +39,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	static DAOInterface<MClass> daoMClass = ConfigDAO.getDAO(MClass.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	static DAOInterface<MProperty> daoMProp = ConfigDAO.getDAO(MProperty.class);
+	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
 	String currentURL;
 	public void reset(String url) {
 		this.currentURL=url;
@@ -114,7 +116,10 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		super.visitClassNode(n);
 		if (clazz!=null) {
 			if (clazz.isPersistent() && !clazz.getProperties().stream().anyMatch(p->p.isPk())) {
-				clazz.newPKProperty().setName("id").setType("integer"); //TODO: not for subclasses!!
+				//TODO: not for subclasses!!
+				MProperty idProp = clazz.newPKProperty().setName("id").setType("integer"); 
+				MColumn decoyId = daoColumn.persit(MColumn.newMColumn().setTable(clazz.getPersistence().getMainTable()));
+				idProp.setColumnMapping(MColumnMapping.newMColumnMapping(decoyId));
 			}			
 			stack.pop();			
 			List<ClassNode> subs = repo.subclasses.get(name);

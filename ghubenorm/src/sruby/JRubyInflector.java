@@ -13,11 +13,21 @@ import javax.script.ScriptException;
 
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
-
+/**
+ * to install gem on jruby:
+ * jruby -S gem install rails
+ * jirb is the command line utility
+ * @author user
+ *
+ */
 public class JRubyInflector {
 	public static final JRubyInflector instance = new JRubyInflector();
 	ScriptContext context;
 	ScriptEngine rubyEngine;
+	String derive_join_table_name = 
+			"def derive_join_table_name(first_table, second_table) \n"
+					+ "[first_table.to_s, second_table.to_s].sort.join(\"\0\").gsub(/^(.*_)(.+)\0\1(.+)/, '\1\2_\3').tr(\"\0\", \"_\")\n"
+					+ "end";
 	public static JRubyInflector getInstance() {
 		return instance;
 	}
@@ -31,6 +41,8 @@ public class JRubyInflector {
 			
 			try{
 				rubyEngine.eval("require 'active_support/inflector'",context);
+				//rubyEngine.eval("require 'active_record'",context);
+				rubyEngine.eval(derive_join_table_name);
 			} catch (ScriptException e) {
 			    e.printStackTrace();
 			}
@@ -41,6 +53,14 @@ public class JRubyInflector {
 	public String tableize(String className) {
 		try {
 			return (String) rubyEngine.eval("\""+className+"\".tableize", context);
+		} catch (ScriptException ex) {
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+		    return "";
+		}
+	}
+	public String foreignKey(String value) {
+		try {
+			return (String) rubyEngine.eval("\""+value+"\".foreign_key", context);
 		} catch (ScriptException ex) {
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
 		    return "";
@@ -70,15 +90,32 @@ public class JRubyInflector {
 		    return "";
 		}
 	}
-	
+	public Object eval(String st) {
+		try {
+			return (String) rubyEngine.eval(st, context);
+		} catch (ScriptException ex) {
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+		    return "";
+		}
+		
+	}
+	public String deriveJoinTable(String tab1,String tab2) {
+		try {
+			return (String) rubyEngine.eval("derive_join_table_name(\""+tab1+"\",\""+tab2+"\")", context);
+		} catch (ScriptException ex) {
+			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+		    return "";
+		}
+	}
 	public static void main(String[] args) {
 		
 		try {
-			
+			/*
 			System.out.println(instance.tableize("photo"));
 			System.out.println(instance.tableize("person"));
 			System.out.println(instance.underscore("FirstPerson"));
-			System.out.println(instance.singularize("people"));
+			System.out.println(instance.singularize("people"));*/
+			System.out.println(instance.eval("derive_join_table_name(\"members\", \"clubs\")"));
 			/*
 			ScriptEngineManager m = new ScriptEngineManager();
 			ScriptEngine rubyEngine = m.getEngineByName("jruby");

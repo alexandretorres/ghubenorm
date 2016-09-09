@@ -19,31 +19,20 @@ public class JavaCrawlerOneTest {
 	}
 
 	@Test
-	public void test() {
-		
+	public void test() {		
 		String repos[]= new String[] {
-				"nirvdrum/cayenne","SnapImpact/ivolunteer","myabc/appfuse"
-				/*"khaya/acm","vusa/Placd","rangalo/Seam2Examples","felipero/examples","ifischer/getabike",
-				"tjcampos/TPW","rafabene/XSeam2","johnragan/johnragan_org","myabc/opendls"*/
-				/*"sirgwain/CraigStars-"
-				"martijnblankestijn/javaee6-demo",
-				"OpenAMEE/amee.platform.domain",
-				"dshaish/Delegator_base",
-				"jraduget/kaleido-repository",
-				"cgreenhalgh/lobbyservice",
-				"dtrott/mdtracker",
-				"KhurtinDN/AdmissionDepartment",
-			
-				"jsmadja/fluxx"*/
-				//"pedrotoliveira/smartproject",
-				//"guruzu/Hibernate-recipes-JPA";
-				//"ihilt/echarts";
-				//"RaviH/MavenSpringHibernateMockito";
-				//"kgbu/boothmgr";
-				//"emacadie/James-Admin-Web-App";
-				//"adelinojr/BookStoreClienteEJB";
+				//pancutan/ConcesionariaDB
+				"nirvdrum/cayenne","SnapImpact/ivolunteer",
+				"khaya/acm","vusa/Placd","rangalo/Seam2Examples","felipero/examples","ifischer/getabike",
+				"tjcampos/TPW","rafabene/XSeam2","johnragan/johnragan_org","myabc/opendls",
+				"sirgwain/CraigStars-",	"martijnblankestijn/javaee6-demo",	"OpenAMEE/amee.platform.domain",
+				"dshaish/Delegator_base","jraduget/kaleido-repository",	"cgreenhalgh/lobbyservice",
+				"dtrott/mdtracker",	"KhurtinDN/AdmissionDepartment","jsmadja/fluxx",
+				"pedrotoliveira/smartproject","guruzu/Hibernate-recipes-JPA","ihilt/echarts",
+				"RaviH/MavenSpringHibernateMockito","kgbu/boothmgr","emacadie/James-Admin-Web-App",				
+				"adelinojr/BookStoreClienteEJB","myabc/appfuse",
+				//----x----
 				//	"EthanWint/PDFFilter";
-				//"myabc/appfuse";
 				//		"android/platform_packages_apps_phone";
 		// "facebook/react-native";
 		// "kmahaley/MSD_File_Sharing";

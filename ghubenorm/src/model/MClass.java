@@ -285,6 +285,7 @@ public class MClass {
 		else
 			return ret;
 	}
+	//TODO:ordered PK?
 	public List<MProperty> getPK() {
 		return getProperties().stream().filter(p->p.isPk()).collect(Collectors.toList());
 	}

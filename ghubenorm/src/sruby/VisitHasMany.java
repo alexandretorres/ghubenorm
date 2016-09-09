@@ -173,7 +173,7 @@ public class VisitHasMany implements LateVisitor {
 			//visit SUPERCLASS PROPERTIES
 			for (MProperty p:type.getProperties()) {
 				// this is for belongs_to
-				if (p.getName().equals(clazz_under)) {
+				if (p.getName().equals(clazz_under) && !p.equals(prop)) {
 					if (p.getAssociation()==null) {
 						MAssociation.newMAssociation(p,prop).
 						setNavigableFrom(true).

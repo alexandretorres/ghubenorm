@@ -138,9 +138,11 @@ public class VisitAssociation implements LateVisitor {
 		}
 		//---
 		MClass fromClass = prop.getParent();  // Where the Foreign Key points, if Join Column exists
+		MClass toClass = typeClass;
 		if (typeClass==null && !(ElementCollection.isType(assoc,unit)))
 			Log.LOG.warning("Null destination type for association "+prop.getName()+" at "+prop.getParent());
 		if ((ManyToOne.isType(assoc,unit) || OneToOne.isType(assoc,unit)) && typeClass!=null) {
+			toClass = fromClass;
 			fromClass = typeClass;
 		}
 		//TODO: all other association parameters
@@ -152,13 +154,20 @@ public class VisitAssociation implements LateVisitor {
 				MTable tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(unit.jrepo.getRepo(),name));
 				tab.setCatalog(an.getValueAsString("catalog"));
 				tab.setSchema(an.getValueAsString("schema"));
-				
+				//TODO: missing inverseJoinColumns of JoinTable. The referencedColumns are named inverse, while the inverse are just normal JoinCols
 				adef.setDataSource(tab);
 				List<ElementValue> jcs = an.getListValue("joinColumns");
 				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
 						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc);
+						
+					}
+				jcs = an.getListValue("inverseJoinColumns");
+				if (jcs!=null)
+					for (ElementValue ev:jcs) {
+						Annotation ajc = ev.annotation;
+						MJoinColumn jc= createJoinColumn(unit.jrepo,toClass,tab,adef,ajc);
 						
 					}
 			} else if (JoinColumns.isType(an,unit)) {
