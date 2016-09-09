@@ -22,8 +22,9 @@ public class JavaCrawlerOneTest {
 	public void test() {
 		
 		String repos[]= new String[] {
-				"khaya/acm","vusa/Placd","rangalo/Seam2Examples","felipero/examples","ifischer/getabike",
-				"tjcampos/TPW","rafabene/XSeam2","johnragan/johnragan_org","myabc/opendls"
+				"nirvdrum/cayenne","SnapImpact/ivolunteer","myabc/appfuse"
+				/*"khaya/acm","vusa/Placd","rangalo/Seam2Examples","felipero/examples","ifischer/getabike",
+				"tjcampos/TPW","rafabene/XSeam2","johnragan/johnragan_org","myabc/opendls"*/
 				/*"sirgwain/CraigStars-"
 				"martijnblankestijn/javaee6-demo",
 				"OpenAMEE/amee.platform.domain",
