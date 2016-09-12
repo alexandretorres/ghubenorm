@@ -14,6 +14,7 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 	@Before
 	public void setUp() throws Exception {
 		ConfigDAO.config(new ConfigNop());
+		//ConfigDAO.config(JPA_DAO.instance);
 	}
 
 	@Test

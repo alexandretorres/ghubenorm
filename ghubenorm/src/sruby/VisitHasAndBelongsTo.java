@@ -15,6 +15,7 @@ import model.MAssociationDef;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
+import model.MColumnMapping;
 import model.MJoinColumn;
 import model.MProperty;
 import model.MTable;
@@ -147,7 +148,16 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 		}
 		return true;
 	}
-	
+	public static MColumn getOrCreatePKColumn(MProperty idProp) {
+		MColumnDefinition ret = idProp.getColumnDef();
+		if (ret==null) {
+			MColumn decoyId = daoColumn.persit(MColumn.newMColumn().setTable(idProp.getParent().getPersistence().getMainTable())).
+					setName(idProp.getName());
+			idProp.setColumnMapping(MColumnMapping.newMColumnMapping(decoyId));
+			return decoyId;
+		} else 
+			return ret.getColumn();
+	}
 	private void createFKs(MProperty prop) {
 		MAssociationDef def = prop.getOrInitAssociationDef();
 		int len = fks==null ?  1  : fks.length;
@@ -165,7 +175,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 			}
 			
 			if (clazz.getPK().size()>i) {
-				MColumnDefinition idef = clazz.getPK().get(i).getColumnDef();
+				MColumnDefinition idef = getOrCreatePKColumn(clazz.getPK().get(i));
 				jc.setInverse(idef);
 			}
 			
