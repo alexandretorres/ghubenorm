@@ -110,7 +110,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 		// seek for the association table
 		if (tab==null && type!=null) {
 			MTable t1 = clazz.getPersistence().getMainTable();
-			MTable t2 = clazz.getPersistence().getMainTable();
+			MTable t2 = type.getPersistence().getMainTable();
 			if (t1!=null && t2!=null) {
 				String tabName = JRubyInflector.getInstance().deriveJoinTable(t1.getName(), t2.getName());
 				tab = repo.getTable(tabName);
@@ -159,6 +159,8 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 			return ret.getColumn();
 	}
 	private void createFKs(MProperty prop) {
+		if (fks==null && assoc_fks==null)
+			return;  // does not define join columns if they were not mapped explicitly.
 		MAssociationDef def = prop.getOrInitAssociationDef();
 		int len = fks==null ?  1  : fks.length;
 		//MClass parent = prop.getParent();		
@@ -184,7 +186,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 		MClass tclass = prop.getTypeClass();
 		if (tclass!=null) {
 			for (int i=0;i<len;i++) {
-				String fk = fks==null ? JRubyInflector.instance.foreignKey(tclass.getName()) : fks[i];
+				String fk = assoc_fks==null ? JRubyInflector.instance.foreignKey(tclass.getName()) : assoc_fks[i];
 				MJoinColumn jc = def.findJoinColumn(fk);
 				MColumn col = tab.findColumn(fk);
 				if (col==null) {								
@@ -194,7 +196,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 					jc=def.newJoingColumn(col);				
 				}	
 				if (tclass.getPK().size()>i) {
-					MColumnDefinition idef =tclass.getPK().get(i).getColumnDef();
+					MColumnDefinition idef = getOrCreatePKColumn(tclass.getPK().get(i));				
 					jc.setInverse(idef);
 				}
 			}

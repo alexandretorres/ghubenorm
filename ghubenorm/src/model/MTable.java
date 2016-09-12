@@ -80,5 +80,7 @@ public class MTable extends MDataSource {
 		return def;
 		
 	}
-	
+	public String toString() {
+		return super.toString()+ (getRepo()!=null ? "Repo:"+getRepo().getName()+" - " : "" ) + this.getName();
+	}
 }
