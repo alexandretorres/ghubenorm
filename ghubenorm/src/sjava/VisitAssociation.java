@@ -160,14 +160,14 @@ public class VisitAssociation implements LateVisitor {
 				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc);
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc,true);
 						
 					}
 				jcs = an.getListValue("inverseJoinColumns");
 				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,toClass,tab,adef,ajc);
+						MJoinColumn jc= createJoinColumn(unit.jrepo,toClass,tab,adef,ajc,true);
 						
 					}
 			} else if (JoinColumns.isType(an,unit)) {
@@ -176,12 +176,12 @@ public class VisitAssociation implements LateVisitor {
 				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,ajc);
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,ajc,false);
 						
 					}
 			} else if (JoinColumn.isType(an,unit)) {
 				MAssociationDef adef = prop.getOrInitAssociationDef();
-				MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,an);
+				MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,an,false);
 				
 			} else if (CollectionTable.isType(an, unit)) {
 				MAssociationDef adef = prop.getOrInitAssociationDef();
@@ -200,30 +200,30 @@ public class VisitAssociation implements LateVisitor {
 				if (jcs==null) {
 					ElementValue ev = an.getElementValue("joinColumns");
 					if (ev!=null && ev.annotation!=null) {
-						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ev.annotation);						
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ev.annotation,false);						
 					}
 				} else
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc);
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc,false);
 						
 					}
 			}
 		}
 		return true;
 	}
-	public static MJoinColumn createJoinColumn(JavaRepo repo,MClass clazz,MTable toTable,MAssociationDef adef,Annotation ajoin) {
+	public static MJoinColumn createJoinColumn(JavaRepo repo,MClass clazz,MTable toTable,MAssociationDef adef,Annotation ajoin,boolean junctionTable) {
 		MColumn col = MColumn.newMColumn();					
 		JavaVisitor.daoMCol.persit(col);
 		MJoinColumn jc = MJoinColumn.newMJoinColumn(adef, col);
 		adef.getJoinColumns().add(jc);
 		JavaVisitor.daoJoinCol.persit(jc);
-		loadJoinColumn(repo,clazz,toTable,jc, ajoin);
+		loadJoinColumn(repo,clazz,toTable,jc, ajoin,junctionTable);
 		
 		return jc;
 	}
-	public static void loadJoinColumn(JavaRepo repo,MClass fromClazz,MTable toTable,MJoinColumn jcol,Annotation ajoin) {
-		//TODO: If it is a JoinTable, the inverse must NOT BE NULL. It must refer to a column, that refers to a table in order to differentiate inverseJoinColumns
+	public static void loadJoinColumn(JavaRepo repo,MClass fromClazz,MTable toTable,MJoinColumn jcol,Annotation ajoin,boolean junctionTable) {
+		//TODO: If it is a JoinTable, the inverse must NOT BE NOT NULL. It must refer to a column, that refers to a table in order to differentiate inverseJoinColumns
 		MColumn col = jcol.getColumn().getColumn();
 		col.setName(ajoin.getValue("name", ""));		
 		//
@@ -238,10 +238,10 @@ public class VisitAssociation implements LateVisitor {
 		//
 		col.setTable(toTable);
 		//--------------------------
-		if (refColName!=null) { //TODO: create main table if absent
+		if (junctionTable || refColName!=null) { //TODO: create main table if absent
 			MTable tab=fromClazz.getPersistence().getTableSource(tabName);
 			MColumn refCol=null;
-			if (tab!=null) {
+			if (tab!=null && refColName!=null) {
 				refCol = tab.findColumn(refColName);				
 			}			
 			if (refCol!=null)
@@ -286,8 +286,24 @@ class VisitColumnRef implements LateVisitor {
 	@Override
 	public boolean exec() {
 		MColumn refCol=null;
-		try {
-			refCol = fromClazz.findColumnByName(refColName);
+		try {			
+			if (refColName==null || refColName.equals("")) {
+				refColName="";
+				List<MProperty> pk = fromClazz.getPK();
+				if (pk.size()==1) {
+					MProperty ppk = pk.get(0);
+					MColumnDefinition cdef = ppk.getColumnDef();
+					if (cdef!=null) {
+						refCol=cdef.getColumn();						
+					} else {
+						MTable tab = fromClazz.getPersistence().getMainTable();
+						refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setTable(tab));
+						ppk.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
+						//TODO:This fix cannot be used for inherited PK because we have to know what is the destination class in the hierarqy
+					}
+				}
+			} else
+				refCol = fromClazz.findColumnByName(refColName);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			
