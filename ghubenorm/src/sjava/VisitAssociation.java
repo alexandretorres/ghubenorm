@@ -223,7 +223,7 @@ public class VisitAssociation implements LateVisitor {
 		return jc;
 	}
 	public static void loadJoinColumn(JavaRepo repo,MClass fromClazz,MTable toTable,MJoinColumn jcol,Annotation ajoin) {
-		
+		//TODO: If it is a JoinTable, the inverse must NOT BE NULL. It must refer to a column, that refers to a table in order to differentiate inverseJoinColumns
 		MColumn col = jcol.getColumn().getColumn();
 		col.setName(ajoin.getValue("name", ""));		
 		//
