@@ -206,9 +206,8 @@ public class Repo {
 								col=jc.getInverse();
 								if (col!=null) {
 									if (col.getTable()!=null)
-										pw.print(col.getTable().getName()+".");
-									
-									pw.print(col.getName());
+										pw.print(col.getTable().getName()+".");									
+									pw.print(col.getName());									
 								}
 								pw.print("]");
 							}
@@ -282,8 +281,20 @@ public class Repo {
 									pw.print(".");
 								}
 								pw.print(colDef.getName());
-							if (invColDef!=null)									 
-								pw.print("="+Optional.ofNullable(invColDef.getTable()).map(t->t.getName()+".").orElse("")+invColDef.getName());
+							if (invColDef!=null) {	
+								//TODO: this way will print the table name, the class, and the field.
+								pw.print("="+Optional.ofNullable(invColDef.getTable()).map(t->t.getName()+".").orElse(""));
+								if (invColDef.getName()==null ) {
+									String name = printInverseJoinColumn(invColDef,p.getParent());
+									if (name==null && p.getTypeClass()!=null) {
+										 name = printInverseJoinColumn(invColDef,p.getTypeClass());
+									}
+									pw.print(name);
+									//placeHolder column
+									//invColDef.get
+								} else
+									pw.print(invColDef.getName());
+							}
 							
 							f=true;
 						}
@@ -334,5 +345,60 @@ public class Repo {
 			LOG.info("{Repo:End}----------------");
 		}
 			//System.out.println(sw.getBuffer());
+	}
+	String printInverseJoinColumn(MColumnDefinition invColDef,MClass clazz) {
+		String name = null;
+		if (invColDef.getTable()!=null && invColDef.getTable().getName()==null &&  clazz.getPersistence().hasTableSource(invColDef.getTable())) {
+			return clazz.getName()+".<id>";
+		}
+		for (MProperty pk:clazz.getPK()) {
+			if (invColDef.equals(pk.getColumnDef())) {
+				name = clazz.getName()+"."+pk.getName();
+				break;
+			}
+		}
+		if (name==null) {
+			for (MGeneralization gen:clazz.getGeneralization()) {
+				if (gen instanceof MVertical) {
+					MVertical vert = (MVertical) gen;
+					for (MJoinColumn gjc: vert.getJoinCols()) {
+						if (invColDef.equals(gjc.getColumn())) {
+							String idName = "<id>";
+							for (MProperty pk:clazz.findPK()) {
+								if (pk.getColumnDef()!=null)
+									idName = pk.getColumnDef().getName();
+								if (idName.equals("<id>")) {
+									idName = pk.getName();
+								}
+								break;
+							}
+							name = clazz.getName()+"."+idName;
+							break;
+						}
+					}
+				}
+			}
+		}
+		if (name==null) {
+			for (MOverride over:clazz.getOverrides()) {
+				if (over instanceof MAttributeOverride) {
+					MAttributeOverride aover = (MAttributeOverride) over;
+					if (invColDef.equals(aover.getColumn())) {
+						String idName = "<id>";
+						for (MProperty pk:clazz.findPK()) {
+							if (pk.getColumnDef()!=null)
+								idName = pk.getColumnDef().getName();
+							if (idName.equals("<id>")) {
+								idName = pk.getName();
+							}
+							break;
+						}
+						name = clazz.getName()+"."+idName;
+						break;
+					}
+				}
+			}
+		}
+		return name;
 	}
 }

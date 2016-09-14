@@ -21,9 +21,9 @@ public class JavaCrawlerOneTest {
 	@Test
 	public void test() {		
 		String repos[]= new String[] {
-				"randi2/randi2"
-				//pancutan/ConcesionariaDB
-			/*	"nirvdrum/cayenne","SnapImpact/ivolunteer",
+				"randi2/randi2",
+				"pancutan/ConcesionariaDB",
+			/**/	"nirvdrum/cayenne","SnapImpact/ivolunteer",
 				"khaya/acm","vusa/Placd","rangalo/Seam2Examples","felipero/examples","ifischer/getabike",
 				"tjcampos/TPW","rafabene/XSeam2","johnragan/johnragan_org","myabc/opendls",
 				"sirgwain/CraigStars-",	"martijnblankestijn/javaee6-demo",	"OpenAMEE/amee.platform.domain",
@@ -31,7 +31,7 @@ public class JavaCrawlerOneTest {
 				"dtrott/mdtracker",	"KhurtinDN/AdmissionDepartment","jsmadja/fluxx",
 				"pedrotoliveira/smartproject","guruzu/Hibernate-recipes-JPA","ihilt/echarts",
 				"RaviH/MavenSpringHibernateMockito","kgbu/boothmgr","emacadie/James-Admin-Web-App",				
-				"adelinojr/BookStoreClienteEJB","myabc/appfuse",*/
+				"adelinojr/BookStoreClienteEJB","myabc/appfuse",/**/
 				//----x----
 				//	"EthanWint/PDFFilter";
 				//		"android/platform_packages_apps_phone";

@@ -310,8 +310,8 @@ class VisitColumnRef implements LateVisitor {
 				} else {
 					//TODO: FIRST look for PrimaryKeyJoinColumn on the generalizations, recursively, until find a PK
 					//IF not...
-					MClass cl = fromClazz;
-					while(cl.getSuperClass()!=null && !cl.getGeneralization().isEmpty()) {
+					for (MClass cl = fromClazz;cl.getSuperClass()!=null && !cl.getGeneralization().isEmpty();cl=cl.getSuperClass()) {
+					//while() {
 						for (MGeneralization gen:cl.getGeneralization()) {
 							if (gen instanceof MVertical) {
 								Set<MJoinColumn> jcs = (((MVertical) gen).getJoinCols());
@@ -321,18 +321,29 @@ class VisitColumnRef implements LateVisitor {
 								}
 							}
 						}
-						cl=cl.getSuperClass();
+				//		cl=cl.getSuperClass();
 					}
-					if (refCol==null && cl.getSuperClass()!=null) {
+					if (refCol==null && fromClazz.getSuperClass()!=null) {
 						pk = fromClazz.findPK();
-						MProperty ppk = pk.get(0);
-						//
-						
-						refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn());
-						
-						MAttributeOverride over = MAttributeOverride.newMAttributeOverride(refCol, ppk);
-						fromClazz.override(over);
-						VisitOverrides.daoMAttrOverride.persit(over);
+						if (!pk.isEmpty()) {
+							MProperty ppk = pk.get(0);
+							//
+							for (MOverride ov:fromClazz.getOverrides()) {								
+								if (ov instanceof MAttributeOverride) {
+									if (ov.getProperties().contains(ppk)) {
+										refCol = ((MAttributeOverride)ov).getColumn().getColumn();
+										break;
+									}
+								}
+							}
+							if (refCol==null) {							
+								refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn());
+								
+								MAttributeOverride over = MAttributeOverride.newMAttributeOverride(refCol, ppk);
+								fromClazz.override(over);
+								VisitOverrides.daoMAttrOverride.persit(over);
+							}
+						}
 					}
 					if (refCol==null) {
 						//Create a column with a "reserved" name

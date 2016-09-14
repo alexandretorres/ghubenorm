@@ -323,3 +323,15 @@ select c.filepath,tp.name,a1.id,a1.to_id,a1.max,a2.id,a2.to_id,a2.max
 from MAssociation a1 join MProperty tp on tp.id=a1.to_id join MAssociation a2 on a1.id=tp.association_id join mclass c on tp.parent_id=c.id
 where a2.to_id=tp.id
 and a1.id=a2.id
+-- This checks the odd situation where a many-to-many declares joinColumns that refer to a table that inherits a PK from mapped superclass
+-- In this specific situation, an override is created to distinguish the joinColumn and inversejoincolumn on java
+select c.filepath,p.name,col.name,col.table_id,jtab.name, adef.*,jc.*, invClass.name from repo r join mclass c on r.id=c.repo_id join mproperty p on p.parent_id=c.id
+ join massociationdef adef on  p.value_id=adef.id
+ join mjoincolumn jc on jc.associationdef_id =adef.id
+ join mcolumn col on col.id=jc.column_id
+ join mdatasource jtab on datasource_id=jtab.id
+ join moverride mo on mo.column_id = jc.inverse_id
+ join mclass invClass on mo.clazz_id = invClass.id
+where
+language=0
+and datasource_id is not null

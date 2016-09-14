@@ -74,5 +74,21 @@ public class MPersistent {
 		}
 		return null;
 	}
-	
+	public boolean hasTableSource(MTable tab) {	
+		if (tab==null)
+			return false;
+		if (source instanceof MTableRef)
+			return tab.equals( ((MTableRef)source).getTable());
+		if (source instanceof MJoinedSource) {
+			for (MTable jtab:((MJoinedSource)source).getDefines()) {
+				if (tab.equals(jtab))
+					return true;
+			}
+			return false;
+		} else if (source instanceof MTable) {
+			return tab.equals(source)	;	
+			
+		}
+		return false;
+	}
 }
