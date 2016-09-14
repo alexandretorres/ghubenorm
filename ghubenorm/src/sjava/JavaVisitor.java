@@ -412,6 +412,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			mainTab = superClass.getPersistence().getMainTable();
 			//TODO: this is a mess! question: can I DECLARE a column by referencing? don´t think so
 			//TODO: what is the order? Maybe references should be treated in a third stage, after declarations
+			//TODO: There is a similar create join column algor. in the VisitAssociation class
 			if (refColName!=null) { //TODO: create main table if absent
 				MColumn refCol=null;
 				if (mainTab!=null) {

@@ -1,6 +1,7 @@
 package sjava;
 
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.OneToMany;
 
@@ -8,14 +9,17 @@ import common.LateVisitor;
 import gitget.Log;
 import model.MAssociation;
 import model.MAssociationDef;
+import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
 import model.MColumnMapping;
+import model.MGeneralization;
 import model.MJoinColumn;
 import model.MOverride;
 import model.MProperty;
 import model.MTable;
+import model.MVertical;
 
 import static sjava.JPATags.*;
 
@@ -247,7 +251,7 @@ public class VisitAssociation implements LateVisitor {
 			if (refCol!=null)
 				jcol.setInverse(refCol);	
 			else
-				repo.visitors.add(new VisitColumnRef(refColName,fromClazz,jcol));
+				repo.visitors.add(new VisitColumnRef(repo,refColName,fromClazz,jcol));
 						
 		}
 		
@@ -267,13 +271,14 @@ class VisitColumnRef implements LateVisitor {
 	String refColName;
 	MClass fromClazz;
 	MJoinColumn jcol;
+	JavaRepo repo;
 	
-	
-	public VisitColumnRef(String refColName, MClass fromClazz, MJoinColumn jcol) {
+	public VisitColumnRef(JavaRepo repo,String refColName, MClass fromClazz, MJoinColumn jcol) {
 		super();
 		this.refColName = refColName;
 		this.fromClazz = fromClazz;
 		this.jcol = jcol;
+		this.repo=repo;
 	}
 
 
@@ -300,6 +305,45 @@ class VisitColumnRef implements LateVisitor {
 						refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setTable(tab));
 						ppk.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
 						//TODO:This fix cannot be used for inherited PK because we have to know what is the destination class in the hierarqy
+					
+					}
+				} else {
+					//TODO: FIRST look for PrimaryKeyJoinColumn on the generalizations, recursively, until find a PK
+					//IF not...
+					MClass cl = fromClazz;
+					while(cl.getSuperClass()!=null && !cl.getGeneralization().isEmpty()) {
+						for (MGeneralization gen:cl.getGeneralization()) {
+							if (gen instanceof MVertical) {
+								Set<MJoinColumn> jcs = (((MVertical) gen).getJoinCols());
+								for (MJoinColumn pjc:jcs) {
+									refCol = pjc.getColumn().getColumn();
+									break;
+								}
+							}
+						}
+						cl=cl.getSuperClass();
+					}
+					if (refCol==null && cl.getSuperClass()!=null) {
+						pk = fromClazz.findPK();
+						MProperty ppk = pk.get(0);
+						//
+						
+						refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn());
+						
+						MAttributeOverride over = MAttributeOverride.newMAttributeOverride(refCol, ppk);
+						fromClazz.override(over);
+						VisitOverrides.daoMAttrOverride.persit(over);
+					}
+					if (refCol==null) {
+						//Create a column with a "reserved" name
+						MTable tab = fromClazz.getPersistence().getMainTable();
+						if (tab==null) {
+							tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(repo.getRepo(),(String) null));
+							fromClazz.getPersistence().setDataSource(tab);
+						} else
+							refCol = tab.findColumn("<id>");
+						if (refCol==null)
+							refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setTable(tab).setName("<id>"));	
 					}
 				}
 			} else
