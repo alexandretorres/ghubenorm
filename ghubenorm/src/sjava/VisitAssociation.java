@@ -144,7 +144,7 @@ public class VisitAssociation implements LateVisitor {
 		MClass fromClass = prop.getParent();  // Where the Foreign Key points, if Join Column exists
 		MClass toClass = typeClass;
 		if (typeClass==null && !(ElementCollection.isType(assoc,unit)))
-			Log.LOG.warning("Null destination type for association "+prop.getName()+" at "+prop.getParent());
+			Log.LOG.warning("Null destination type ("+prop.getType()+") for association "+prop.getName()+" at "+prop.getParent());
 		if ((ManyToOne.isType(assoc,unit) || OneToOne.isType(assoc,unit)) && typeClass!=null) {
 			toClass = fromClass;
 			fromClass = typeClass;
@@ -171,7 +171,10 @@ public class VisitAssociation implements LateVisitor {
 				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,toClass,tab,adef,ajc,true);
+						if (toClass!=null)
+							createJoinColumn(unit.jrepo,toClass,tab,adef,ajc,true);
+						else
+							Log.LOG.warning("Join Column refers to unknown class");
 						
 					}
 			} else if (JoinColumns.isType(an,unit)) {

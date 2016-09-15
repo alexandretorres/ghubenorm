@@ -187,7 +187,7 @@ public class JCompilationUnit {
 	}
 	public MClass getClazz(String name) {		
 		//TODO:extract package name
-		MClass ret = jrepo.getClasses().stream().filter(cl->(cl.getName().equals(name) && cl.getPackageName().equals(packageName)) || cl.getFullName().equals(name)).
+		MClass ret = jrepo.getClasses().stream().filter(cl->(cl.getName().equals(name) && Util.equals(cl.getPackageName(),packageName)) || cl.getFullName().equals(name)).
 				findFirst().orElse(jrepo.getClasses().stream().filter(cl->cl.getName().equals(name) && this.importClass(cl)).findFirst().orElse(null));
 		
 		return ret;

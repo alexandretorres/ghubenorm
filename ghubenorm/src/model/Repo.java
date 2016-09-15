@@ -228,7 +228,8 @@ public class Repo {
 					pw.print(" | ");
 					if (cl.getPersistence().getSource() instanceof MTable) {
 						mainTab = (MTable) cl.getPersistence().getSource() ;
-						pw.print(mainTab.getName());
+						if (mainTab.getName()!=null)
+							pw.print(mainTab.getName());
 					} else if (cl.getPersistence().getSource() instanceof MJoinedSource) {
 						MJoinedSource source = (MJoinedSource) cl.getPersistence().getSource();
 						for (MTable stab:source.getDefines()) {
@@ -283,17 +284,19 @@ public class Repo {
 								pw.print(colDef.getName());
 							if (invColDef!=null) {	
 								//TODO: this way will print the table name, the class, and the field.
-								pw.print("="+Optional.ofNullable(invColDef.getTable()).map(t->t.getName()+".").orElse(""));
+								String tabName = Optional.ofNullable(invColDef.getTable()).map(t->t.getName()).orElse(null);
+								pw.print("=");
 								if (invColDef.getName()==null ) {
-									String name = printInverseJoinColumn(invColDef,p.getParent());
+									String name = printInverseJoinColumn(invColDef,p.getParent(),tabName);
 									if (name==null && p.getTypeClass()!=null) {
-										 name = printInverseJoinColumn(invColDef,p.getTypeClass());
+										 name = printInverseJoinColumn(invColDef,p.getTypeClass(),tabName);
 									}
-									pw.print(name);
-									//placeHolder column
-									//invColDef.get
-								} else
+									pw.print(name);									
+								} else {
+									if (tabName!=null)
+										pw.print(tabName+".");
 									pw.print(invColDef.getName());
+								}
 							}
 							
 							f=true;
@@ -346,14 +349,17 @@ public class Repo {
 		}
 			//System.out.println(sw.getBuffer());
 	}
-	String printInverseJoinColumn(MColumnDefinition invColDef,MClass clazz) {
+	String printInverseJoinColumn(MColumnDefinition invColDef,MClass clazz,String tabName) {
+		//TODO: MainTable instead of class name
 		String name = null;
-		if (invColDef.getTable()!=null && invColDef.getTable().getName()==null &&  clazz.getPersistence().hasTableSource(invColDef.getTable())) {
-			return clazz.getName()+".<id>";
+		if (tabName==null && clazz.getPersistence().hasTableSource(invColDef.getTable())) {
+			return "<"+clazz.getName()+">.<id>";
 		}
 		for (MProperty pk:clazz.getPK()) {
 			if (invColDef.equals(pk.getColumnDef())) {
-				name = clazz.getName()+"."+pk.getName();
+				if (tabName==null)
+					tabName = "<"+clazz.getName()+">";
+				name = pk.getName();
 				break;
 			}
 		}
@@ -372,7 +378,9 @@ public class Repo {
 								}
 								break;
 							}
-							name = clazz.getName()+"."+idName;
+							if (tabName==null)
+								tabName = "<"+clazz.getName()+">";
+							name = idName;
 							break;
 						}
 					}
@@ -393,12 +401,16 @@ public class Repo {
 							}
 							break;
 						}
-						name = clazz.getName()+"."+idName;
+						if (tabName==null)
+							tabName ="<"+clazz.getName()+">";
+						name = idName;
 						break;
 					}
 				}
 			}
 		}
+		if (name!=null)
+			name = (tabName==null ? "" : tabName+"." )+name;
 		return name;
 	}
 }
