@@ -267,42 +267,7 @@ public class Repo {
 						pw.print( col.getLength()==null ? "" : "("+col.getLength()+")");
 					}
 						
-					if (p.getAssociationMapping()!=null) {
-						pw.print("( ");
-						boolean f=false;
-						for (MJoinColumn jc:p.getAssociationMapping().getValue().getJoinColumns()) {
-							//TODO:Check with ruby this change. This will never work with Java and looks fishy
-							MColumnDefinition colDef = jc.getColumn(); //jc.getColumnForProperty(p); 
-							MColumnDefinition invColDef = jc.getInverse(); //jc.getColumnForProperty(inv);
-							if (f)
-								pw.print(",");
-							if (colDef!=null)
-								if (colDef.getTable()!=null && !colDef.getTable().equals(cl.getPersistence().getMainTable())) {
-									pw.print(colDef.getTable().getName());
-									pw.print(".");
-								}
-								pw.print(colDef.getName());
-							if (invColDef!=null) {	
-								//TODO: this way will print the table name, the class, and the field.
-								String tabName = Optional.ofNullable(invColDef.getTable()).map(t->t.getName()).orElse(null);
-								pw.print("=");
-								if (invColDef.getName()==null ) {
-									String name = printInverseJoinColumn(invColDef,p.getParent(),tabName);
-									if (name==null && p.getTypeClass()!=null) {
-										 name = printInverseJoinColumn(invColDef,p.getTypeClass(),tabName);
-									}
-									pw.print(name);									
-								} else {
-									if (tabName!=null)
-										pw.print(tabName+".");
-									pw.print(invColDef.getName());
-								}
-							}
-							
-							f=true;
-						}
-						pw.print(") ");							
-					}
+					pw.print( printAssociationDef(cl,p));
 					MAssociation assoc = p.getAssociation();
 					if (assoc==null)
 						assoc = p.getToAssociation();
@@ -325,18 +290,23 @@ public class Repo {
 					pw.println();
 				}
 				if (!cl.getOverrides().isEmpty()) {
-					pw.println("____________");				
-					pw.println("Overrides:");			
+					String header = "____________\n";
+					header += "Overrides:\n";
+					String tx="";
 					for (MOverride ov: cl.getOverrides()) {
 						if (ov instanceof MAttributeOverride) {
-							MAttributeOverride ao = (MAttributeOverride) ov;	
-							Stream<String> st1 = ao.getProperties().stream().map(MProperty::getName);
-							pw.print(String.join(".",  st1.toArray(String[]::new)));					
-							pw.println(" to column "+ao.getColumn().getName());
+							MAttributeOverride ao = (MAttributeOverride) ov;
+							if (ao.checkOverride()) {
+								Stream<String> st1 = ao.getProperties().stream().map(MProperty::getName);
+								tx+=String.join(".",  st1.toArray(String[]::new));		
+								tx+=" to column "+ao.getColumn().getName()+"\n";
+							}
 						} else {
 							
 						}
 					}
+					if (tx.length()>0)
+						pw.print(header+tx);
 				}
 				pw.flush();
 			}
@@ -348,6 +318,60 @@ public class Repo {
 			LOG.info("{Repo:End}----------------");
 		}
 			//System.out.println(sw.getBuffer());
+	}
+	String printAssociationDef(MClass cl,MProperty p) {
+		StringWriter sw =new StringWriter();
+		PrintWriter pw = new PrintWriter(sw);
+		
+		if (p.getAssociationMapping()!=null) {			
+			int f=0;
+			MAssociationDef adef = p.getAssociationMapping().getValue();
+			String dsName=null;
+			if (adef.getDataSource()!=null && (dsName=adef.getDataSource().printName())!=null) {
+				pw.print("joinTable="+dsName);
+				f=1;
+			}
+			for (MJoinColumn jc:adef.getJoinColumns()) {
+				//TODO:Check with ruby this change. This will never work with Java and looks fishy
+				MColumnDefinition colDef = jc.getColumn(); //jc.getColumnForProperty(p); 
+				MColumnDefinition invColDef = jc.getInverse(); //jc.getColumnForProperty(inv);				
+				if (f>0)
+					pw.print(", ");
+				if (f<2)
+					pw.print("joinColumn(s)=");
+				f=2;
+				if (colDef!=null)
+					if (colDef.getTable()!=null && !colDef.getTable().equals(cl.getPersistence().getMainTable())) {
+						pw.print(colDef.getTable().getName());
+						pw.print(".");
+					}
+					pw.print(colDef.getName());
+				if (invColDef!=null) {	
+					//TODO: this way will print the table name, the class, and the field.
+					String tabName = Optional.ofNullable(invColDef.getTable()).map(t->t.getName()).orElse(null);
+					pw.print("=");
+					if (invColDef.getName()==null ) {
+						String name = printInverseJoinColumn(invColDef,p.getParent(),tabName);
+						if (name==null && p.getTypeClass()!=null) {
+							 name = printInverseJoinColumn(invColDef,p.getTypeClass(),tabName);
+						}
+						pw.print(name);									
+					} else {
+						if (tabName!=null)
+							pw.print(tabName+".");
+						pw.print(invColDef.getName());
+					}
+				}
+				
+				
+			}
+								
+		}
+		pw.flush();
+		String ret = sw.toString();
+		if (ret.length()>0)
+			ret= "("+ret+")";
+		return ret;
 	}
 	String printInverseJoinColumn(MColumnDefinition invColDef,MClass clazz,String tabName) {
 		//TODO: MainTable instead of class name

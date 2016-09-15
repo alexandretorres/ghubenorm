@@ -32,6 +32,18 @@ public class MJoinedSource extends MDataSource{
 		return this;
 	}
 
+	@Override
+	public String printName() {
+		String ret="";
+		for (MTable tab:defines) {
+			String tname = tab.getName();
+			if (ret.length()>0)
+				ret+=",";
+			ret+=tname==null ? "<Unnamed>" : tname;
+		}
+		return ret;
+	}
+
 
 	
 }

@@ -15,5 +15,9 @@ public class MTableRef extends MDataSource {
 	public void setTable(MTable table) {
 		this.table = table;
 	}
-	
+	@Override
+	public String printName() {
+		
+		return table.getName();
+	}
 }

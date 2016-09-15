@@ -117,7 +117,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		if (clazz!=null) {
 			if (clazz.isPersistent() && !clazz.getProperties().stream().anyMatch(p->p.isPk())) {
 				//TODO: not for subclasses!!
-				MProperty idProp = clazz.newPKProperty().setName("id").setType("integer"); 				
+				MProperty idProp = clazz.newPKProperty().setName("<id>").setType("integer"); 				
 			}			
 			stack.pop();			
 			List<ClassNode> subs = repo.subclasses.get(name);

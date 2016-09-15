@@ -83,4 +83,10 @@ public class MTable extends MDataSource {
 	public String toString() {
 		return super.toString()+ (getRepo()!=null ? "Repo:"+getRepo().getName()+" - " : "" ) + this.getName();
 	}
+	@Override
+	public String printName() {
+		
+		return name;
+	}
+	
 }

@@ -30,4 +30,6 @@ public abstract class MDataSource {
 	protected void setRepo(Repo repo) {
 		this.repo = repo;
 	}
+	
+	public abstract String printName();
 }
