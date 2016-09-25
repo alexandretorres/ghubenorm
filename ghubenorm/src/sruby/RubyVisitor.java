@@ -103,7 +103,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 							clazz.newProperty().
 							setName(col.getName()).
 							setType(col.getColummnDefinition()).
-							setMin(col.isNullable() ? 0 :1).
+							setMin(col.isNullableDef() ? 0 :1).
 							setColumnMapping(MColumnMapping.newMColumnMapping(col)));
 					
 				}
@@ -117,7 +117,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		if (clazz!=null) {
 			if (clazz.isPersistent() && !clazz.getProperties().stream().anyMatch(p->p.isPk())) {
 				//TODO: not for subclasses!!
-				MProperty idProp = clazz.newPKProperty().setName("<id>").setType("integer"); 				
+				//MProperty idProp = clazz.newPKProperty().setName("<id>").setType("integer"); 				
 			}			
 			stack.pop();			
 			List<ClassNode> subs = repo.subclasses.get(name);

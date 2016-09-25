@@ -88,5 +88,7 @@ public class MTable extends MDataSource {
 		
 		return name;
 	}
-	
+	public boolean isDummy() {
+		return name==null;
+	}
 }

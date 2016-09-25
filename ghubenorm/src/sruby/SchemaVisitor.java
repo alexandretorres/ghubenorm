@@ -220,7 +220,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			MTable tab = (MTable) top;
 			if (name.equals("references") || name.equals("add_reference")) {
 				ret=createColumn(tab,"integer",n.getArgsNode().childNodes());
-				ret.setName(ret.getName()+"_id");
+				ret.setName(JRubyInflector.instance.foreignKey(ret.getName()));  /*+"_id"*/
 				//TODO:indexes according with http://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/TableDefinition.html#method-i-column
 			}else if (name.equals("column") || name.equals("add_column")) {			
 				ret=createColumn(tab,null,n.getArgsNode().childNodes());

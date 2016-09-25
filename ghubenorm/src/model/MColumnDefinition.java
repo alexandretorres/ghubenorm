@@ -17,21 +17,21 @@ public abstract class MColumnDefinition {
 	public void setId(int id) {	this.id = id;	}
 	public abstract String getName();
 
-	public abstract boolean isNullable();
+	public abstract boolean isNullableDef();
 
-	public abstract boolean isInsertable();
+	public abstract boolean isInsertableDef();
 
-	public abstract boolean isUpdatable();
+	public abstract boolean isUpdatableDef();
 
 	public abstract String getColummnDefinition() ;
 
-	public abstract Integer getLength();
+	public abstract int getLengthDef();
 
-	public abstract int getPrecision();
+	public abstract int getPrecisionDef();
 
-	public abstract int getScale();
+	public abstract int getScaleDef();
 
-	public abstract boolean isUnique();
+	public abstract boolean isUniqueDef();
 	
 	public abstract MTable getTable();
 	

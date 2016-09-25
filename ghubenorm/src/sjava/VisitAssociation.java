@@ -232,12 +232,12 @@ public class VisitAssociation implements LateVisitor {
 	public static void loadJoinColumn(JavaRepo repo,MClass fromClazz,MTable toTable,MJoinColumn jcol,Annotation ajoin,boolean junctionTable) {
 		//TODO: If it is a JoinTable, the inverse must NOT BE NOT NULL. It must refer to a column, that refers to a table in order to differentiate inverseJoinColumns
 		MColumn col = jcol.getColumn().getColumn();
-		col.setName(ajoin.getValue("name", ""));		
+		col.setName(ajoin.getValue("name", null));		/*""*/
 		//
-		col.setUnique(ajoin.getValue("unique",Boolean.FALSE));
-		col.setNullable(ajoin.getValue("nullable",Boolean.TRUE));
-		col.setInsertable(ajoin.getValue("insertable",Boolean.TRUE));
-		col.setUpdatable(ajoin.getValue("updatable",Boolean.TRUE));
+		col.setUnique(ajoin.getValue("unique",null,Boolean.class));
+		col.setNullable(ajoin.getValue("nullable",null,Boolean.class));
+		col.setInsertable(ajoin.getValue("insertable",null,Boolean.class));
+		col.setUpdatable(ajoin.getValue("updatable",null,Boolean.class));
 		col.setColummnDefinition(ajoin.getValue("columnDefinition", null)); 
 		//TODO: foreignKey
 		String tabName=ajoin.getValueAsString("table");
@@ -296,7 +296,7 @@ class VisitColumnRef implements LateVisitor {
 		MColumn refCol=null;
 		try {			
 			if (refColName==null || refColName.equals("")) {
-				refColName="";
+				//refColName=""; if it is null, MUST BE NULL
 				List<MProperty> pk = fromClazz.getPK();
 				if (pk.size()==1) {
 					MProperty ppk = pk.get(0);
@@ -339,9 +339,9 @@ class VisitColumnRef implements LateVisitor {
 									}
 								}
 							}
-							if (refCol==null) {							
+							if (refCol==null) {
 								refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn());
-								
+								//TODO: Overrive is a "difference" column, do we need the previous override history?
 								MAttributeOverride over = MAttributeOverride.newMAttributeOverride(refCol, ppk);
 								fromClazz.override(over);
 								VisitOverrides.daoMAttrOverride.persit(over);
@@ -355,9 +355,9 @@ class VisitColumnRef implements LateVisitor {
 							tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(repo.getRepo(),(String) null));
 							fromClazz.getPersistence().setDataSource(tab);
 						} else
-							refCol = tab.findColumn("<id>");
+							refCol = tab.findColumn(MColumn.ID_COLUMN_NAME);
 						if (refCol==null)
-							refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setTable(tab).setName("<id>"));	
+							refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setTable(tab).setName(MColumn.ID_COLUMN_NAME));	
 					}
 				}
 			} else

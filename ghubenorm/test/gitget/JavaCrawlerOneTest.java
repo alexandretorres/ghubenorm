@@ -21,9 +21,12 @@ public class JavaCrawlerOneTest {
 	@Test
 	public void test() {		
 		String repos[]= new String[] {
+				//"johnragan/johnragan_org"
+				
 				"randi2/randi2",
 				"pancutan/ConcesionariaDB",
-			/**/	"SnapImpact/ivolunteer",
+			//
+				"SnapImpact/ivolunteer",
 				"khaya/acm","vusa/Placd","rangalo/Seam2Examples","felipero/examples","ifischer/getabike",
 				"tjcampos/TPW","rafabene/XSeam2","johnragan/johnragan_org","myabc/opendls",
 				"sirgwain/CraigStars-",	"martijnblankestijn/javaee6-demo",	"OpenAMEE/amee.platform.domain",

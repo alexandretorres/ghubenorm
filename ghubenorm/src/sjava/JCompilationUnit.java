@@ -6,11 +6,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -29,6 +31,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import common.Util;
 import dao.ConfigDAO;
 import dao.DAOInterface;
+
 import model.MClass;
 import model.MProperty;
 import model.MTable;
@@ -39,6 +42,7 @@ import static sjava.JPATags.*;
 public class JCompilationUnit {
 	String url;
 	String packageName="";
+	String base;
 	Set<MClass> classes= new HashSet<MClass>();
 	Set<Import> imports = new HashSet<Import>();
 
@@ -139,14 +143,19 @@ public class JCompilationUnit {
 	 * @param newClass
 	 * @return
 	 */
-	public boolean checkPendingRefs(MClass newClass) {
+	public boolean checkPendingRefs(MClass newClass,boolean acceptAnyBase) {
 		int isClass=0;
+		boolean acceptBase = acceptAnyBase || isSameBase(newClass) ;
 		for (MClass cl:classes) {
 			if (cl.getSuperClass()==null && cl.getSuperClassName()!=null) {
 				String superName = cl.getSuperClassName();
 				if (superName.equals(newClass.getFullName())) {
-					cl.setSuperClass(newClass);
-					isClass=isClass==0?isClass=1:isClass;
+					if (acceptBase) {
+						cl.setSuperClass(newClass);
+						isClass=isClass==0?isClass=1:isClass;
+					} else {
+						isClass=2;
+					}
 				/*
 				String pakName = null;
 				int point=superName.indexOf(".");
@@ -157,8 +166,8 @@ public class JCompilationUnit {
 						cl.setSuperClass(newClass);
 						isClass=isClass==0?isClass=1:isClass;
 					}*/
-				} else if (superName.equals(newClass.getName())){
-					if (importClass(newClass)) {
+				} else if (superName.equals(newClass.getName()) ){
+					if (importClass(newClass) && acceptBase) {
 						cl.setSuperClass(newClass);
 						isClass=isClass==0?isClass=1:isClass;
 					} else {
@@ -170,10 +179,14 @@ public class JCompilationUnit {
 				if (prop.getTypeClass()==null || prop.getType()!=null) {
 					String typeName = prop.getType();
 					if (typeName.equals(newClass.getFullName())) {
-						prop.setTypeClass(newClass);
-						isClass=isClass==0?isClass=1:isClass;
+						if (acceptBase) {
+							prop.setTypeClass(newClass);
+							isClass=isClass==0?isClass=1:isClass;
+						} else {
+							isClass=2;
+						}
 					} else if (typeName.equals(newClass.getName())){
-						if (importClass(newClass)) {
+						if (importClass(newClass) && acceptBase) {
 							prop.setTypeClass(newClass);
 							isClass=isClass==0?isClass=1:isClass;
 						} else {
@@ -185,12 +198,51 @@ public class JCompilationUnit {
 		}
 		return isClass==1;
 	}
+	public boolean isSameBase(MClass cl) {
+		if (this.base==null) {
+			if (packageName==null)
+				this.base = url;
+			else {
+				String pak =  this.packageName.replace('.', '/');
+				int pos = url.indexOf(pak);
+				if (pos>0)
+					this.base = url.substring(0,pos);
+				else
+					base="";
+			}
+		}
+		return (cl.getFilePath().startsWith(base));
+	}
+	/**
+	 * removes all classes that have a distinct BASE url from the set, and returns ONE of them, if it exists
+	 * @param set
+	 * @return
+	 */
+	private MClass filterByBaseUrl(Set<MClass> set) {
+		MClass otherBased=null;
+		for (Iterator<MClass> it=set.iterator();it.hasNext();) {
+			MClass cnd = it.next();
+			if (!isSameBase(cnd)) {
+				otherBased = cnd; //ANY other Based class 
+				it.remove();
+			}
+		}
+		return otherBased;
+	}
 	public MClass getClazz(String name) {		
 		//TODO:extract package name
-		MClass ret = jrepo.getClasses().stream().filter(cl->(cl.getName().equals(name) && Util.equals(cl.getPackageName(),packageName)) || cl.getFullName().equals(name)).
-				findFirst().orElse(jrepo.getClasses().stream().filter(cl->cl.getName().equals(name) && this.importClass(cl)).findFirst().orElse(null));
+		Set<MClass> set1 = jrepo.getClasses().stream().
+				filter(cl->(cl.getName().equals(name) && Util.equals(cl.getPackageName(),packageName)) || cl.getFullName().equals(name)).collect(Collectors.toSet());
+		MClass otherBased=filterByBaseUrl(set1);
 		
-		return ret;
+		if (set1.isEmpty()) {
+			set1 = jrepo.getClasses().stream().
+					filter(cl->cl.getName().equals(name) && this.importClass(cl)).collect(Collectors.toSet());
+			MClass otherBased2=filterByBaseUrl(set1);
+			if (otherBased==null)
+				otherBased = otherBased2;
+		}
+		return set1.isEmpty() ? otherBased : set1.iterator().next();
 	}
 	public boolean importClass(MClass cl) {
 		if (Util.equals(packageName, cl.getPackageName()))

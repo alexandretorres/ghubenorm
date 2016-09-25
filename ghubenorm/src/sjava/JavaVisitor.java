@@ -110,14 +110,17 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			List<Annotation> annots = new ArrayList<Annotation>();
 			c.setAbstract(ModifierSet.isAbstract(cd.getModifiers()));		
 			for (ClassOrInterfaceType scls:cd.getExtends()) {
-				String superName = scls.getName();
+				String superName = scls.getName();				
+				comp.jrepo.visitors.add(new VisitInheritance(c, comp));	
+				
+				comp.jrepo.addLateSubclass(superName, c,comp);
+				/*
 				MClass superClass = comp.getClazz(superName);
-				comp.jrepo.visitors.add(new VisitInheritance(c, comp));		
 				if (superClass!=null) {
 					c.setSuperClass(superClass);					
 				} else {
 					comp.jrepo.addLateSubclass(superName, c,comp);
-				}
+				}*/
 			}
 			
 			for (AnnotationExpr mod:cd.getAnnotations()) {			
@@ -180,11 +183,13 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			for (MProperty p:c.getProperties()) {
 				if (p.getTypeClass()==null) {
 					String name = p.getType();
-					MClass clazz = comp.getClazz(name);
+					comp.jrepo.addPendingRef(name, c, comp);
+					/*MClass clazz = comp.getClazz(name);
+					
 					if (clazz==null) {
 						comp.jrepo.addPendingRef(name, c, comp);
 					} else
-						p.setTypeClass(clazz);
+						p.setTypeClass(clazz);*/
 				}
 			}
 		}
@@ -192,7 +197,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		if (pending!=null && c!=null)
 			for (Iterator<JCompilationUnit> it =pending.iterator();it.hasNext();) {
 				JCompilationUnit comp = it.next();
-				if (comp.checkPendingRefs(c)) {
+				if (comp.checkPendingRefs(c,false)) {
 					it.remove();
 				}
 				//TODO: comp.solve refs (superclasses, embedds...)
@@ -353,10 +358,10 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	public static MColumn createMColumn(MClass clazz,Annotation column) {
 		MColumn col = MColumn.newMColumn();
 		col.setName(column.getValue("name",null));
-		col.setUnique(column.getValue("unique",Boolean.FALSE));
-		col.setNullable(column.getValue("nullable",Boolean.TRUE));
-		col.setInsertable(column.getValue("insertable",Boolean.TRUE));
-		col.setUpdatable(column.getValue("updatable",Boolean.TRUE));
+		col.setUnique(column.getValue("unique",null,Boolean.class));
+		col.setNullable(column.getValue("nullable",null,Boolean.class));
+		col.setInsertable(column.getValue("insertable",null,Boolean.class));
+		col.setUpdatable(column.getValue("updatable",null,Boolean.class));
 		col.setColummnDefinition(column.getValue("columnDefinition",null));
 		col.setLength(column.getValue("length",null,Integer.class));
 		col.setPrecision(column.getValue("precision",null,Integer.class));
@@ -392,7 +397,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		private void loadPKJoin(MClass superClass,MClass subClass,MVertical gen,Annotation pkJoin,Annotation fk) {
 			//TODO: create a MDefinition object for FK defs 
 			List<MProperty> superPK = superClass.findPK(); //TODO: get defaultnames...			
-			String name = pkJoin.getValue("name", ""); 
+			String name = pkJoin.getValue("name", null/*""*/); 
 			String colDef = pkJoin.getValue("columnDefinition", null); 
 			String refColName = pkJoin.getValue("referencedColumnName", null); 
 			if (fk==null) {
@@ -528,7 +533,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						if (col.getColummnDefinition()==null) {
 							col.setColummnDefinition(dtype);
 						}
-						if (length!=null && col.getLength()==null)
+						if (length!=null /*&& col.getLength()==null*/)
 							col.setLength(length);
 						JavaVisitor.daoMCol.persit(col);
 						dcol.setColumn(col);

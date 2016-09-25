@@ -30,36 +30,36 @@ public class MColumnRef extends MColumnDefinition {
 		return column.getName();
 	}
 
-	public boolean isNullable() {
-		return column.isNullable();
+	public boolean isNullableDef() {
+		return column.isNullableDef();
 	}
 
-	public boolean isInsertable() {
-		return column.isInsertable();
+	public boolean isInsertableDef() {
+		return column.isInsertableDef();
 	}
 
-	public boolean isUpdatable() {
-		return column.isUpdatable();
+	public boolean isUpdatableDef() {
+		return column.isUpdatableDef();
 	}
 
 	public String getColummnDefinition() {
 		return column.getColummnDefinition();
 	}
 
-	public Integer getLength() {
-		return column.getLength();
+	public int getLengthDef() {
+		return column.getLengthDef();
 	}
 
-	public int getPrecision() {
-		return column.getPrecision();
+	public int getPrecisionDef() {
+		return column.getPrecisionDef();
 	}
 
-	public int getScale() {
-		return column.getScale();
+	public int getScaleDef() {
+		return column.getScaleDef();
 	}
 
-	public boolean isUnique() {
-		return column.isUnique();
+	public boolean isUniqueDef() {
+		return column.isUniqueDef();
 	}
 
 	@Override

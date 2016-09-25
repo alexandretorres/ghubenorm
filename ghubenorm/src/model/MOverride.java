@@ -12,6 +12,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 @Entity
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 public abstract class MOverride {
@@ -20,6 +21,7 @@ public abstract class MOverride {
 	@ManyToOne(optional=false)
 	private MClass clazz;
 	@ManyToMany
+	@OrderColumn(name="pos")
 	private List<MProperty> properties = new ArrayList<MProperty>();
 	
 	protected MOverride() {}	

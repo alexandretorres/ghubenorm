@@ -264,7 +264,7 @@ public class Repo {
 						pw.print(" | "+colTab+Optional.ofNullable(col.getName()).orElse(""));
 						if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
 							pw.print(":"+col.getColummnDefinition());
-						pw.print( col.getLength()==null ? "" : "("+col.getLength()+")");
+						pw.print( col.getColumn().getLength()==null ? "" : "("+col.getLengthDef()+")");
 					}
 						
 					pw.print( printAssociationDef(cl,p));
@@ -331,6 +331,7 @@ public class Repo {
 				pw.print("joinTable="+dsName);
 				f=1;
 			}
+			int cnt = adef.getJoinColumns().size();
 			for (MJoinColumn jc:adef.getJoinColumns()) {
 				//TODO:Check with ruby this change. This will never work with Java and looks fishy
 				MColumnDefinition colDef = jc.getColumn(); //jc.getColumnForProperty(p); 
@@ -338,18 +339,20 @@ public class Repo {
 				if (f>0)
 					pw.print(", ");
 				if (f<2)
-					pw.print("joinColumn(s)=");
+					pw.print("joinColumn"+(cnt>1 ? "s" : "")+"=");
+				if (cnt>1)
+					pw.print("(");
 				f=2;
 				if (colDef!=null)
 					if (colDef.getTable()!=null && !colDef.getTable().equals(cl.getPersistence().getMainTable())) {
 						pw.print(colDef.getTable().getName());
 						pw.print(".");
 					}
-					pw.print(colDef.getName());
+					pw.print(printJointColumnName(p, colDef) );
 				if (invColDef!=null) {	
 					//TODO: this way will print the table name, the class, and the field.
 					String tabName = Optional.ofNullable(invColDef.getTable()).map(t->t.getName()).orElse(null);
-					pw.print("=");
+					pw.print(", ");
 					if (invColDef.getName()==null ) {
 						String name = printInverseJoinColumn(invColDef,p.getParent(),tabName);
 						if (name==null && p.getTypeClass()!=null) {
@@ -362,7 +365,8 @@ public class Repo {
 						pw.print(invColDef.getName());
 					}
 				}
-				
+				if (cnt>1)
+					pw.print(")");
 				
 			}
 								
@@ -370,7 +374,20 @@ public class Repo {
 		pw.flush();
 		String ret = sw.toString();
 		if (ret.length()>0)
-			ret= "("+ret+")";
+			ret= "{"+ret+"}";
+		return ret;
+	}
+	String printJointColumnName(MProperty p,MColumnDefinition c) {
+		if (c.getName()!=null)
+			return c.getName();
+		String id = null;
+		MClass type=p.getTypeClass();
+		if (type!=null && !type.getPK().isEmpty()) {
+			id = type.getPK().get(0).getName();
+		}
+		if (id==null)
+			id = "id";
+		String ret = "<"+p.getName()+"_"+id+">";
 		return ret;
 	}
 	String printInverseJoinColumn(MColumnDefinition invColDef,MClass clazz,String tabName) {

@@ -9,18 +9,20 @@ import javax.persistence.Transient;
 @Entity
 public class MColumn extends MColumnDefinition{
 	//TODO: Use nullable types for length, precision and so forth. 
-//	@Transient public static final int DEFAULT_LENGTH = 255;	
+	@Transient public static final int DEFAULT_LENGTH = 255;	
 	@Transient public static final int DEFAULT_SCALE = 0;	
+	@Transient public static final MColumn DEFAULT_COLUMN = createDefaultColumn();
+	@Transient public static final String ID_COLUMN_NAME = "<id>";
 	private String name;
-	private boolean nullable=true;
-	private boolean insertable=true;
-	private boolean updatable=true;
+	private Boolean nullable;
+	private Boolean insertable;
+	private Boolean updatable;
 	private String colummnDefinition;
 	private Integer length;
-	private int precision;
-	private int scale;
+	private Integer precision;
+	private Integer scale;
 	@Column(name="isUnique")
-	private boolean unique;
+	private Boolean unique;
 	@ManyToOne(optional=true)
 	private MTable table;
 	/**
@@ -28,7 +30,17 @@ public class MColumn extends MColumnDefinition{
 	 */
 	private String defaulValue;
 	
-	
+	private static MColumn createDefaultColumn() {
+		MColumn c = new MColumn();
+		c.setScale(DEFAULT_SCALE);
+		c.setLength(DEFAULT_LENGTH);
+		c.nullable=true;
+		c.insertable=true;
+		c.updatable=true;
+		c.unique=false;
+		c.precision=0;
+		return c;
+	}
 	public static MColumn newMColumn() {
 		return new MColumn();
 	}
@@ -41,24 +53,24 @@ public class MColumn extends MColumnDefinition{
 		this.name = name;
 		return this;
 	}
-	public boolean isNullable() {
+	protected Boolean isNullable() {
 		return nullable;
 	}
-	public MColumn setNullable(boolean nullable) {
+	public MColumn setNullable(Boolean nullable) {
 		this.nullable = nullable;
 		return this;
 	}
-	public boolean isInsertable() {
+	protected Boolean isInsertable() {
 		return insertable;
 	}
-	public MColumn setInsertable(boolean insertable) {
+	public MColumn setInsertable(Boolean insertable) {
 		this.insertable = insertable;
 		return this;
 	}
-	public boolean isUpdatable() {
+	protected Boolean isUpdatable() {
 		return updatable;
 	}
-	public MColumn setUpdatable(boolean updatable) {
+	public MColumn setUpdatable(Boolean updatable) {
 		this.updatable = updatable;
 		return this;
 	}
@@ -69,40 +81,31 @@ public class MColumn extends MColumnDefinition{
 		this.colummnDefinition = colummnDefinition;
 		return this;
 	}
-	public Integer getLength() {
+	protected Integer getLength() {
 		return length;
 	}
-	public MColumn setLength(Integer length) {
-		/*if (length==null)
-			this.length = DEFAULT_LENGTH;
-		else*/
+	public MColumn setLength(Integer length) {		
 		this.length = length;
 		return this;
 	}
-	public int getPrecision() {
+	protected Integer getPrecision() {
 		return precision;
 	}
 	public MColumn setPrecision(Integer precision) {
-		if (precision==null)
-			this.precision = DEFAULT_SCALE;
-		else
-			this.precision = precision;
+		this.precision = precision;
 		return this;
 	}
-	public int getScale() {
+	protected Integer getScale() {
 		return scale;
 	}
 	public MColumn setScale(Integer scale) {
-		if (scale==null)
-			this.scale = DEFAULT_SCALE;
-		else
-			this.scale = scale;
+		this.scale = scale;
 		return this;
 	}
-	public boolean isUnique() {
+	protected Boolean isUnique() {
 		return unique;
 	}
-	public MColumn setUnique(boolean unique) {
+	public MColumn setUnique(Boolean unique) {
 		this.unique = unique;
 		return this;
 	}
@@ -123,5 +126,54 @@ public class MColumn extends MColumnDefinition{
 	public MColumn getColumn() {		
 		return this;
 	}
+	@Override
+	public boolean isNullableDef() {
+		if (nullable==null)
+			return DEFAULT_COLUMN.nullable;
+		return nullable;
+	}
+	@Override
+	public boolean isInsertableDef() {
+		if (insertable==null)
+			return DEFAULT_COLUMN.insertable;
+		return insertable;
+	}
+	@Override
+	public boolean isUpdatableDef() {
+		if (updatable==null)
+			return DEFAULT_COLUMN.updatable;
+		return updatable;
+	}
 	
+	@Override
+	public int getLengthDef() {
+		if (length==null)
+			return DEFAULT_COLUMN.length;
+		return length;
+	}
+	@Override
+	public int getPrecisionDef() {
+		if (precision==null)
+			return DEFAULT_COLUMN.precision;
+		return precision;
+	}
+	@Override
+	public int getScaleDef() {
+		if (scale==null)
+			return DEFAULT_COLUMN.scale;
+		return scale;
+	}
+	@Override
+	public boolean isUniqueDef() {
+		if (unique==null)
+			return DEFAULT_COLUMN.unique;
+		return unique;
+	}
+	public boolean isDummy() {
+		boolean ret = this.insertable==null && this.nullable==null && this.unique==null && this.updatable==null
+				&& this.colummnDefinition==null && this.defaulValue==null && this.length==null &&
+				this.name==null && this.precision==null && this.scale==null;
+		ret = ret && (table==null || table.isDummy());
+		return ret;
+	}
 }

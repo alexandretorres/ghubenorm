@@ -1,9 +1,11 @@
 package sjava;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -82,7 +84,33 @@ public class JavaRepo {
 		if (!pendingRefs.isEmpty())
 			Log.LOG.warning("Pending refs");
 		for (Entry<String, List<JCompilationUnit>> entry:pendingRefs.entrySet()) {
-			
+			String ename = entry.getKey();
+			if (BaseType.isBaseType(entry.getKey()) || ename.contains("<")){
+				entry.setValue(Collections.EMPTY_LIST);
+				continue;
+			}				
+			for (MClass c:repo.getClasses()) {
+				
+				if (c.getName().equals(entry.getKey())) {
+					List<JCompilationUnit> units = entry.getValue();
+					for (Iterator<JCompilationUnit> it=units.iterator();it.hasNext();) {
+						JCompilationUnit unit = it.next();
+						if (unit.checkPendingRefs(c, false))
+							it.remove();
+					}
+				}
+			}
+			//pass 2
+			for (MClass c:repo.getClasses()) {
+				if (c.getName().equals(entry.getKey())) {
+					List<JCompilationUnit> units = entry.getValue();
+					for (Iterator<JCompilationUnit> it=units.iterator();it.hasNext();) {
+						JCompilationUnit unit = it.next();
+						if (unit.checkPendingRefs(c, true))
+							it.remove();
+					}
+				}
+			}
 			// do something
 		}
 		

@@ -34,6 +34,8 @@ public class MAttributeOverride extends MOverride {
 	}
 	
 	public boolean checkOverride() {
+		return !column.getColumn().isDummy();
+		/*
 		
 		MColumn defCol = null;		
 		MColumn cc ;
@@ -45,7 +47,7 @@ public class MAttributeOverride extends MOverride {
 			//TODO: check an override for this property at the context class			
 		}
 		if (defCol==null)
-			defCol=MColumn.newMColumn();
+			defCol=MColumn.DEFAULT_COLUMN;
 		if (!Util.equals(column.getName(),defCol.getName()))
 			return true;
 		if (column.isInsertable()!=defCol.isInsertable())
@@ -70,6 +72,6 @@ public class MAttributeOverride extends MOverride {
 		}
 	
 		
-		return false;
+		return false;*/
 	}
 }
