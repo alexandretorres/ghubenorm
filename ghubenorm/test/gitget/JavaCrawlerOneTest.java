@@ -14,8 +14,8 @@ public class JavaCrawlerOneTest {
 
 	@Before
 	public void setUp() throws Exception {
-		//ConfigDAO.config(new ConfigNop());
-		ConfigDAO.config(JPA_DAO.instance);
+		ConfigDAO.config(new ConfigNop());
+		//ConfigDAO.config(JPA_DAO.instance);
 	}
 
 	@Test

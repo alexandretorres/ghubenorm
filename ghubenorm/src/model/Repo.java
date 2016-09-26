@@ -275,13 +275,16 @@ public class Repo {
 					
 					if (assoc!=null) {						
 						MProperty inv = assoc.getInverse(p);
-						
+						pw.print("-");
+						pw.print(inv==null ?  "("+(assoc.getMax()<0 ? "*": assoc.getMax())+")" : "("+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+")");
 						if (p.isTransient())
 							pw.print("--(transient)---");
 						else
 							pw.print("---------------");
+						pw.print("("+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+")");
+						pw.print("-");
 						try {							
-							pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getName())+(inv==null ?  "["+(assoc.getMax()<0 ? "*": assoc.getMax())+"]" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
+							pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getName())+(inv==null ?  "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
 						} catch (Exception ex) {
 							LOG.log(Level.SEVERE,ex.getMessage(),ex);		 						
 						}
