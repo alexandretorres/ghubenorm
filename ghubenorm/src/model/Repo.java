@@ -281,7 +281,7 @@ public class Repo {
 						else
 							pw.print("---------------");
 						try {							
-							pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getName())+(inv==null ? "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
+							pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getName())+(inv==null ?  "["+(assoc.getMax()<0 ? "*": assoc.getMax())+"]" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
 						} catch (Exception ex) {
 							LOG.log(Level.SEVERE,ex.getMessage(),ex);		 						
 						}
