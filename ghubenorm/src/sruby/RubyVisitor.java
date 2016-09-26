@@ -66,11 +66,18 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	}
 	
 	public MClass createClass(ClassNode n,MClass superclazz,boolean isPersistent) {
-		
-		
+		String dname = decodeName( n.getCPath());
+		String path=""; //TODO: in fact you have to see the module declaration
+		if (dname.contains("::")) {
+			path = dname.replace("::",".");
+			path = path.substring(0, path.lastIndexOf("."));
+			
+		}
+		System.out.println("decoded name:"+dname);
 		String name = n.getCPath().getName();
 		MClass clazz = daoMClass.persit(MClass.newMClass(currentURL,repo.getRepo()).setName(name));
-	
+		clazz.setPackageName(path);
+		
 		stack.push(clazz);
 		repo.getClasses().add(clazz);
 		clazz.setSuperClass(superclazz);
@@ -172,6 +179,9 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		if (!stack.isEmpty() && stack.peek() instanceof MClass) {
 			MClass clazz = (MClass) stack.peek();
 			switch (n.getName()) {
+				case "has_one":
+					repo.visitors.push(new VisitHasOne(repo,clazz,n));	
+					break;
 				case "belongs_to":
 					//TODO: relationship to superclass of another class
 					repo.visitors.push(new VisitBelongsTo(repo,clazz,n));					

@@ -60,6 +60,8 @@ public class RubyRepo {
 		return ret.orElse(null);
 	}
 	public MClass getClazz(String name) {
+		//TODO: decode :: to package
+		
 		Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(name)).findFirst();
 		return ret.orElse(null);
 	}

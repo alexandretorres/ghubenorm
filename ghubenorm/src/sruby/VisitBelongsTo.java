@@ -183,22 +183,13 @@ public class VisitBelongsTo implements LateVisitor {
 		//remove properties for fks
 
 		if (prop.getAssociation()==null && type!=null) {
-			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName()));
-			for (MProperty p:type.getProperties()) {
-				// this is for has_many in the other side
-				if (p.getName().equals(clazz_under) && !p.equals(prop)) {
-					if (p.getAssociation()==null) {
-						MAssociation.newMAssociation(prop,p).
-						setNavigableFrom(true).
-						setNavigableTo(true);
-						break;
-					} else if (p.getAssociation().getTo()==null) {
-						p.getAssociation().setTo(prop).swap();
-						prop.getAssociation().setNavigableTo(true);
-						break;
-					}
-				} 
+			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName())); //has many
+			findAssociationByName(clazz_under);
+			if (prop.getAssociation()==null) {
+				clazz_under = JRubyInflector.getInstance().underscore(clazz.getName()); //has One
+				findAssociationByName(clazz_under);
 			}
+				
 			if (prop.getAssociation()==null && prop.getToAssociation()==null)
 				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false).setMax(-1);  // inverse is many
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
@@ -209,11 +200,26 @@ public class VisitBelongsTo implements LateVisitor {
 		return true;
 		
 	}
+	private void findAssociationByName(String clazz_under) {
+		for (MProperty p:type.getProperties()) {
+			// this is for has_many in the other side
+			if (p.getName().equals(clazz_under) && !p.equals(prop)) {
+				if (p.getAssociation()==null) {
+					MAssociation.newMAssociation(prop,p).
+					setNavigableFrom(true).
+					setNavigableTo(true);
+					break;
+				} else if (p.getAssociation().getTo()==null) {
+					p.getAssociation().setTo(prop).swap();
+					prop.getAssociation().setNavigableTo(true);
+					break;
+				}
+			} 
+		}
+	}
 	private void createFKs() {
 		MAssociationDef def = prop.getOrInitAssociationDef();
-		
-		//MClass parent = prop.getParent();
-		
+			
 		MTable source = (MTable) clazz.findDataSource();
 		if (source==null) {
 			LOG.warning("Foreing Key exist but DataSource not found for class:"+clazz+". Creating a table source");
@@ -221,16 +227,6 @@ public class VisitBelongsTo implements LateVisitor {
 					clazz.newTableSource(								
 							JRubyInflector.getInstance().tableize(clazz.getName())));
 		}
-		/*
-		Optional<MPersistent> x = Optional.ofNullable(parent.getPersistence());
-		Optional<MDataSource> k = x.map(MPersistent::getSource);
-		//TODO: Does not create table if it inherits!
-		MTable source = (MTable) k.orElseGet(()->
-			daoMTable.persit(
-			parent.newTableSource(								
-						JRubyInflector.getInstance().tableize(parent.getName())
-				)));
-		*/
 		for (String fk:fks) {
 			MJoinColumn jc = def.findJoinColumn(fk);
 			MColumn col = source.findColumn(fk);
@@ -264,7 +260,7 @@ public class VisitBelongsTo implements LateVisitor {
 				if (inverse.getAssociation()==null) {									
 					MAssociation.newMAssociation(prop, inverse).setNavigableFrom(true).setNavigableTo(true);
 				} else {
-					//neste caso o inverse � ao contr�rio, definido do outro lado
+					//in this case the association is in the opposite side
 					inverse.getAssociation().setTo(prop).setNavigableTo(true);
 				}
 			}
@@ -291,6 +287,9 @@ public class VisitBelongsTo implements LateVisitor {
 						break;
 					case "foreign_key":				
 						this.fks = value.split(",");
+						break;
+					case "required":
+						// do nothing, it is a software check
 						break;
 				}
 				
