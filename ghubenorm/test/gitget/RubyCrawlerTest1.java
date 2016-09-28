@@ -19,8 +19,14 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 
 	@Test
 	public void test() {
-		String repos[] = {				
-				"towski/mator",				
+		String repos[] = {		
+				"adrianodennanni/PokeLibrary"
+				/*  // has_one primary_key that makes no sense 
+				"andromedai/andromedai",
+				"alexhasapis/after_school",
+				"bkielbasa/redmine-msproject-importer",
+				"bonjias/newapp"*/ 
+			/*	"towski/mator",				
 				"tih-ra/shoto",
 				"danieloliveira/financeiro",
 				"jdwyah/hippo-on-rails",
@@ -29,15 +35,17 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 				"phddoom/garvindocs",
 				"wendbandeira/kendell",
 				"thiagoaos/myllet",
-				"lukapiske/ren",
+				"lukapiske/ren",*/
 
-				};
-				//"vegantech/sims";
-				//"fernandomachado/crm";
-				//"ferblape/query_memcached";
-				//"fabioespindula/crm";
-				//"gustin/lovd-by-less";
-				//"francois/acctsoft";
+				/*
+				"vegantech/sims",
+				"fernandomachado/crm",
+				"ferblape/query_memcached",
+				"fabioespindula/crm",
+				"gustin/lovd-by-less",
+				"francois/acctsoft",*/
+				
+		};
 		for (String repo:repos) 
 			processRepo(gh.getRepoInfo(repo) ,repo);
 		

@@ -130,6 +130,7 @@ public class VisitBelongsTo implements LateVisitor {
 	// values....
 	private String pname;
 	private MClass type;
+	private String typeName;
 	private MProperty prop;
 	private String[] fks=null;
 	private String inverseOf;
@@ -164,11 +165,13 @@ public class VisitBelongsTo implements LateVisitor {
 		prop  = clazz.getProperties().stream().
 				filter(p->p.getName().equalsIgnoreCase(pname+"_id")).
 				findFirst().orElse(
-						null
-						);
+						null);
+	
 		if (prop==null)
 			prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
+		if (typeName!=null)	
+			prop.setType(typeName);
 		
 		if (type!=null)
 			prop.setTypeClass(type);
@@ -278,6 +281,7 @@ public class VisitBelongsTo implements LateVisitor {
 								
 				switch (name.toLowerCase()) {
 					case "class_name": 
+						typeName = value;
 						this.type = repo.getClazz(value);
 						//if (type!=null)
 						//	prop.setTypeClass(type);

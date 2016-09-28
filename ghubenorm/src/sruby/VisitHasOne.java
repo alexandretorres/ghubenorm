@@ -142,6 +142,7 @@ public class VisitHasOne implements LateVisitor {
 	// values....
 	private String pname;
 	private MClass type;
+	private String typeName;
 	private MProperty prop;
 	private String[] fks=null;
 	private String inverseOf;
@@ -182,6 +183,8 @@ public class VisitHasOne implements LateVisitor {
 		
 		prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
+		if (typeName!=null)	
+			prop.setType(typeName);
 		
 		if (type!=null)
 			prop.setTypeClass(type);
@@ -294,7 +297,7 @@ public class VisitHasOne implements LateVisitor {
 								
 				switch (name.toLowerCase()) {
 					case "class_name": 
-						prop.setType(value);
+						typeName = value;
 						
 						this.type = repo.getClazz(value);
 						//if (type!=null)
@@ -302,6 +305,9 @@ public class VisitHasOne implements LateVisitor {
 						break;
 					case "inverse_of":
 						this.inverseOf = value;
+						break;
+					case "primary_key":	
+						LOG.info("primary_key on has one:"+value);
 						break;
 					case "foreign_key":				
 						this.fks = value.split(",");

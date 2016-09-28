@@ -205,6 +205,7 @@ public class VisitHasMany implements LateVisitor {
 				switch (name.toLowerCase()) {
 					case "class_name": 
 						MClass type = repo.getClazz(value);
+						prop.setType(value);
 						if (type!=null)
 							prop.setTypeClass(type);
 						break;

@@ -60,10 +60,21 @@ public class RubyRepo {
 		return ret.orElse(null);
 	}
 	public MClass getClazz(String name) {
-		//TODO: decode :: to package
-		
-		Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(name)).findFirst();
+		final String cname;
+		if (name.contains("::")) {
+			name = name.replace("::",".");
+			int idx = name.lastIndexOf(".");
+			String path = name.substring(0, idx);
+			cname = name.substring(idx+1);
+			
+			Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname) && path.equals(cl.getPackageName())).findFirst();
+			if (ret.isPresent())
+				return ret.get();			
+		} else
+			cname =name;
+		Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname)).findFirst();
 		return ret.orElse(null);
+		
 	}
 	public MClass getClazzFromUnderscore(String underscore_name) {
 		Optional<MClass> ret = getClasses().stream().filter(
