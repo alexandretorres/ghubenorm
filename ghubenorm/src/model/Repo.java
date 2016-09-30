@@ -25,6 +25,8 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+
+import common.Util;
  
 
 @Entity
@@ -222,6 +224,8 @@ public class Repo {
 						pw.print(" △");
 					}
 					pw.print(" extends " + cl.getSuperClass().getName());
+				} else if (!Util.isNullOrEmpty(cl.getSuperClassName())) {
+					pw.print(" extends (?)" + cl.getSuperClassName());
 				}
 				MTable mainTab=null;
 				if (cl.isPersistent()) {

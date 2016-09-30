@@ -23,19 +23,18 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 				"adrianodennanni/PokeLibrary",
 				  // has_one primary_key that makes no sense 
 				"andromedai/andromedai",
-				//"alexhasapis/after_school",
-				//"bkielbasa/redmine-msproject-importer",
-				//"bonjias/newapp"
-			/*	"towski/mator",				
+				"alexhasapis/after_school",
+				"bkielbasa/redmine-msproject-importer",
+				"bonjias/newapp",
+			/**/	"towski/mator",				
 				"tih-ra/shoto",
 				"danieloliveira/financeiro",
 				"jdwyah/hippo-on-rails",
 				"macbury/iSklep",
-				"mikeymckay/formtastic.us",
 				"phddoom/garvindocs",
 				"wendbandeira/kendell",
 				"thiagoaos/myllet",
-				"lukapiske/ren",*/
+				"lukapiske/ren",
 
 				/*
 				"vegantech/sims",

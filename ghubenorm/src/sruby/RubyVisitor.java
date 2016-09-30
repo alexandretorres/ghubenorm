@@ -164,9 +164,10 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			sname = decodeName(sup); 			
 		}
 		if (sname.equals("") || sname.equals("ActiveRecord::Base")) {
-			visitClass(ret,n,null,sname.equals("ActiveRecord::Base"));			
+			visitClass(ret,n,null,sname.equals("ActiveRecord::Base"));
+			sname=null;
 			// Inner classes are not added in resove ref stage. TODO: separated method to read before the resolve
-		} else if (stack.isEmpty()){
+		} else if (stack.isEmpty()) {
 			int idx = sname.lastIndexOf(":");
 			idx= idx<0 ? idx=sname.indexOf(".") : idx;
 			String superName = idx<0 ? sname : sname.substring(idx+1);
@@ -174,7 +175,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			
 			if (subs==null) {
 				subs = new ArrayList<MClass>();
-				repo.subclasses.put(superName, subs); //TODO: remove the :: or process this correctly
+				repo.subclasses.put(superName, subs); 
 			}
 			subs.add(ret);
 		}
@@ -233,7 +234,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 						propName = propName+".rb";
 					}
 					URI uri = new URL(this.currentURL).toURI().resolve(propName);
-					LOG.info(uri.toURL().toString());
+					//LOG.info(uri.toURL().toString());
 					RubyRepoLoader loader = RubyRepoLoader.getInstance();
 					loader.pushVisitor();
 					try {						
@@ -248,7 +249,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 					e.printStackTrace();
 				}
 			}
-			LOG.info(st);
+			//LOG.info(st);
 			//TODO: check if this resource was loaded before continuing
 		}
 			

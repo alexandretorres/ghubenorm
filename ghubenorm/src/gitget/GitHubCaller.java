@@ -37,7 +37,7 @@ public class GitHubCaller {
 	}
 
 	public URL newURL(String host,String path,String query) throws MalformedURLException, URISyntaxException {
-		return (new URI("https",host,path,query,null)).toURL();			
+		return (new URI("https",host,path,query,null)).normalize().toURL();			
 		
 	}
 	protected JsonObject getRepoInfo(String path)  {

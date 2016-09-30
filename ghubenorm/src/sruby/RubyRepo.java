@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import org.jruby.ast.ClassNode;
 
 import common.LateVisitor;
+import common.Util;
 import gitget.Dir;
 import gitget.Log;
 import model.Language;
@@ -96,26 +97,31 @@ public class RubyRepo {
 		}
 		
 	}
+	/**
+	 * visit pending classes on the sublass map
+	 * preconditions: all classes created at this point
+	 * @param rv
+	 */
 	public void solveRefs(RubyVisitor rv) {
 		boolean keep; 
 		do {
 			HashSet<String> removed = new HashSet<String>(); 
 			keep=false;
 			for (Iterator<String> it=subclasses.keySet().iterator();it.hasNext();) {
-				String name = it.next();
-				MClass parent = getClazz(name);
-				if (parent!=null) {
-					List<MClass> lst = subclasses.get(name);	
+				String supername = it.next();
+				MClass parent = getClazz(supername); 
+				boolean wait = parent!=null && !Util.isNullOrEmpty(parent.getSuperClassName()) && incomplete.containsKey(parent);
+				if (!wait) {
+					List<MClass> lst = subclasses.get(supername);	
 					for (MClass c:lst) {
 						ClassNode n = incomplete.get(c);
 						if (n!=null)
-							rv.visitClass(c,n, parent,parent.isPersistent());
+							rv.visitClass(c,n, parent,parent==null ? false : parent.isPersistent());
 					}
 					keep=true;
-					removed.add(name);
-					//it.remove();				
-				
-				}
+					removed.add(supername);
+					//it.remove();		
+				}				
 			}
 			for (String s:removed) {
 				subclasses.remove(s);
