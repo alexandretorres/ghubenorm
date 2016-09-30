@@ -145,6 +145,7 @@ public class VisitHasOne implements LateVisitor {
 	private String typeName;
 	private MProperty prop;
 	private String[] fks=null;
+	private String[] pks=null;
 	private String inverseOf;
 	
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
@@ -219,7 +220,7 @@ public class VisitHasOne implements LateVisitor {
 		}
 		
 		// Set FKs, AFTER we got the association...
-		if (fks!=null) {
+		if (fks!=null || pks!=null) {
 			createFKs();
 		}
 		return true;
@@ -232,9 +233,7 @@ public class VisitHasOne implements LateVisitor {
 		if (type==null) {
 			LOG.warning("Foreing Key exist for has_one "+prop.getName()+" but Type could not be found:"+prop.getType()+".");
 			return;
-		}
-	
-			
+		}			
 		MTable source = (MTable) type.findDataSource();
 		if (source==null) {
 			LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+". Creating a table source");
@@ -246,9 +245,15 @@ public class VisitHasOne implements LateVisitor {
 		final MProperty iprop =  prop.getAssociation().getTo()==null? prop :  prop.getAssociation().getTo();
 		
 		MAssociationDef def = prop.getOrInitAssociationDef();
-		for (String fk:fks) {
-			MJoinColumn jc = def.findJoinColumn(fk);
-			MColumn col = source.findColumn(fk);
+		int len = fks==null ? pks.length : fks.length;
+		for (int i=0;i<len;i++) {
+			
+			String fk = fks==null ? null : fks[i];
+			String pk = pks==null ? null : pks[i];
+			
+			String jfk = fk==null ? JRubyInflector.getInstance().foreignKey(clazz.getName()) : fk;
+			MJoinColumn jc = def.findJoinColumn(jfk);
+			MColumn col = source.findColumn(jfk);
 			if (col==null) {								
 				col =  daoColumn.persit(source.addColumn().setName(fk));
 			} else {
@@ -263,7 +268,12 @@ public class VisitHasOne implements LateVisitor {
 			}
 			if (jc==null) {
 				jc=def.newJoingColumn(col);				
-			}							
+			}			
+			if (pk!=null) {
+				MTable dest = (MTable) clazz.findDataSource();
+				MColumn invcol = dest.findColumn(pk);
+				jc.setInverse(invcol);
+			}
 		}	
 	}
 	private void createInverseOf() {
@@ -307,7 +317,7 @@ public class VisitHasOne implements LateVisitor {
 						this.inverseOf = value;
 						break;
 					case "primary_key":	
-						LOG.info("primary_key on has one:"+value);
+						this.pks = value.split(",");					
 						break;
 					case "foreign_key":				
 						this.fks = value.split(",");

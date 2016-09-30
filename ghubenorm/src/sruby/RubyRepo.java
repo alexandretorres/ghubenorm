@@ -36,11 +36,12 @@ import model.Repo;
 public class RubyRepo {
 	private Repo repo;
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
+	Map<MClass,ClassNode> incomplete = new HashMap<MClass,ClassNode>();
 	private Dir root;
 	/**
 	 * Superclass-ClassCode: subclasses waiting for a class definition 
 	 */
-	Map<String,List<ClassNode>> subclasses = new HashMap<String,List<ClassNode>>();
+	Map<String,List<MClass>> subclasses = new HashMap<String,List<MClass>>();
 	public RubyRepo(Repo repo) {
 		this.repo=repo;
 	}
@@ -82,8 +83,21 @@ public class RubyRepo {
 				findFirst();
 		return ret.orElse(null);
 	}
+	private void completeClasses(RubyVisitor rv) {
+		Map<MClass, ClassNode> curList = incomplete;
+		for (MClass cl:curList.keySet()) {
+			if (cl.getSuperClassName()!=null) {
+				MClass parent = getClazz(cl.getSuperClassName());
+				
+				ClassNode node = incomplete.get(cl);
+				if (node!=null)
+					rv.visitClass(cl, node, null, false);
+			}
+		}
+		
+	}
 	public void solveRefs(RubyVisitor rv) {
-		boolean keep;
+		boolean keep; 
 		do {
 			HashSet<String> removed = new HashSet<String>(); 
 			keep=false;
@@ -91,13 +105,16 @@ public class RubyRepo {
 				String name = it.next();
 				MClass parent = getClazz(name);
 				if (parent!=null) {
-					List<ClassNode> lst = subclasses.get(name);	
-					for (ClassNode n:lst) {
-						rv.createClass(n, parent,parent.isPersistent());
+					List<MClass> lst = subclasses.get(name);	
+					for (MClass c:lst) {
+						ClassNode n = incomplete.get(c);
+						if (n!=null)
+							rv.visitClass(c,n, parent,parent.isPersistent());
 					}
 					keep=true;
 					removed.add(name);
 					//it.remove();				
+				
 				}
 			}
 			for (String s:removed) {
@@ -106,8 +123,10 @@ public class RubyRepo {
 		} while (keep && !subclasses.isEmpty());
 		
 		for (String name:subclasses.keySet()) {			
-			for (ClassNode n:subclasses.get(name)) {
-				rv.createClass(n, null,false);
+			for (MClass c:subclasses.get(name)) {
+				ClassNode n = incomplete.get(c);
+				if (n!=null)
+					rv.visitClass(c,n, null,false);
 			}
 		}
 		subclasses.clear();

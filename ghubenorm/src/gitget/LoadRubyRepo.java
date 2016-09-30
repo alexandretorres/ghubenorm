@@ -25,7 +25,7 @@ public class LoadRubyRepo {
 			
 			//InputStream is = url.openStream();
 			
-			RubyRepoLoader loader = new RubyRepoLoader();
+			RubyRepoLoader loader = RubyRepoLoader.getInstance();
 			
 			RubyRepo repo =loader.setRepo(new Repo(Language.RUBY));
 			loader.visitSchema(url);

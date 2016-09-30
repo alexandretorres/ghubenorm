@@ -1,5 +1,11 @@
 package sruby;
 
+import static gitget.Log.LOG;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -13,12 +19,14 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
+import gitget.Log;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
@@ -50,8 +58,8 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		this.repo=repo;
 	}
 	@Override
-	protected Object defaultVisit(Node node) {		
-		visitChildren(node);
+	protected Object defaultVisit(Node node) {			
+		visitChildren(node); 
 		return null;
 	}
 	private String decodeName(INameNode n) {
@@ -65,23 +73,26 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		return name;
 	}
 	
-	public MClass createClass(ClassNode n,MClass superclazz,boolean isPersistent) {
+	public MClass createClass(ClassNode n) {
 		String dname = decodeName( n.getCPath());
-		String path=""; //TODO: in fact you have to see the module declaration
+		String path=null; //TODO: in fact you have to see the module declaration
 		if (dname.contains("::")) {
 			path = dname.replace("::",".");
 			path = path.substring(0, path.lastIndexOf("."));
 			System.out.println("decoded name:"+dname+" path="+path);
 			
-		}
-		
-		
+		}		
 		String name = n.getCPath().getName();
 		MClass clazz = daoMClass.persit(MClass.newMClass(currentURL,repo.getRepo()).setName(name));
 		clazz.setPackageName(path);
-		
-		stack.push(clazz);
 		repo.getClasses().add(clazz);
+		repo.incomplete.put(clazz,n);
+		return clazz;
+	}
+	public void visitClass(MClass clazz,ClassNode n,MClass superclazz,boolean isPersistent) {	
+		repo.incomplete.remove(clazz);
+		stack.push(clazz);
+		
 		clazz.setSuperClass(superclazz);
 		//self.table_name
 		if (isPersistent) {			
@@ -97,7 +108,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			if (clazz.isFirstConcretePersistent()) {
 				
 				AttrAssignNode an = Helper.findAttrAssignNode(n.getBodyNode(), "table_name");		
-				String tabname = JRubyInflector.getInstance().tableize(name);
+				String tabname = JRubyInflector.getInstance().tableize(clazz.getName());
 				if (an!=null && an.getReceiverNode() instanceof SelfNode) {				
 					tabname=Helper.getValue(an.getArgsNode());
 				}
@@ -129,8 +140,8 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 				//MProperty idProp = clazz.newPKProperty().setName("<id>").setType("integer"); 				
 			}			
 			stack.pop();			
-			List<ClassNode> subs = repo.subclasses.get(name);
-			/*
+			/*List<ClassNode> subs = repo.subclasses.get(clazz.getName());
+			
 			if (subs!=null) {
 				for (ClassNode sc:subs) {
 					MClass sub = createClass(sc, isPersistent);
@@ -139,31 +150,35 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			}*/
 			//repo.subclasses.remove(name);
 		}
-		return clazz;
+		
 	}
 	@Override
 	public Object visitClassNode(ClassNode n) {
-		Object ret=null;
+		MClass ret=null;
 		String name = n.getCPath().getName();
 		String sname="";
-		
+		ret = createClass(n);
 		if (n.getSuperNode() instanceof INameNode) {
 			INameNode sup = (INameNode) n.getSuperNode();
 			//String lexname = sup.getLexicalName();
 			sname = decodeName(sup); 			
 		}
 		if (sname.equals("") || sname.equals("ActiveRecord::Base")) {
-			ret = createClass(n,null,sname.equals("ActiveRecord::Base"));			
+			visitClass(ret,n,null,sname.equals("ActiveRecord::Base"));			
 			// Inner classes are not added in resove ref stage. TODO: separated method to read before the resolve
 		} else if (stack.isEmpty()){
-			List<ClassNode> subs = repo.subclasses.get(sname);
+			int idx = sname.lastIndexOf(":");
+			idx= idx<0 ? idx=sname.indexOf(".") : idx;
+			String superName = idx<0 ? sname : sname.substring(idx+1);
+			List<MClass> subs = repo.subclasses.get(superName);
 			
 			if (subs==null) {
-				subs = new ArrayList<ClassNode>();
-				repo.subclasses.put(sname, subs); //TODO: remove the :: or process this correctly
+				subs = new ArrayList<MClass>();
+				repo.subclasses.put(superName, subs); //TODO: remove the :: or process this correctly
 			}
-			subs.add(n);
+			subs.add(ret);
 		}
+		ret.setSuperClassName(sname);
 		return ret;
 	}
 	
@@ -206,6 +221,37 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			}
 			
 		}
+		if (n.getName().equals("require_relative") /*|| n.getName().equals("require")*/) {
+			String st = currentURL+" has "+n.getName()+": ";
+			
+			for (Node cn:n.getArgsNode().childNodes()) {
+				String propName = Helper.getValue(cn);
+				st+=propName+" ";
+				try {
+					if (propName.lastIndexOf(".")<=propName.lastIndexOf("/")) {
+					//if (propName.substring(propName.lastIndexOf("/")).indexOf(".")<0 ) {
+						propName = propName+".rb";
+					}
+					URI uri = new URL(this.currentURL).toURI().resolve(propName);
+					LOG.info(uri.toURL().toString());
+					RubyRepoLoader loader = RubyRepoLoader.getInstance();
+					loader.pushVisitor();
+					try {						
+						loader.visitFile(uri.toURL());
+					} finally {
+						loader.popVisitor();
+					}
+					
+					//TODO: visitFile cannot "reset" our state!
+				} catch (MalformedURLException | URISyntaxException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			LOG.info(st);
+			//TODO: check if this resource was loaded before continuing
+		}
+			
 		//System.out.println("call F node:"+n.getName());
 		return super.visitFCallNode(n);
 	}
@@ -243,5 +289,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		return super.visitCallNode(n);
 	}
 	
+	
+
 	
 }

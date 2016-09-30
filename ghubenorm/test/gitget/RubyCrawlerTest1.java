@@ -20,12 +20,12 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 	@Test
 	public void test() {
 		String repos[] = {		
-				"adrianodennanni/PokeLibrary"
-				/*  // has_one primary_key that makes no sense 
+				"adrianodennanni/PokeLibrary",
+				  // has_one primary_key that makes no sense 
 				"andromedai/andromedai",
-				"alexhasapis/after_school",
-				"bkielbasa/redmine-msproject-importer",
-				"bonjias/newapp"*/ 
+				//"alexhasapis/after_school",
+				//"bkielbasa/redmine-msproject-importer",
+				//"bonjias/newapp"
 			/*	"towski/mator",				
 				"tih-ra/shoto",
 				"danieloliveira/financeiro",

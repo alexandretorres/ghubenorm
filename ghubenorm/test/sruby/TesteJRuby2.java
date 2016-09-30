@@ -33,14 +33,15 @@ import javax.persistence.RollbackException;
 
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.SyntaxException;
+import org.junit.Test;
 
 public class TesteJRuby2 { 
 
 	static int fileCnt=0;
-	static RubyRepoLoader loader = new RubyRepoLoader();
+	static RubyRepoLoader loader = RubyRepoLoader.getInstance();
 	
-	
-	public static void main(String[] args)  {
+	@Test
+	public void test()  {
 		Node n=null;
 		try {
 			//ConfigDAO.config(JPA_DAO.instance);
@@ -57,18 +58,18 @@ public class TesteJRuby2 {
 			// 			
 			//ps-deathstar-master
 			//in = new FileInputStream("repos/chroma32-master/db/schema.rb");
-			in = new FileInputStream("repos/ps-deathstar-master/db/schema.rb");
+			//in = new FileInputStream("repos/ps-deathstar-master/db/schema.rb");
 			//in = new FileInputStream("repos/promoweb-master/db/schema.rb");
-			//in = new FileInputStream("repos/gitlabhq-master/db/schema.rb");
+			in = new FileInputStream("repos/gitlabhq-master/db/schema.rb");
 			
 			fileCnt++;
 			n = loader.visitSchema(in);
 	     
 	        //
 	        //File baseFile = new File("repos/chroma32-master/app/models/");//
-	        File baseFile = new File("repos/ps-deathstar-master/app/models/");//
+	        //File baseFile = new File("repos/ps-deathstar-master/app/models/");//
 	        //File baseFile = new File("repos/promoweb-master/app/models/");//
-	        //File baseFile = new File("repos/gitlabhq-master/app/models/");//
+	        File baseFile = new File("repos/gitlabhq-master/app/models/");//
 	       
 	   
 	        for (File f:baseFile.listFiles()) {

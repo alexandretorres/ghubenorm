@@ -6,6 +6,12 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
+import java.util.Stack;
 import java.util.logging.Level;
 
 import org.jruby.Ruby;
@@ -26,22 +32,30 @@ import model.Repo;
  *
  */
 public class RubyRepoLoader {
+	private static RubyRepoLoader instance;
+	private Stack<RubyVisitor> visitors = new Stack<RubyVisitor>();
 	private RubyVisitor fileVisitor;
 	private RubyRepo rrepo;
 	//private Parser rubyParser;
 	//private ParserConfiguration config;
 	private SchemaVisitor schemaVisitor;
 	private Ruby runtime ;
+	private Set<URL> visitList ;
 	
-	public RubyRepoLoader() {		
+	private RubyRepoLoader() {		
 		runtime = Ruby.newInstance();		      
 		
 	}
-	
+	public static RubyRepoLoader getInstance() {
+		if (instance==null)
+			instance = new RubyRepoLoader();
+		return instance;
+	}
 	public RubyRepo setRepo(Repo repo) {
 		this.rrepo = new RubyRepo(repo);
 		schemaVisitor = new SchemaVisitor(rrepo);
 		fileVisitor = new RubyVisitor(rrepo);
+		this.visitList= new HashSet<URL>();
 		return rrepo;
 		
 	}
@@ -58,6 +72,7 @@ public class RubyRepoLoader {
 		URLConnection connection=null;
 		try {
 			connection=url.openConnection();
+			
 			try (InputStream in =  connection.getInputStream()) {		
 				return visitSchema(in);
 			}
@@ -78,10 +93,13 @@ public class RubyRepoLoader {
         return n;
 	    
 	}
-	
+	//TODO: avoid repeated loading
 	public Node visitFile(URL url) {
 		URLConnection connection=null;
 		try {
+			if (visitList.contains(url))
+				return null;
+			visitList.add(url);
 			connection=url.openConnection();
 			try (InputStream in =  connection.getInputStream()) {	
 				return visitFile(url.toString(),in);			
@@ -103,5 +121,12 @@ public class RubyRepoLoader {
 	}
 	public void solveRefs() {
 		rrepo.solveRefs(fileVisitor);		
+	}
+	public void pushVisitor() {
+		this.visitors.push(fileVisitor);
+		fileVisitor = new RubyVisitor(rrepo);
+	}
+	public void popVisitor() {
+		fileVisitor =visitors.pop();
 	}
 }

@@ -133,6 +133,7 @@ public class VisitBelongsTo implements LateVisitor {
 	private String typeName;
 	private MProperty prop;
 	private String[] fks=null;
+	private String[] pks=null;
 	private String inverseOf;
 	
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
@@ -178,7 +179,7 @@ public class VisitBelongsTo implements LateVisitor {
 		else
 			type = prop.getTypeClass();
 		// Set FKs...
-		if (fks!=null) {
+		if (fks!=null || pks!=null) {
 			createFKs();
 		}
 		if (inverseOf!=null)
@@ -230,9 +231,18 @@ public class VisitBelongsTo implements LateVisitor {
 					clazz.newTableSource(								
 							JRubyInflector.getInstance().tableize(clazz.getName())));
 		}
-		for (String fk:fks) {
-			MJoinColumn jc = def.findJoinColumn(fk);
-			MColumn col = source.findColumn(fk);
+		int len = fks==null ? pks.length : fks.length;
+		for (int i=0;i<len;i++) {
+			
+			String fk = fks==null ? null : fks[i];
+			String pk = pks==null ? null : pks[i];
+			
+			String jfk = fk;
+			if (fk==null && type!=null)
+				jfk = JRubyInflector.getInstance().foreignKey(type.getName());
+			
+			MJoinColumn jc = def.findJoinColumn(jfk);
+			MColumn col = source.findColumn(jfk);
 			if (col==null) {								
 				col =  daoColumn.persit(source.addColumn().setName(fk));
 			} else {
@@ -247,7 +257,12 @@ public class VisitBelongsTo implements LateVisitor {
 			}
 			if (jc==null) {
 				jc=def.newJoingColumn(col);				
-			}							
+			}	
+			if (pk!=null && type!=null) {
+				MTable dest = (MTable) type.findDataSource();
+				MColumn invcol = dest.findColumn(pk);
+				jc.setInverse(invcol);
+			}
 		}	
 	}
 	private void createInverseOf() {
@@ -288,6 +303,9 @@ public class VisitBelongsTo implements LateVisitor {
 						break;
 					case "inverse_of":
 						this.inverseOf = value;
+						break;
+					case "primary_key":	
+						this.pks = value.split(",");					
 						break;
 					case "foreign_key":				
 						this.fks = value.split(",");

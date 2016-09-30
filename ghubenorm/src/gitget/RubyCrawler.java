@@ -24,7 +24,7 @@ import sruby.RubyRepoLoader;
 
 class RubyCrawler  {
 	
-	private static RubyRepoLoader loader = new RubyRepoLoader();
+	private static RubyRepoLoader loader = RubyRepoLoader.getInstance();
 	private static GitHubCaller gh = GitHubCaller.instance;
 	private DAOInterface<Repo> daoRepo;
 	public void processRepo(JsonObject repoJson,String fullName)  {

@@ -68,6 +68,8 @@ public class MClass {
 		return name;
 	}
 	public String getFullName() {
+		if (packageName==null)
+			return name;
 		return packageName+"."+name;
 	}
 	public MClass setName(String name) {
