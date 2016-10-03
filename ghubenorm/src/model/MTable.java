@@ -80,6 +80,9 @@ public class MTable extends MDataSource {
 		return def;
 		
 	}
+	public Set<MDefinition> getDefinitions() {
+		return definitons;
+	}
 	public String toString() {
 		return super.toString()+ (getRepo()!=null ? "Repo:"+getRepo().getName()+" - " : "" ) + this.getName();
 	}
@@ -91,4 +94,5 @@ public class MTable extends MDataSource {
 	public boolean isDummy() {
 		return name==null;
 	}
+	
 }

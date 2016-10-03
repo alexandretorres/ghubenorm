@@ -8,6 +8,10 @@ import javax.persistence.NamedQuery;
 	@NamedQuery(
 			name="Repo.FindByURL",
 			query="SELECT r FROM Repo r WHERE r.url = :url"
+			),
+	@NamedQuery(
+			name="Repo.FindByName",
+			query="SELECT r FROM Repo r WHERE r.name = :name"
 			)
 })
 /**

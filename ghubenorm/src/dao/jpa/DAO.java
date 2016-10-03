@@ -83,6 +83,9 @@ public class DAO<C> implements DAOInterface<C>{
 		em.persist(obj);
 		return obj;
 	}
+	public void remove(C obj) {
+		em.remove(obj);
+	}
 	public static void finish() {
 		//map=null;
 		try {

@@ -52,6 +52,10 @@ class RubyCrawler  {
 			for (JsonObject res: result.getJsonArray("tree").getValuesAs(JsonObject.class)) {
 				String path  =res.getString("path");
 				if (path.endsWith(".rb")) {
+					if (!res.containsKey("size")) {
+						LOG.warning("rb file without size? path="+path);
+						continue;
+					}
 					int size = res.getInt("size");
 					if (size==0)
 						continue;			

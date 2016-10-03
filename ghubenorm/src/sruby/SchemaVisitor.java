@@ -100,16 +100,19 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			MTable tab = repo.getTable(tabname);
 			if (tab!=null) {
 				nod = it.next();
-				String[] colNames = Helper.getValue(nod).split(",");
-				MColumn[] cols = new MColumn[colNames.length];
-				for (int i=0;i<colNames.length;i++) {
-					cols[i] = tab.findColumn(colNames[i]);
+				String tmp = Helper.getValue(nod);
+				if (tmp != null) { // we´ve found NIL at one project... can´t figure out why ruby acepts NIL here
+					String[] colNames = tmp.split(",");
+					MColumn[] cols = new MColumn[colNames.length];
+					for (int i=0;i<colNames.length;i++) {
+						cols[i] = tab.findColumn(colNames[i]);
+					}
+					if (it.hasNext())
+						nod = it.next();
+					else 
+						nod=null;
+					addIndex(nod, tab, cols);
 				}
-				if (it.hasNext())
-					nod = it.next();
-				else 
-					nod=null;
-				addIndex(nod, tab, cols);
 				
 			}
 		}

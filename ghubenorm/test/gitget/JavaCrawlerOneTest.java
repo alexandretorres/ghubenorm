@@ -19,7 +19,7 @@ public class JavaCrawlerOneTest {
 	}
 
 	@Test
-	public void test() {		
+	public void test() {	
 		String repos[]= new String[] {
 				//"johnragan/johnragan_org"
 				

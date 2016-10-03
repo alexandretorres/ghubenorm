@@ -242,7 +242,11 @@ public class VisitHasOne implements LateVisitor {
 							JRubyInflector.getInstance().tableize(type.getName())));
 		}
 		//The property of the "other side"
-		final MProperty iprop =  prop.getAssociation().getTo()==null? prop :  prop.getAssociation().getTo();
+		final MProperty iprop = prop.getAssociation()==null ? 
+				prop.getToAssociation().getFrom() : 
+				prop.getAssociation().getTo()==null ? 
+						prop :  
+						prop.getAssociation().getTo();
 		
 		MAssociationDef def = prop.getOrInitAssociationDef();
 		int len = fks==null ? pks.length : fks.length;

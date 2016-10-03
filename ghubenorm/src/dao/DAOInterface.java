@@ -9,4 +9,5 @@ public interface DAOInterface<C> {
 	public <T> T first(Collection<T> col) ;
 	public C find(Object pk) ;
 	public C persit(C obj);
+	public void remove(C obj);
 }

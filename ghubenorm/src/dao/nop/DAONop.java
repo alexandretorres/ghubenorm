@@ -42,4 +42,10 @@ public class DAONop<C> implements DAOInterface<C> {
 		return obj;
 	}
 
+	@Override
+	public void remove(C obj) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }
