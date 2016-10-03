@@ -97,7 +97,8 @@ public class JavaCrawler {
 			boolean truncated = result.getBoolean("truncated");
 			if (truncated)
 				LOG.warning("truncated tree file for repository "+fullName);
-			for (JsonObject res: result.getJsonArray("tree").getValuesAs(JsonObject.class)) {
+			List<JsonObject> array = result.getJsonArray("tree").getValuesAs(JsonObject.class);
+			for (JsonObject res: array) {
 				String path  =res.getString("path");
 				if (path.endsWith("persistence.xml"))  {
 					LOG.info("path "+path+" has a persistence.xml file");
