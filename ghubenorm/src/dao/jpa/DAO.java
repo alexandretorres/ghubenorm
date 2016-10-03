@@ -101,5 +101,10 @@ public class DAO<C> implements DAOInterface<C>{
 		}
 		
 	}
+	@Override
+	public void removeCascade(C obj) {
+		//implement the cascade and call super.removeCascade
+		remove(obj);
+	}
 	
 }

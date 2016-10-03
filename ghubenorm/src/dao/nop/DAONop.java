@@ -48,4 +48,10 @@ public class DAONop<C> implements DAOInterface<C> {
 		
 	}
 
+	@Override
+	public void removeCascade(C obj) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

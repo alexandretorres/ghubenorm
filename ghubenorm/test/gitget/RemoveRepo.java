@@ -34,7 +34,7 @@ public class RemoveRepo {
 		RepoDAO dao = ConfigDAO.getDAO(Repo.class);
 		dao.beginTransaction();
 		for (Repo r:dao.findByName(repoName)) {
-			dao.remove(r);
+			dao.removeCascade(r);
 			LOG.info("repo removed:"+r.getId()+" name "+repoName);
 			f=true;
 		}

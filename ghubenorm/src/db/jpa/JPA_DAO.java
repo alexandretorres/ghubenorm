@@ -34,24 +34,24 @@ class MDataSourceDaoImpl extends DAO<MDataSource> implements DAOInterface<MDataS
 		super(MDataSource.class);		
 	}
 	@Override
-	public void remove(MDataSource ds) {
+	public void removeCascade(MDataSource ds) {
 		if (ds instanceof MJoinedSource) {
 			MJoinedSource j = (MJoinedSource) ds;
 			for (MTable t:j.getDefines()) {
-				remove(t);
+				removeCascade(t);
 			}
 		} else if (ds instanceof MTable) {
 			MTable t = (MTable) ds;	
 			DAO<MColumn> coldao = ConfigDAO.getDAO(MColumn.class);
 			for (MColumn c:t.getColumns()) {
-				coldao.remove(c);
+				coldao.removeCascade(c);
 			}
 			DAO<MDefinition> defdao = ConfigDAO.getDAO(MDefinition.class);
 			for (MDefinition def:t.getDefinitions()) {				
-				defdao.remove(def);
+				defdao.removeCascade(def);
 			}
 		}
-		super.remove(ds);
+		super.removeCascade(ds);
 	}
 	
 }
@@ -79,12 +79,12 @@ class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 	}
 
 	@Override
-	public void remove(Repo r) {
+	public void removeCascade(Repo r) {
 		DAO<MDataSource> dsdao = ConfigDAO.getDAO(MDataSource.class);
 		for (MDataSource ds:r.getDataSources()) {
-			dsdao.remove(ds);
+			dsdao.removeCascade(ds);
 		}
-		super.remove(r);
+		super.removeCascade(r);
 	}
 	
 }
