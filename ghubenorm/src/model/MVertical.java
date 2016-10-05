@@ -8,8 +8,11 @@ import javax.persistence.Entity;
 
 import javax.persistence.OneToMany;
 
+import common.ReflectiveVisitor;
+import common.Visitable;
+
 @Entity
-public class MVertical extends MDiscrminableGeneralization {
+public class MVertical extends MDiscrminableGeneralization implements Visitable{
 	@OneToMany(mappedBy="generalization")
 	private Set<MJoinColumn> joinCols = new HashSet<MJoinColumn>();
 
@@ -19,6 +22,15 @@ public class MVertical extends MDiscrminableGeneralization {
 
 	protected void setJoinCols(Set<MJoinColumn> joinCols) {
 		this.joinCols = joinCols; 
+	}
+
+	@Override
+	public void accept(ReflectiveVisitor visitor) {
+		for (MJoinColumn jc:joinCols) {
+			visitor.callAccept(jc);
+		}
+		visitor.visit(this);
+		
 	}
 	
 }

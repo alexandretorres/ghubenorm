@@ -17,8 +17,11 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
+
+import common.ReflectiveVisitor;
+import common.Visitable;
 @Entity
-public class MClass {
+public class MClass implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	private String name;
@@ -55,7 +58,7 @@ public class MClass {
 	}
 	public int getId() { return id;	}
 	public void setId(int id) {	this.id = id;	}
-	protected Repo getRepo() {
+	public Repo getRepo() {
 		return repo;
 	}
 	protected void setRepo(Repo repo) {
@@ -319,6 +322,17 @@ public class MClass {
 	}
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
+	}
+	@Override
+	public void accept(ReflectiveVisitor visitor) {
+		
+		visitor.callAccept(properties);
+		
+		visitor.callAccept(generalization);
+		
+		visitor.callAccept(overrides);		
+		
+		visitor.visit(this);
 	}
 	
 }

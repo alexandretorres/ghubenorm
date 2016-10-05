@@ -10,6 +10,10 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+
+import common.ReflectiveVisitor;
+import dao.ConfigDAO;
+import dao.jpa.DAO;
 @Entity
 public class MTable extends MDataSource {
 	
@@ -93,6 +97,16 @@ public class MTable extends MDataSource {
 	}
 	public boolean isDummy() {
 		return name==null;
+	}
+	@Override
+	public void accept(ReflectiveVisitor visitor) {		
+		for (MColumn c:getColumns()) {
+			visitor.callAccept(c);
+		}
+		for (MDefinition def:getDefinitions()) {				
+			visitor.callAccept(def);
+		}
+		visitor.visit(this);		
 	}
 	
 }

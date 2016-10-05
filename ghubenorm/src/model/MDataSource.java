@@ -8,9 +8,11 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.ManyToOne;
 
+import common.Visitable;
+
 @Entity
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
-public abstract class MDataSource {
+public abstract class MDataSource implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	//associationdefs are not navigable from here

@@ -10,13 +10,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+
+import common.ReflectiveVisitor;
+import common.Visitable;
 /**
  * This entity must be added to entity manager
  * @author torres
  *
  */
 @Entity
-public class MAssociationDef {
+public class MAssociationDef implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	private MCascadeType cascade;
@@ -98,5 +101,12 @@ public class MAssociationDef {
 	public void addCascade(MCascadeType cascadeOp) {
 		if (cascadeOp!=null)
 			this.cascade=cascadeOp.add(this.cascade);
+	}
+
+	@Override
+	public void accept(ReflectiveVisitor visitor) {
+		visitor.callAccept(joinColumns);		
+		visitor.visit(this);
+		
 	}
 }

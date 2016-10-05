@@ -52,7 +52,7 @@ public class MJoinColumn {
 		this.inverse = inverse;
 	}	
 	
-	protected MVertical getGeneralization() {
+	public MVertical getGeneralization() {
 		return generalization;
 	}
 	protected void setGeneralization(MVertical generalization) {
@@ -70,4 +70,11 @@ public class MJoinColumn {
 		}
 		return null;
 	}
+	public MAssociationDef getAssociationDef() {
+		return associationDef;
+	}
+	private void setAssociationDef(MAssociationDef associationDef) {
+		this.associationDef = associationDef;
+	}
+	
 }

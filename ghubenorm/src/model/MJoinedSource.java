@@ -8,6 +8,8 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 
+import common.ReflectiveVisitor;
+
 @Entity
 public class MJoinedSource extends MDataSource{
 	
@@ -42,6 +44,14 @@ public class MJoinedSource extends MDataSource{
 			ret+=tname==null ? "<Unnamed>" : tname;
 		}
 		return ret;
+	}
+
+	@Override
+	public void accept(ReflectiveVisitor visitor) {	
+		for (MTable t:getDefines()) {
+			visitor.callAccept(t);
+		}
+		visitor.visit(this);		
 	}
 	
 

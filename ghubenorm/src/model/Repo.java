@@ -27,11 +27,15 @@ import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 
 import common.Util;
+import common.Visitable;
+import common.ReflectiveVisitor;
+import dao.ConfigDAO;
+import dao.jpa.DAO;
  
 
 @Entity
 
-public class Repo {
+public class Repo implements Visitable {
 	
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)	
 	private int id;
@@ -460,5 +464,16 @@ public class Repo {
 		if (name!=null)
 			name = (tabName==null ? "" : tabName+"." )+name;
 		return name;
+	}
+	@Override
+	public void accept(ReflectiveVisitor visitor) {
+		//problem classes > 16590, 16584
+		
+		visitor.callAccept(getClasses());
+		
+		for (MDataSource ds:getDataSources()) {
+			visitor.callAccept(ds);
+		}
+		visitor.visit(this);		
 	}
 }

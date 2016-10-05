@@ -10,8 +10,11 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
+import common.ReflectiveVisitor;
+import common.Visitable;
+
 @Entity
-public class MProperty {
+public class MProperty implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	private String name;
@@ -157,6 +160,12 @@ public class MProperty {
 	}
 	public void setToAssociation(MAssociation toAssociation) {
 		this.toAssociation = toAssociation;
+	}
+	@Override
+	public void accept(ReflectiveVisitor visitor) {
+		visitor.callAccept(getAssociationDef());
+		visitor.callAccept(association);
+		visitor.visit(this);
 	}
 	
 }

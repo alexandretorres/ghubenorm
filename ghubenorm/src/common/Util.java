@@ -1,5 +1,7 @@
 package common;
 
+import java.util.Collection;
+
 public class Util {
 	public static boolean equals(Object v1,Object v2) {
 		if (v1==null || v2==null) {
@@ -10,5 +12,9 @@ public class Util {
 	public static boolean isNullOrEmpty(String s) {
 		return (s==null || s.length()==0);
 			
+	}
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public static void removeAll(Collection col) {
+		col.removeAll(col);
 	}
 }

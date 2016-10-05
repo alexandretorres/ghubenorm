@@ -2,19 +2,11 @@ package db.jpa;
 
 import java.util.List;
 
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-
-import dao.ConfigDAO;
 import dao.DAOInterface;
 import dao.jpa.ConfigJPA;
 import dao.jpa.DAO;
 import db.daos.RepoDAO;
-import model.MColumn;
 import model.MDataSource;
-import model.MDefinition;
-import model.MJoinedSource;
-import model.MTable;
 import model.Repo;
 
 public class JPA_DAO extends ConfigJPA {
@@ -30,30 +22,9 @@ public class JPA_DAO extends ConfigJPA {
 	
 }
 class MDataSourceDaoImpl extends DAO<MDataSource> implements DAOInterface<MDataSource> {
-	public MDataSourceDaoImpl() {
+	public MDataSourceDaoImpl() {		
 		super(MDataSource.class);		
 	}
-	@Override
-	public void removeCascade(MDataSource ds) {
-		if (ds instanceof MJoinedSource) {
-			MJoinedSource j = (MJoinedSource) ds;
-			for (MTable t:j.getDefines()) {
-				removeCascade(t);
-			}
-		} else if (ds instanceof MTable) {
-			MTable t = (MTable) ds;	
-			DAO<MColumn> coldao = ConfigDAO.getDAO(MColumn.class);
-			for (MColumn c:t.getColumns()) {
-				coldao.removeCascade(c);
-			}
-			DAO<MDefinition> defdao = ConfigDAO.getDAO(MDefinition.class);
-			for (MDefinition def:t.getDefinitions()) {				
-				defdao.removeCascade(def);
-			}
-		}
-		super.removeCascade(ds);
-	}
-	
 }
 class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 	final static String FindByURL = "Repo.FindByURL";
@@ -78,13 +49,5 @@ class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 		return (int) getEm().createQuery("SELECT max(r.publicId) FROM Repo r").getSingleResult();
 	}
 
-	@Override
-	public void removeCascade(Repo r) {
-		DAO<MDataSource> dsdao = ConfigDAO.getDAO(MDataSource.class);
-		for (MDataSource ds:r.getDataSources()) {
-			dsdao.removeCascade(ds);
-		}
-		super.removeCascade(r);
-	}
 	
 }

@@ -10,9 +10,5 @@ public interface DAOInterface<C> {
 	public C find(Object pk) ;
 	public C persit(C obj);
 	public void remove(C obj);
-	/**
-	 * When implemented, removes all dependent objects
-	 * @param obj
-	 */
-	public void removeCascade(C obj);
+	
 }

@@ -65,7 +65,8 @@ public class MAssociation {
 	}
 	public MAssociation setTo(MProperty to) {
 		this.to = to;
-		to.setToAssociation(this);
+		if (to!=null)
+			to.setToAssociation(this);
 		return this;
 	}
 	public boolean isNavigableFrom() {
