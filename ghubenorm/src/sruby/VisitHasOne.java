@@ -200,7 +200,7 @@ public class VisitHasOne implements LateVisitor {
 			String clazz_under = JRubyInflector.getInstance().underscore(clazz.getName());
 			for (MProperty p:type.getProperties()) {
 				// this is for has_many in the other side
-				if (p.getName().equals(clazz_under) && !p.equals(prop)) {
+				if (p.getName().equals(clazz_under) && !p.equals(prop) && (p.getToAssociation()==null || p.getToAssociation().getFrom()==prop)) {
 					if (p.getAssociation()==null) {
 						MAssociation.newMAssociation(prop,p).
 						setNavigableFrom(true).

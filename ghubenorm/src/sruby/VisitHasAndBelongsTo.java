@@ -126,7 +126,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 		if (prop.getAssociation()==null && type!=null) {
 			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName()));
 			for (MProperty p:type.getProperties()) {				
-				if (p.getName().equals(clazz_under) && !p.equals(prop)) {
+				if (p.getName().equals(clazz_under) && !p.equals(prop) && (p.getToAssociation()==null || p.getToAssociation().getFrom()==prop)) {
 					if (p.getAssociation()==null) {
 						MAssociation.newMAssociation(p,prop).
 						setNavigableFrom(true).
