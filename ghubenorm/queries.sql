@@ -335,3 +335,21 @@ select c.filepath,p.name,col.name,col.table_id,jtab.name, adef.*,jc.*, invClass.
 where
 language=0
 and datasource_id is not null
+
+--error check: one-to-one to association pointing to MANY
+select count(to_id) from massociation 	
+group by to_id
+having count(to_id)>1
+
+select count(a.to_id) ,c.id,c.filepath
+from massociation a join mproperty p on p.association_id=a.id
+join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id
+where r.language=1
+group by a.to_id,c.filepath,c.id
+having count(a.to_id)>1
+
+select a.*,p.*,c.filepath,ty.filepath
+from massociation a join mproperty p on p.association_id=a.id
+join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id
+join mclass ty on p.typeclass_id=ty.id
+where c.id=?

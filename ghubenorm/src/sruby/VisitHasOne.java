@@ -206,7 +206,7 @@ public class VisitHasOne implements LateVisitor {
 						setNavigableFrom(true).
 						setNavigableTo(true);
 						break;
-					} else if (p.getAssociation().getTo()==null) {
+					} else if (p.getAssociation().getTo()==null || p.getAssociation().getTo()==prop) {
 						p.getAssociation().setMax(1).setTo(prop).swap(); // The default belongs_to is "many_to_one", here we set it no one_to_one
 						prop.getAssociation().setNavigableTo(true);
 						break;

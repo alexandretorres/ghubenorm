@@ -179,7 +179,7 @@ public class VisitHasMany implements LateVisitor {
 						setNavigableFrom(true).
 						setNavigableTo(true);
 						break;
-					} else if (p.getAssociation().getTo()==null) {
+					} else if (p.getAssociation().getTo()==null || p.getAssociation().getTo()==prop) {
 						p.getAssociation().setTo(prop).setNavigableTo(true);
 						break;
 					}

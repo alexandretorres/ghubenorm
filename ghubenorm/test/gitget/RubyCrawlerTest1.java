@@ -13,13 +13,15 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 	GitHubCaller gh = GitHubCaller.instance;
 	@Before
 	public void setUp() throws Exception {
-	//	ConfigDAO.config(new ConfigNop());
-		ConfigDAO.config(JPA_DAO.instance);
+		ConfigDAO.config(new ConfigNop());
+		//ConfigDAO.config(JPA_DAO.instance);
 	}
 
 	@Test
 	public void test() {
-		String repos[] = {		
+		String repos[] = {
+				"trevorturk/eldorado",
+				//---
 			//"activescaffold/active_scaffold",
 		//	"djcp/cohort",
 		//	"holtonma/markholton-old",

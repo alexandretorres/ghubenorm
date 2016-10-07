@@ -35,11 +35,17 @@ public class RemoveRepo {
 	@Test
 	public void test() {
 		String repos[] = {	
-				"SRabbelier/Netbeans",
+				"jadeforrest/OpenACS-on-Rails",
+				"steven-zhou/amazon",
+				"fisherv1/amazon_project",
+				"jgilliam/nb-deprecated",
+				"alexs/salva-old"
+
+		/*		"SRabbelier/Netbeans",
 				"netspective/medigy-java",
 				"hibernate/hibernate-search",
 				"bobeal/capdemat",
-				"identityxx/velo1"
+				"identityxx/velo1"*/
 
 			//	"tulios/datasync",
 			//	"irishjava/looncms",
