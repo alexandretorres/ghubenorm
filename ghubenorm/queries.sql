@@ -353,3 +353,17 @@ from massociation a join mproperty p on p.association_id=a.id
 join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id
 join mclass ty on p.typeclass_id=ty.id
 where c.id=?
+
+-- check for fk defined by the other side of relationship. Notice that assoc.to_id "should" be null, or the Fk should be defined in the opposite side?
+-- This query needs some work
+select cl.name as fromClass,cl.source_id as fromtable,p.name as fromProperty,col.name as colname,col.table_id as tableid,tab.name as toTable,toCl.name as toClass,assoc.id,assoc.to_id
+from MProperty p join MAssociationDef def on p.value_id=def.id
+join MJoinColumn jc on jc.associationdef_id = def.id
+join MColumn col on jc.column_id=col.id
+join MClass cl on p.parent_id=cl.id
+left outer join MClass toCl on toCl.source_id = col.table_id
+left outer join MDataSource tab on tab.id= col.table_id
+left outer join MAssociation assoc on assoc.id=p.association_id
+where cl.source_id<>col.table_id
+
+
