@@ -249,6 +249,7 @@ public class Repo implements Visitable {
 						}
 					}
 				}
+				pw.print("\n  path:"+cl.getFilePath());
 				//if (!Util.isNullOrEmpty(cl.getPackageName()))
 				//	pw.print("\n package:"+cl.getPackageName());
 				pw.println("\n________________________________");
@@ -285,7 +286,8 @@ public class Repo implements Visitable {
 					if (assoc!=null) {						
 						MProperty inv = assoc.getInverse(p);
 						pw.print("-");
-						pw.print(inv==null ?  "("+(assoc.getMax()<0 ? "*": assoc.getMax())+")" : "("+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+")");
+						
+						pw.print(inv==null ?  "("+(assoc.getMax()<0 ? "*": getDefaultInverseMin(p)+assoc.getMax())+")" : "("+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+")");
 						if (p.isTransient())
 							pw.print("--(transient)---");
 						else
@@ -330,6 +332,14 @@ public class Repo implements Visitable {
 			LOG.info("{Repo:End}----------------");
 		}
 			//System.out.println(sw.getBuffer());
+	}
+	public String getDefaultInverseMin(MProperty p) {
+		boolean notNull = p.getAssociationDef()==null ? false : p.getAssociationDef().getJoinColumns().stream().anyMatch(jc->!jc.getColumn().isNullableDef());
+		if (notNull)
+			return "";
+		else
+			return "0..";
+			
 	}
 	String printAssociationDef(MClass cl,MProperty p) {
 		StringWriter sw =new StringWriter();

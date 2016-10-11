@@ -177,7 +177,7 @@ public class VisitHasMany implements LateVisitor {
 		String pname=Helper.getValue(nameNode); 
 		
 		String typeName =  JRubyInflector.getInstance().singularize(pname);
-		MProperty prop=daoProp.persit(clazz.newProperty());
+		prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
 		prop.setMax(-1);
 		
@@ -186,7 +186,7 @@ public class VisitHasMany implements LateVisitor {
 			prop.setTypeClass(type);
 		while (it.hasNext()) {
 			Node in = it.next();
-			visitArg(prop,in);
+			visitArg(in);
 			// search for inverse_of and other stuff
 		}
 		//remove properties for fks
@@ -222,11 +222,12 @@ public class VisitHasMany implements LateVisitor {
 				
 				}
 			}
+			
+			if (prop.getAssociation()==null && prop.getToAssociation()==null)
+				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 			if (fks!=null || pks!=null) {
 				createFKs();
 			}
-			if (prop.getAssociation()==null && prop.getToAssociation()==null)
-				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
 			//não tem inversa se não especifica com inverse_of, a não ser que tenha sido especificado do outro lado
@@ -250,31 +251,10 @@ public class VisitHasMany implements LateVisitor {
 					inverse.getAssociation().setTo(prop).setNavigableTo(true);
 				}
 			}
-		}
-		
-		/*
-		MClass ctype = prop.getTypeClass();
-		if (ctype!=null) {
-			final String tmp=inverseOf;
-			MProperty inverse = ctype.getProperties().stream().
-					filter(p->p.getName().equals(tmp)).
-					findFirst().orElse(null);
-
-			if (inverse!=null) {
-				if (inverse.getAssociation()==null) {									
-					MAssociation.newMAssociation(prop, inverse).setNavigableFrom(true).setNavigableTo(true);
-				} else {
-					//in this case the association is in the opposite side
-					inverse.getAssociation().setMax(1).setTo(prop).setNavigableTo(true);
-				}
-			}
-		}*/
+		}		
 
 	}
 	private void createFKs() {
-		if (true)
-			return;
-		//TODO: implement
 		MClass type = prop.getTypeClass();
 		if (type==null) {
 			LOG.warning("Foreing Key exist for has_one "+prop.getName()+" but Type could not be found:"+prop.getType()+".");
@@ -330,7 +310,7 @@ public class VisitHasMany implements LateVisitor {
 			}
 		}	
 	}
-	private void visitArg(MProperty prop,Node arg) {
+	private void visitArg(Node arg) {
 		if (arg instanceof HashNode) {
 			HashNode hn = (HashNode) arg;
 			for (KeyValuePair<Node, Node> pair:hn.getPairs()) {				
