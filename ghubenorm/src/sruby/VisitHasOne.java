@@ -151,6 +151,7 @@ public class VisitHasOne implements LateVisitor {
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
+	
 	public VisitHasOne(RubyRepo repo,MClass clazz,IArgumentNode node) {
 		this.repo=repo;
 		this.clazz = clazz;

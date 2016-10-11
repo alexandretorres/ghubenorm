@@ -1,5 +1,8 @@
 package sruby;
 
+import static gitget.Log.LOG;
+
+import java.util.Arrays;
 import java.util.Iterator;
 
 import org.jruby.ast.*;
@@ -12,7 +15,12 @@ import model.MAssociation;
 import model.MAssociationDef;
 import model.MCascadeType;
 import model.MClass;
+import model.MColumn;
+import model.MJoinColumn;
 import model.MProperty;
+import model.MTable;
+import static sruby.VisitHasOne.daoColumn;
+import static sruby.VisitHasOne.daoMTable;
 
 /**
  * :class_name
@@ -131,16 +139,29 @@ import model.MProperty;
  * ActiveRecord::Associations::ClassMethods's overview on Bi-directional
  * associations for more detail.
  * 
+ * --- test results:
+ * 
+ * The foreign_key can be used to specify the inverse on practice. Notice that if no foreign_key is specified, 
+ * and there is a match by default foreign_key, it is still an inverse. Ruby imediatelly flushes updates and 
+ * always selects back the belongs_to
  * @author torres
  *
  */
 public class VisitHasMany implements LateVisitor {
+	/**
+	 * On ruby, if you set the same FK in both sides of the association, it is not the same as setting inverseof,
+	 * because the retrived object will not be "the same" in memory. However it will be the same in the database (same PK)
+	 * Therefore we assume that only when the names matches OR the inverse is specified that it is a bidirectional relationship.
+	 * Otherwise they are two independent relationships.
+	 */
+	public static final boolean ASSUME_SAMEFK_AS_INVERSE=false;
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
-	
+	private String inverseOf;
 	private String[] fks=null;
 	private String[] pks=null;
+	private MProperty prop;
 	
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	public VisitHasMany(RubyRepo repo,MClass clazz,IArgumentNode node) {
@@ -172,22 +193,34 @@ public class VisitHasMany implements LateVisitor {
 		
 		//Uma PROP so tem uma assoc no lado from(?), mas uma coluna pode ter v�rias(?)
 		type = prop.getTypeClass();
+		if (inverseOf!=null)
+			createInverseOf();
 		if (prop.getAssociation()==null && type!=null) {
 			String clazz_under = JRubyInflector.getInstance().underscore(clazz.getName());
 			//visit SUPERCLASS PROPERTIES
+			String[] defFks = fks==null ? new String[]{JRubyInflector.getInstance().foreignKey(clazz.getName())} : fks;
 			for (MProperty p:type.getProperties()) {
 				// this is for belongs_to
 				if (p.getName().equals(clazz_under) && !p.equals(prop) && (p.getToAssociation()==null || p.getToAssociation().getFrom()==prop)) {
 					if (p.getAssociation()==null) {
-				/*		MAssociation.newMAssociation(p,prop).
-						setNavigableFrom(true).
-						setNavigableTo(true);
-						break;*/
+						continue;
 					} else if (p.getAssociation().getTo()==null || p.getAssociation().getTo()==prop) {
 						p.getAssociation().setTo(prop).setNavigableTo(true);
 						break;
 					}
-				} 
+				} else if (ASSUME_SAMEFK_AS_INVERSE && p.getAssociation()!=null && p.getAssociationDef()!=null) {
+					MAssociationDef def = p.getAssociationDef();
+					String[] jcs = def.getJoinColumns().stream().map(jc->jc.getColumn().getName()).toArray(String[]::new);
+					if (Arrays.equals(defFks, jcs)) {
+						if (p.getAssociation().getTo()==null) {
+							p.getAssociation().setTo(prop).setNavigableTo(true);
+							break;
+						} else {
+							LOG.info("double TO association on "+p);
+						}
+					}
+				
+				}
 			}
 			if (fks!=null || pks!=null) {
 				createFKs();
@@ -201,8 +234,101 @@ public class VisitHasMany implements LateVisitor {
 		}
 		return true;
 	}
+	private void createInverseOf() {		
+		MClass ctype = prop.getTypeClass();
+		if (ctype!=null) {
+			final String tmp=inverseOf;
+			MProperty inverse = ctype.getProperties().stream().
+					filter(p->p.getName().equals(tmp)).
+					findFirst().orElse(null);
+
+			if (inverse!=null) {
+				if (inverse.getAssociation()==null) {					
+					MAssociation.newMAssociation(inverse, prop).setNavigableFrom(true).setNavigableTo(true);
+				} else {
+					//in this case the association is in the opposite side
+					inverse.getAssociation().setTo(prop).setNavigableTo(true);
+				}
+			}
+		}
+		
+		/*
+		MClass ctype = prop.getTypeClass();
+		if (ctype!=null) {
+			final String tmp=inverseOf;
+			MProperty inverse = ctype.getProperties().stream().
+					filter(p->p.getName().equals(tmp)).
+					findFirst().orElse(null);
+
+			if (inverse!=null) {
+				if (inverse.getAssociation()==null) {									
+					MAssociation.newMAssociation(prop, inverse).setNavigableFrom(true).setNavigableTo(true);
+				} else {
+					//in this case the association is in the opposite side
+					inverse.getAssociation().setMax(1).setTo(prop).setNavigableTo(true);
+				}
+			}
+		}*/
+
+	}
 	private void createFKs() {
+		if (true)
+			return;
 		//TODO: implement
+		MClass type = prop.getTypeClass();
+		if (type==null) {
+			LOG.warning("Foreing Key exist for has_one "+prop.getName()+" but Type could not be found:"+prop.getType()+".");
+			return;
+		}			
+		MTable source = (MTable) type.findDataSource();
+		if (source==null) {
+			if (type.isAbstract()) {
+				LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+".");
+				return; // forget about it
+			}
+			LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+". Creating a table source");
+			source =daoMTable.persit(
+					type.newTableSource(								
+							JRubyInflector.getInstance().tableize(type.getName())));
+		}
+		//The property of the "other side"
+		final MProperty iprop = prop.getAssociation()==null ? 
+				prop.getToAssociation().getFrom() : 
+				prop.getAssociation().getTo()==null ? 
+						prop :  
+						prop.getAssociation().getTo();
+		
+		MAssociationDef def = prop.getOrInitAssociationDef();
+		int len = fks==null ? pks.length : fks.length;
+		for (int i=0;i<len;i++) {
+			
+			String fk = fks==null ? null : fks[i];
+			String pk = pks==null ? null : pks[i];
+			
+			String jfk = fk==null ? JRubyInflector.getInstance().foreignKey(clazz.getName()) : fk;
+			MJoinColumn jc = def.findJoinColumn(jfk);
+			MColumn col = source.findColumn(jfk);
+			if (col==null) {								
+				col =  daoColumn.persit(source.addColumn().setName(fk));
+			} else {
+				//remove property
+				MProperty delProp = type.getProperties().stream().
+						filter(p->p.getName().equalsIgnoreCase(fk) && !p.equals(iprop)).
+						findFirst().orElse(null);
+				if (delProp!=null) {
+					delProp.getParent().getProperties().remove(delProp);
+					
+				}
+			}
+			if (jc==null) {
+				jc=def.newJoingColumn(col);				
+			}			
+			if (pk!=null) {
+				MTable dest = (MTable) clazz.findDataSource();
+				MColumn invcol = dest.findColumn(pk);
+				jc.setInverse(invcol);
+			}
+		}	
 	}
 	private void visitArg(MProperty prop,Node arg) {
 		if (arg instanceof HashNode) {
@@ -250,24 +376,7 @@ public class VisitHasMany implements LateVisitor {
 						this.fks = value.split(",");
 						break;
 					case "inverse_of": 
-						def = prop.getOrInitAssociationDef();
-						MClass ctype = prop.getTypeClass();
-						if (ctype!=null) {
-							final String tmp=value;
-							MProperty inverse = ctype.getProperties().stream().
-									filter(p->p.getName().equals(tmp)).
-									findFirst().orElse(null);
-
-							if (inverse!=null) {
-								if (inverse.getAssociation()==null) {
-									
-									MAssociation.newMAssociation(inverse, prop).setNavigableFrom(true).setNavigableTo(true);
-								} else {
-									//neste caso o inverse � ao contr�rio, definido do outro lado
-									inverse.getAssociation().setTo(prop).setNavigableTo(true);
-								}
-							}
-						}
+						this.inverseOf = value;
 						break;
 						
 				}
