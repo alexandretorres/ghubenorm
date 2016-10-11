@@ -166,12 +166,33 @@ public class Helper {
 	static boolean keepScope(Node c) {
 		return NewlineNode.class.isInstance(c) ; //or other classes?
 	}
-	
+	static public AttrAssignNode getAttrAssignNode(Node n,String varname) {
+		if (n instanceof AttrAssignNode) {
+			AttrAssignNode an = (AttrAssignNode) n;
+			String aname = an.getName();
+			CharMatcher matcher = CharMatcher.is('=');
+			aname = matcher.trimFrom(aname);
+			if (varname.equals(aname)) {
+				return an;
+			}
+		} else if (keepScope(n)) {
+			AttrAssignNode an = findAttrAssignNode(n, varname);
+			if (an!=null)
+				return an;
+		}
+		return null;
+	}
 	static public AttrAssignNode findAttrAssignNode(Node root,String varname) {
 		if (root==null)
 			return null;
+		AttrAssignNode ret = getAttrAssignNode(root,varname);
+		if (ret!=null)
+			return ret;
 		for (Node n:root.childNodes()) {
-			if (n instanceof AttrAssignNode) {
+			ret = getAttrAssignNode(n,varname);
+			if (ret!=null)
+				return ret;
+			/*if (n instanceof AttrAssignNode) {
 				AttrAssignNode an = (AttrAssignNode) n;
 				String aname = an.getName();
 				CharMatcher matcher = CharMatcher.is('=');
@@ -183,11 +204,9 @@ public class Helper {
 				AttrAssignNode an = findAttrAssignNode(n, varname);
 				if (an!=null)
 					return an;
-			}
+			}*/
 		}
-		/*
-		Stream<Node> x = root.childNodes().stream().
-			filter(c->Helper.keepScope(c)).flatMap(c->c.childNodes().stream());*/
+		
 		return null;
 	}
 }

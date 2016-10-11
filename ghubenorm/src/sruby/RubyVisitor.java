@@ -17,7 +17,9 @@ import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.Colon2Node;
+import org.jruby.ast.Colon3Node;
 import org.jruby.ast.FCallNode;
+import org.jruby.ast.ModuleNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.SelfNode;
@@ -43,7 +45,7 @@ import model.MTable;
 public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	Stack<Object> stack = new Stack<Object>();
 	private RubyRepo repo;
-	
+	Stack<String> modules = new Stack<String>();
 	static DAOInterface<MClass> daoMClass = ConfigDAO.getDAO(MClass.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	static DAOInterface<MProperty> daoMProp = ConfigDAO.getDAO(MProperty.class);
@@ -52,6 +54,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	public void reset(String url) {
 		this.currentURL=url;
 		stack.removeAll(stack);
+		modules.clear();
 	}
 	
 	public RubyVisitor(RubyRepo repo){
@@ -60,6 +63,14 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	@Override
 	protected Object defaultVisit(Node node) {			
 		visitChildren(node); 
+		return null;
+	}
+	@Override
+	public Object visitModuleNode(ModuleNode node) {
+		String name = decodeName(node.getCPath());
+		modules.push(name);
+		visitChildren(node);
+		modules.pop();
 		return null;
 	}
 	private String decodeName(INameNode n) {
@@ -72,9 +83,26 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		}
 		return name;
 	}
+	private String decodeName(String context,INameNode n) {
+		String name = n.getName();
+		if (n instanceof Colon2Node) {
+			Colon2Node c2 = (Colon2Node) n;
+			if (c2.getLeftNode() instanceof INameNode) {
+				name = decodeName((INameNode)c2.getLeftNode())+"::"+name;
+			}
+		} else if (n instanceof Colon3Node) {
+			//Colon3Node c3 = (Colon3Node)n;
+			return n.getName();
+		} else if (context!=null && context.length()>0) {
+			name = context+"::"+name;
+		}
+		return name;
+	}
 	
 	public MClass createClass(ClassNode n) {
 		String dname = decodeName( n.getCPath());
+		if (!modules.isEmpty())
+			dname = String.join("::", (CharSequence[]) modules.toArray(new CharSequence[] {})) +"::"+dname;
 		String path=null; //TODO: in fact you have to see the module declaration
 		if (dname.contains("::")) {
 			path = dname.replace("::",".");
@@ -88,6 +116,23 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		repo.getClasses().add(clazz);
 		repo.incomplete.put(clazz,n);
 		return clazz;
+	}
+	/**
+	 * SE superclasse for abstrata e for persistente, filho tem tabela
+	 * SE superclasse não for abstrata for persistente, filho não tem tabela
+	 * SE superclasse não for persistente, e filho persistente, tem tabela -so que não, 
+	 *   pq tem que extender active:record!
+	 * @return
+	 */
+	public boolean isFirstConcretePersistent(MClass clazz) {
+		MClass superClass = clazz.getSuperClass();
+		if (superClass==null) {
+			return clazz.isPersistent() && (!clazz.isAbstract() || clazz.getPersistence().getSource()!=null);
+		}
+		if (superClass.isPersistent()) {
+			return !isFirstConcretePersistent(superClass);			
+		}
+		return false;
 	}
 	public void visitClass(MClass clazz,ClassNode n,MClass superclazz,boolean isPersistent) {	
 		repo.incomplete.remove(clazz);
@@ -105,13 +150,18 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			
 			//Abstract class on Ruby means Mapped Super class, and Horizontal Inheritance
 			clazz.setPersistent();	
-			if (clazz.isFirstConcretePersistent()) {
-				
-				AttrAssignNode an = Helper.findAttrAssignNode(n.getBodyNode(), "table_name");		
-				String tabname = JRubyInflector.getInstance().tableize(clazz.getName());
-				if (an!=null && an.getReceiverNode() instanceof SelfNode) {				
-					tabname=Helper.getValue(an.getArgsNode());
-				}
+			
+			String tabname = null;
+			
+			if (isFirstConcretePersistent(clazz)) {
+				tabname = JRubyInflector.getInstance().tableize(clazz.getName());
+			}
+			AttrAssignNode an = Helper.findAttrAssignNode(n.getBodyNode(), "table_name");
+			if (an!=null && an.getReceiverNode() instanceof SelfNode) {				
+				tabname=Helper.getValue(an.getArgsNode());
+			}
+			
+			if (tabname!=null) {				
 				MTable tab = repo.getTable(tabname);
 				if (tab==null)
 					tab=daoMTable.persit(clazz.newTableSource(tabname));
@@ -161,7 +211,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		if (n.getSuperNode() instanceof INameNode) {
 			INameNode sup = (INameNode) n.getSuperNode();
 			//String lexname = sup.getLexicalName();
-			sname = decodeName(sup); 			
+			sname = decodeName(ret.getPackageName(),sup); 			
 		}
 		if (sname.equals("") || sname.equals("ActiveRecord::Base")) {
 			visitClass(ret,n,null,sname.equals("ActiveRecord::Base"));

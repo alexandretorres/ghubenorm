@@ -14,6 +14,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.logging.Level;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jruby.ast.ClassNode;
@@ -61,28 +63,73 @@ public class RubyRepo {
 		Optional<MTable> ret = getTables().stream().filter(tab->tab.getName().equalsIgnoreCase(name)).findFirst();
 		return ret.orElse(null);
 	}
-	public MClass getClazz(String name) {
+	private MClass getClazz(String name) {
+		return getClazz(null,name);
+	}
+	public String formatPackage(String pak) {		
+		pak = pak==null ? "" : pak; 
+		pak = pak.replaceAll("::", ".");
+		return pak;
+	}
+	public MClass getClazz(MClass from,String name) {
 		final String cname;
-		if (name.contains("::")) {
+		final String path;
+		if (name.contains("::") || name.contains(".")) {
 			name = name.replace("::",".");
 			int idx = name.lastIndexOf(".");
-			String path = name.substring(0, idx);
+			path = name.substring(0, idx);
 			cname = name.substring(idx+1);
 			
-			Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname) && path.equals(cl.getPackageName())).findFirst();
+			/*Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname) && path.equals(cl.getPackageName())).findFirst();
 			if (ret.isPresent())
-				return ret.get();			
-		} else
+				return ret.get();	*/		
+		} else {
+			if (from!=null) {
+				path = formatPackage(from.getPackageName());
+			} else 
+				path="";
 			cname =name;
-		Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname)).findFirst();
-		return ret.orElse(null);
+			/*Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname) && (cl.getPackageName()==null || "".equals(cl.getPackageName()))).findFirst();
+			if (ret.isPresent())
+				return ret.get();	*/
+		}
+		
+		List<MClass> lst = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname)).collect(Collectors.toList());
+		return pickClassFromList(path, lst);
+		/*Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname)).findFirst();
+		return ret.orElse(null);*/
 		
 	}
-	public MClass getClazzFromUnderscore(String underscore_name) {
-		Optional<MClass> ret = getClasses().stream().filter(
-				cl->JRubyInflector.getInstance().underscore(cl.getName()).equalsIgnoreCase(underscore_name)).
-				findFirst();
-		return ret.orElse(null);
+	private MClass pickClassFromList(String pak,List<MClass> lst) {
+		MClass ret = null;
+		do {
+			for (MClass cl:lst) {
+				String pakCl = cl.getPackageName();
+				pakCl = pakCl==null ? "" :pakCl;
+				pakCl = pakCl.replaceAll("::", ".");
+				if (pak.equals(pakCl)) {
+					return cl;
+					
+				}
+			}
+			int idx = pak.lastIndexOf('.');
+			if (idx>0)
+				pak=pak.substring(0,idx);
+			else
+				pak=null;
+		} while (pak!=null);
+		if (ret==null && !lst.isEmpty())
+			ret= lst.iterator().next();
+		return ret;
+	}
+	public MClass getClazzFromUnderscore(MClass context,String underscore_name) {
+		 List<MClass> lst = getClasses().stream().filter(
+				cl->JRubyInflector.getInstance().underscore(cl.getName()).equalsIgnoreCase(underscore_name)).collect(Collectors.toList())
+				;
+		String pak = context.getPackageName();
+		pak = pak==null ? "" : pak; 
+		pak = pak.replaceAll("::", ".");
+		return pickClassFromList(pak, lst);
 	}
 	private void completeClasses(RubyVisitor rv) {
 		Map<MClass, ClassNode> curList = incomplete;
@@ -109,19 +156,26 @@ public class RubyRepo {
 			keep=false;
 			for (Iterator<String> it=subclasses.keySet().iterator();it.hasNext();) {
 				String supername = it.next();
-				MClass parent = getClazz(supername); 
-				boolean wait = parent!=null && !Util.isNullOrEmpty(parent.getSuperClassName()) && incomplete.containsKey(parent);
-				if (!wait) {
-					List<MClass> lst = subclasses.get(supername);	
-					for (MClass c:lst) {
+				//MClass parent = getClazz(supername); 
+				// old wait
+				List<MClass> lst = subclasses.get(supername);	
+				for (Iterator<MClass> it2=lst.iterator();it2.hasNext();) {					
+					MClass c = it2.next();					
+					MClass parent = getClazz(c.getSuperClassName());
+					boolean wait = parent!=null && !Util.isNullOrEmpty(parent.getSuperClassName()) && incomplete.containsKey(parent);
+					if (!wait) {
 						ClassNode n = incomplete.get(c);
 						if (n!=null)
 							rv.visitClass(c,n, parent,parent==null ? false : parent.isPersistent());
+						it2.remove();
 					}
-					keep=true;
+				}
+				
+				keep=true;
+				if (lst.isEmpty())
 					removed.add(supername);
-					//it.remove();		
-				}				
+				//it.remove();		
+				//old wait ends				
 			}
 			for (String s:removed) {
 				subclasses.remove(s);
@@ -136,6 +190,7 @@ public class RubyRepo {
 			}
 		}
 		subclasses.clear();
+		visitors.sort(LateVisitor.comparator);
 		for (LateVisitor v:visitors) {
 			v.exec();
 		}		

@@ -82,6 +82,7 @@ public class MProperty implements Visitable {
 	public MClass getTypeClass() {
 		return typeClass;
 	}
+	
 	public MProperty setTypeClass(MClass typeClass) {
 		this.typeClass = typeClass;
 		return this;
@@ -167,5 +168,7 @@ public class MProperty implements Visitable {
 		visitor.callAccept(association);
 		visitor.visit(this);
 	}
-	
+	public String toString() {
+		return (parent==null ? "" : parent.getName()+".")+ name+" "+super.toString();
+	}
 }

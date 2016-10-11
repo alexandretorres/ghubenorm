@@ -176,4 +176,7 @@ public class MColumn extends MColumnDefinition{
 		ret = ret && (table==null || table.isDummy());
 		return ret;
 	}
+	public String toString() {
+		return (table==null ? "" : table.getName()+".")+ name+" "+super.toString();
+	}
 }

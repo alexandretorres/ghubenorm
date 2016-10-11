@@ -166,7 +166,7 @@ public class VisitHasOne implements LateVisitor {
 	
 		/*
 		*/
-		this.type = repo.getClazzFromUnderscore(pname);
+		this.type = repo.getClazzFromUnderscore(clazz,pname);
 		// collect data
 		while (it.hasNext()) {
 			Node in = it.next();
@@ -202,10 +202,10 @@ public class VisitHasOne implements LateVisitor {
 				// this is for has_many in the other side
 				if (p.getName().equals(clazz_under) && !p.equals(prop) && (p.getToAssociation()==null || p.getToAssociation().getFrom()==prop)) {
 					if (p.getAssociation()==null) {
-						MAssociation.newMAssociation(prop,p).
+					/*	MAssociation.newMAssociation(prop,p).
 						setNavigableFrom(true).
 						setNavigableTo(true);
-						break;
+						break;*/
 					} else if (p.getAssociation().getTo()==null || p.getAssociation().getTo()==prop) {
 						p.getAssociation().setMax(1).setTo(prop).swap(); // The default belongs_to is "many_to_one", here we set it no one_to_one
 						prop.getAssociation().setNavigableTo(true);
@@ -236,6 +236,10 @@ public class VisitHasOne implements LateVisitor {
 		}			
 		MTable source = (MTable) type.findDataSource();
 		if (source==null) {
+			if (type.isAbstract()) {
+				LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+".");
+				return; // forget about it
+			}
 			LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+". Creating a table source");
 			source =daoMTable.persit(
 					type.newTableSource(								
@@ -313,7 +317,7 @@ public class VisitHasOne implements LateVisitor {
 					case "class_name": 
 						typeName = value;
 						
-						this.type = repo.getClazz(value);
+						this.type = repo.getClazz(clazz,value);
 						//if (type!=null)
 						//	prop.setTypeClass(type);
 						break;
@@ -335,4 +339,7 @@ public class VisitHasOne implements LateVisitor {
 			
 		}
 	}
+	public int getOrder() {
+		return 1;
+	};
 }

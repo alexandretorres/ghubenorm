@@ -116,15 +116,7 @@ public class JavaRepo {
 		
 		while(!visitors.isEmpty()) {
 			List<LateVisitor> procList = visitors;
-			procList.sort(new Comparator<LateVisitor>() {
-
-				@Override
-				public int compare(LateVisitor o1, LateVisitor o2) {
-					
-					return o1.getOrder()-o2.getOrder();
-				}
-				
-			});
+			procList.sort(LateVisitor.comparator);
 			visitors= new Stack<LateVisitor>() ;
 			for (LateVisitor v:procList) {
 				v.exec();

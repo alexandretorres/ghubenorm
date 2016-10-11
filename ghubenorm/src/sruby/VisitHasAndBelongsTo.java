@@ -96,7 +96,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 		MProperty prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
 		prop.setMax(-1);
-		MClass type = repo.getClazzFromUnderscore(typeName);
+		MClass type = repo.getClazzFromUnderscore(clazz,typeName);
 		if (type!=null)
 			prop.setTypeClass(type);
 		while (it.hasNext()) {
@@ -216,7 +216,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 				MAssociationDef def=null;
 				switch (name.toLowerCase()) {
 					case "class_name": 
-						MClass type = repo.getClazz(value);
+						MClass type = repo.getClazz(clazz,value);
 						if (type!=null)
 							prop.setTypeClass(type);
 						break;

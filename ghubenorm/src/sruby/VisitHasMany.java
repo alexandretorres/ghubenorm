@@ -138,6 +138,10 @@ public class VisitHasMany implements LateVisitor {
 	private RubyRepo repo;
 	private MClass clazz;
 	private IArgumentNode node;
+	
+	private String[] fks=null;
+	private String[] pks=null;
+	
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	public VisitHasMany(RubyRepo repo,MClass clazz,IArgumentNode node) {
 		this.repo=repo;
@@ -156,7 +160,7 @@ public class VisitHasMany implements LateVisitor {
 		prop.setName(pname);
 		prop.setMax(-1);
 		
-		MClass type = repo.getClazzFromUnderscore(typeName);
+		MClass type = repo.getClazzFromUnderscore(clazz,typeName);
 		if (type!=null)
 			prop.setTypeClass(type);
 		while (it.hasNext()) {
@@ -175,15 +179,18 @@ public class VisitHasMany implements LateVisitor {
 				// this is for belongs_to
 				if (p.getName().equals(clazz_under) && !p.equals(prop) && (p.getToAssociation()==null || p.getToAssociation().getFrom()==prop)) {
 					if (p.getAssociation()==null) {
-						MAssociation.newMAssociation(p,prop).
+				/*		MAssociation.newMAssociation(p,prop).
 						setNavigableFrom(true).
 						setNavigableTo(true);
-						break;
+						break;*/
 					} else if (p.getAssociation().getTo()==null || p.getAssociation().getTo()==prop) {
 						p.getAssociation().setTo(prop).setNavigableTo(true);
 						break;
 					}
 				} 
+			}
+			if (fks!=null || pks!=null) {
+				createFKs();
 			}
 			if (prop.getAssociation()==null && prop.getToAssociation()==null)
 				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
@@ -193,6 +200,9 @@ public class VisitHasMany implements LateVisitor {
 
 		}
 		return true;
+	}
+	private void createFKs() {
+		//TODO: implement
 	}
 	private void visitArg(MProperty prop,Node arg) {
 		if (arg instanceof HashNode) {
@@ -204,7 +214,7 @@ public class VisitHasMany implements LateVisitor {
 				MAssociationDef def=null;
 				switch (name.toLowerCase()) {
 					case "class_name": 
-						MClass type = repo.getClazz(value);
+						MClass type = repo.getClazz(clazz,value);
 						prop.setType(value);
 						if (type!=null)
 							prop.setTypeClass(type);
@@ -232,6 +242,13 @@ public class VisitHasMany implements LateVisitor {
 							def.addCascade(MCascadeType.PERSIST);
 						}
 						break;
+						
+					case "primary_key":	
+						this.pks = value.split(",");					
+						break;
+					case "foreign_key":				
+						this.fks = value.split(",");
+						break;
 					case "inverse_of": 
 						def = prop.getOrInitAssociationDef();
 						MClass ctype = prop.getTypeClass();
@@ -257,6 +274,9 @@ public class VisitHasMany implements LateVisitor {
 			}
 		}
 	}
+	public int getOrder() {
+		return 1;
+	};
 }
 /*
  * Inverso: has_many e belongs_to precisa especificar inverse para ser a mesma associa��o.

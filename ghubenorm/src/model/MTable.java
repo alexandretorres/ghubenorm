@@ -71,8 +71,10 @@ public class MTable extends MDataSource {
 		return c;
 	}
 	public MColumn findColumn(String name) {
+		if (name==null)
+			return null;
 		for (MColumn c:columns) {
-			if (c.getName().equalsIgnoreCase(name))
+			if (name.equalsIgnoreCase(c.getName()))
 				return c;
 		}
 		return null;

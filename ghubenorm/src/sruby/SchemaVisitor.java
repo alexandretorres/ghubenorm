@@ -166,7 +166,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				try {
 					ret.setLength(Helper.getHashArgument(hn.getPairs(), "limit",Integer.class));	
 				} catch (Exception ex) {
-					LOG.log(Level.SEVERE,ex.getMessage(),ex);	
+					LOG.log(Level.SEVERE,tab.getName()+"."+ret.getName()+":"+ ex.getMessage(),ex);	
 				}
 				//String index = Helper.getHashArgument(hn.getPairs(), "index");
 				Node nidx = Helper.getHashValue(hn.getPairs(), "index");

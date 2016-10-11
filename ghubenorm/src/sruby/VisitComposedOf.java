@@ -43,7 +43,7 @@ public class VisitComposedOf implements LateVisitor {
 		String pname = Helper.getValue(nameNode);
 		String typeName = pname;
 		MProperty prop=daoProp.persit(clazz.newProperty().setName(pname).setMax(1));
-		type = repo.getClazzFromUnderscore(typeName);
+		type = repo.getClazzFromUnderscore(clazz,typeName);
 		if (type!=null)
 			prop.setTypeClass(type);
 		prop.setEmbedded(true);
@@ -139,7 +139,7 @@ public class VisitComposedOf implements LateVisitor {
 				switch (name.toLowerCase()) {
 					case "class_name": 
 						String value= Helper.getValue(valueNode);
-						this.type = repo.getClazz(value);						
+						this.type = repo.getClazz(clazz,value);						
 						if (type!=null)
 							prop.setTypeClass(type);
 						break;

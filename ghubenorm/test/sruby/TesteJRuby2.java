@@ -36,42 +36,49 @@ import org.jruby.lexer.yacc.SyntaxException;
 import org.junit.Test;
 
 public class TesteJRuby2 { 
-
+	static int REPO_NUM=4;
 	static int fileCnt=0;
 	static RubyRepoLoader loader = RubyRepoLoader.getInstance();
-	
+	String[][] repos = {			
+			{"repos/chroma32-master/db/schema.rb","repos/chroma32-master/app/models/"},			//0
+			{"repos/ps-deathstar-master/db/schema.rb","repos/ps-deathstar-master/app/models/"},	//1
+			{"repos/promoweb-master/db/schema.rb","repos/promoweb-master/app/models/"},			//2
+			{"repos/gitlabhq-master/db/schema.rb","repos/gitlabhq-master/app/models/"},			//3
+			{"repos/activerecord_test/schema/schema.rb","repos/activerecord_test/models/"}		//4
+		};
+	String[] names = {
+			"repos/chroma32-master",
+			"repos/ps-deathstar-master",
+			"repos/promoweb-master",
+			"repos/gitlabhq-master",
+			"repos/activerecord_test"
+			};
 	@Test
 	public void test()  {
 		Node n=null;
 		try {
-			//ConfigDAO.config(JPA_DAO.instance);
-			ConfigDAO.config(new ConfigNop());
+			ConfigDAO.config(JPA_DAO.instance);
+			//ConfigDAO.config(new ConfigNop());
 			DAOInterface<Repo> dao = ConfigDAO.getDAO(Repo.class);
 			
 			dao.beginTransaction();
 			//testeDB();	
 			RubyRepo repo =	loader.setRepo(new Repo(Language.RUBY));
+			repo.getRepo().setPublicId(REPO_NUM);
+			repo.getRepo().setName(names[REPO_NUM]);
 			dao.persit(repo.getRepo());
 	        //first warm up the parser
 			FileInputStream in = new FileInputStream("warmup.rb");
 			n= loader.parse(in);			
-			// 			
-			//ps-deathstar-master
-			//in = new FileInputStream("repos/chroma32-master/db/schema.rb");
-			//in = new FileInputStream("repos/ps-deathstar-master/db/schema.rb");
-			//in = new FileInputStream("repos/promoweb-master/db/schema.rb");
-			in = new FileInputStream("repos/gitlabhq-master/db/schema.rb");
+			
+			in = new FileInputStream(repos[REPO_NUM][0]);
+			
 			
 			fileCnt++;
 			n = loader.visitSchema(in);
-	     
-	        //
-	        //File baseFile = new File("repos/chroma32-master/app/models/");//
-	        //File baseFile = new File("repos/ps-deathstar-master/app/models/");//
-	        //File baseFile = new File("repos/promoweb-master/app/models/");//
-	        File baseFile = new File("repos/gitlabhq-master/app/models/");//
+	          
+	        File baseFile = new File(repos[REPO_NUM][1]);//
 	       
-	   
 	        for (File f:baseFile.listFiles()) {
 	        	if (f.isFile()) {
 	        		try {

@@ -155,7 +155,7 @@ public class VisitBelongsTo implements LateVisitor {
 		//clazz.getProperties().stream().filter(p->p.getName().equalsIgnoreCase(pname+"_id"));
 		/*
 		*/
-		this.type = repo.getClazzFromUnderscore(pname);
+		this.type = repo.getClazzFromUnderscore(clazz,pname);
 		// collect data
 		while (it.hasNext()) {
 			Node in = it.next();
@@ -208,11 +208,11 @@ public class VisitBelongsTo implements LateVisitor {
 		for (MProperty p:type.getProperties()) {
 			// this is for has_many in the other side
 			if (p.getName().equals(clazz_under) && !p.equals(prop) && (p.getToAssociation()==null || p.getToAssociation().getFrom()==prop)) {
-				if (p.getAssociation()==null) {
-					MAssociation.newMAssociation(prop,p).
+				if (p.getAssociation()==null) { //perhaps we should not create an association until the other side have one
+					/*MAssociation.newMAssociation(prop,p).
 					setNavigableFrom(true).
 					setNavigableTo(true);
-					break;
+					break;*/
 				} else if (p.getAssociation().getTo()==null || p.getAssociation().getTo()==prop) {
 					p.getAssociation().setTo(prop).swap();
 					prop.getAssociation().setNavigableTo(true);
@@ -297,7 +297,7 @@ public class VisitBelongsTo implements LateVisitor {
 				switch (name.toLowerCase()) {
 					case "class_name": 
 						typeName = value;
-						this.type = repo.getClazz(value);
+						this.type = repo.getClazz(clazz,value);
 						//if (type!=null)
 						//	prop.setTypeClass(type);
 						break;

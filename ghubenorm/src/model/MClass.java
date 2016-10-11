@@ -70,6 +70,12 @@ public class MClass implements Visitable {
 	public String getName() {
 		return name;
 	}
+	public String getUMLName() {
+		String name = getFullName();
+		if (name!=null)
+			name = name.replaceAll("\\.", "::");
+		return name;
+	}
 	public String getFullName() {
 		if (packageName==null)
 			return name;
@@ -133,7 +139,7 @@ public class MClass implements Visitable {
 		MDataSource ret = persistence.getSource();
 		if (ret!=null)
 			return ret;
-		if (superClass!=null && superClass.isPersistent())
+		if (superClass!=null /*&& superClass.isPersistent()*/)
 			return superClass.findDataSource();
 		return null;
 		
@@ -263,23 +269,7 @@ public class MClass implements Visitable {
 		generalization.add(ret);
 		return ret;
 	}
-	/**
-	 * SE superclasse for abstrata e for persistente, filho tem tabela
-	 * SE superclasse n�o for abstrata for persistente, filho n�o tem tabela
-	 * SE superclasse n�o for persistente, e filho persistente, tem tabela -so que n�o, 
-	 *   pq tem que extender active:record!
-	 * @return
-	 */
-	public boolean isFirstConcretePersistent() {
-		if (this.superClass==null) {
-			return isPersistent() && !isAbstract;
-		}
-		if (superClass.isPersistent()) {
-			return !superClass.isFirstConcretePersistent();
-			
-		}
-		return false;
-	}
+	
 	public boolean isPersistent() {
 		return persistence.isPersistent();
 	}

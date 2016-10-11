@@ -227,7 +227,7 @@ public class Repo implements Visitable {
 					} else if (cl.isPersistent()) {
 						pw.print(" △");
 					}
-					pw.print(" extends " + cl.getSuperClass().getName());
+					pw.print(" extends " + cl.getSuperClass().getFullName());
 				} else if (!Util.isNullOrEmpty(cl.getSuperClassName())) {
 					pw.print(" extends (?)" + cl.getSuperClassName());
 				}
@@ -249,7 +249,8 @@ public class Repo implements Visitable {
 						}
 					}
 				}
-				
+				//if (!Util.isNullOrEmpty(cl.getPackageName()))
+				//	pw.print("\n package:"+cl.getPackageName());
 				pw.println("\n________________________________");
 				List<MProperty> propList = new ArrayList<MProperty>(cl.getProperties());
 				Collections.sort(propList, mPropComp);
@@ -292,7 +293,7 @@ public class Repo implements Visitable {
 						pw.print("("+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+")");
 						pw.print("-");
 						try {							
-							pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getName())+(inv==null ?  "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
+							pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getUMLName())+(inv==null ?  "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
 						} catch (Exception ex) {
 							LOG.log(Level.SEVERE,ex.getMessage(),ex);		 						
 						}
