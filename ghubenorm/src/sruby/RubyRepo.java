@@ -150,6 +150,7 @@ public class RubyRepo {
 	 * @param rv
 	 */
 	public void solveRefs(RubyVisitor rv) {
+		int tries=0; //this is a hack
 		boolean keep; 
 		do {
 			HashSet<String> removed = new HashSet<String>(); 
@@ -163,14 +164,19 @@ public class RubyRepo {
 					MClass c = it2.next();					
 					MClass parent = getClazz(c.getSuperClassName());
 					boolean wait = parent!=null && !Util.isNullOrEmpty(parent.getSuperClassName()) && incomplete.containsKey(parent);
+					if (c.equals(parent))
+						wait=false;
 					if (!wait) {
+						tries=0;
 						ClassNode n = incomplete.get(c);
 						if (n!=null)
 							rv.visitClass(c,n, parent,parent==null ? false : parent.isPersistent());
 						it2.remove();
 					}
+					tries++;
 				}
-				
+				if (tries>1000000)
+					throw new RuntimeException("solverefs exceeded limit for finding superclasses:"+subclasses.keySet());
 				keep=true;
 				if (lst.isEmpty())
 					removed.add(supername);
