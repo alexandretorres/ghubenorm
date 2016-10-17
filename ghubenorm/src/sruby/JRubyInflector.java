@@ -50,6 +50,9 @@ public class JRubyInflector {
 			ex.printStackTrace();
 		}
 	}
+	public String polymorphicTypeName(String colName) {
+		return colName+"_type";
+	}
 	public String tableize(String className) {
 		try {
 			return (String) rubyEngine.eval("\""+className+"\".tableize", context);

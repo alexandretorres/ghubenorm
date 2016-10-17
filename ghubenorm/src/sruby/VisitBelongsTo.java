@@ -135,6 +135,8 @@ public class VisitBelongsTo implements LateVisitor {
 	private String[] fks=null;
 	private String[] pks=null;
 	private String inverseOf;
+	private boolean polymorphic=false;
+	private String foreignType;
 	
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
@@ -185,22 +187,36 @@ public class VisitBelongsTo implements LateVisitor {
 		if (inverseOf!=null)
 			createInverseOf();
 		//remove properties for fks
-
-		if (prop.getAssociation()==null && type!=null) {
+		if (polymorphic) {
+			String dname = foreignType ==null? pname+"_type" : foreignType;
+			
+			MColumn dcolumn = null;
+			MTable source = (MTable) clazz.findDataSource();
+			if (source!=null) {
+				dcolumn = source.findColumn(dname);
+			}
+			if (dcolumn==null) {
+				LOG.info("creating a discriminator column "+dname+" from table "+source+" of class "+clazz );				
+				dcolumn = daoColumn.persit(MColumn.newMColumn().setName(dname).setTable(source));				
+			} else {
+				MProperty delProp = clazz.findProperty(dname);
+				if (delProp!=null && dcolumn.equals(delProp.getColumnDef()))
+					daoProp.remove(delProp);
+			}
+			prop.setType("<polymorphic>"+dcolumn.getName());
+			this.repo.polymorphicProperties.put(pname, prop); //TODO: packaged names !
+			prop.getDiscriminatorColumn().setColumn(dcolumn);
+		} else if (prop.getAssociation()==null && type!=null) {
 			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName())); //has many
 			findAssociationByName(clazz_under);
 			if (prop.getAssociation()==null) {
 				clazz_under = JRubyInflector.getInstance().underscore(clazz.getName()); //has One
 				findAssociationByName(clazz_under);
 			}
-				
-			if (prop.getAssociation()==null && prop.getToAssociation()==null)
-				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false).setMax(-1);  // inverse is many
-			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
-					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
-			//n�o tem inversa se n�o especifica com inverse_of, a n�o ser que tenha sido especificado do outro lado
-
 		}
+		if (prop.getAssociation()==null && prop.getToAssociation()==null)
+			MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false).setMax(-1);  // inverse is many by default
+		
 		return true;
 		
 	}
@@ -312,6 +328,14 @@ public class VisitBelongsTo implements LateVisitor {
 						break;
 					case "required":
 						// do nothing, it is a software check
+						break;
+					case "polymorphic":
+						polymorphic=true;
+						type=null;
+						typeName="<polymorphic::"+this.pname+">";						
+						break;
+					case "foreign_type":
+						foreignType=value;
 						break;
 				}
 				

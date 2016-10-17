@@ -40,6 +40,7 @@ public class RubyRepo {
 	private Repo repo;
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
 	Map<MClass,ClassNode> incomplete = new HashMap<MClass,ClassNode>();
+	Map<String,MProperty> polymorphicProperties = new HashMap<String,MProperty>();
 	private Dir root;
 	/**
 	 * Superclass-ClassCode: subclasses waiting for a class definition 

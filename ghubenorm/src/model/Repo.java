@@ -296,6 +296,8 @@ public class Repo implements Visitable {
 						pw.print("-");
 						try {							
 							pw.print((p.getTypeClass()==null ? p.getType() : p.getTypeClass().getUMLName())+(inv==null ?  "" : "."+ inv.getName()+"["+inv.getMin()+".."+(inv.getMax()<0 ? "*": inv.getMax())+"]"));
+							if (assoc.getPolymorphicAs()!=null)
+								pw.print(" as "+assoc.getPolymorphicAs());
 						} catch (Exception ex) {
 							LOG.log(Level.SEVERE,ex.getMessage(),ex);		 						
 						}

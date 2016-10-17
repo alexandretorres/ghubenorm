@@ -20,6 +20,12 @@ public class MAssociation {
 	private boolean navigableFrom;
 	private boolean navigableTo;
 	/**
+	 * A polymorphic association is weird thing of Ruby. It is not bidirectional. It is not an association with "more than 2 properties". 
+	 * We don´t want to break the "to" one-to-one pointing to bidirectional associations. In current UML, the properties of one association cannot be
+	 * shared with other associations. So we just record the "as" clause here.
+	 */
+	private String polymorphicAs;
+	/**
 	 * this is the (..)ToOne/Many in case this is an unidirectional association. 1 is one, -1 is many
 	 */
 	@Basic(optional=false)
@@ -93,6 +99,13 @@ public class MAssociation {
 		return from.getTypeClass();
 	}
 
+	public String getPolymorphicAs() {
+		return polymorphicAs;
+	}
+	public MAssociation setPolymorphicAs(String polymorphicAs) {
+		this.polymorphicAs = polymorphicAs;
+		return this;
+	}
 	public MAssociation swap() {		
 		MProperty tmp = to;
 		to=from;

@@ -106,9 +106,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		String path=null; //TODO: in fact you have to see the module declaration
 		if (dname.contains("::")) {
 			path = dname.replace("::",".");
-			path = path.substring(0, path.lastIndexOf("."));
-			System.out.println("decoded name:"+dname+" path="+path);
-			
+			path = path.substring(0, path.lastIndexOf("."));			
 		}		
 		String name = n.getCPath().getName();
 		MClass clazz = daoMClass.persit(MClass.newMClass(currentURL,repo.getRepo()).setName(name));

@@ -176,6 +176,11 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				ret.setDefaulValue(Helper.getHashArgument(hn.getPairs(), "default"));
 				ret.setPrecision(Helper.getHashArgument(hn.getPairs(), "precision",Integer.class));
 				ret.setScale(Helper.getHashArgument(hn.getPairs(), "scale",Integer.class));
+				
+				boolean polymorphic = "true".equals(Helper.getHashArgument(hn.getPairs(), "polymorphic"));	
+				if (polymorphic) {
+					daoColumn.persit(tab.addColumn().setName(JRubyInflector.instance.polymorphicTypeName(ret.getName()) ));
+				}
 			} else {				
 				type = Helper.getValue(n);
 				
@@ -221,7 +226,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		MColumn ret=null;
 		if (top instanceof MTable) {
 			MTable tab = (MTable) top;
-			if (name.equals("references") || name.equals("add_reference")) {
+			if (name.equals("references") || name.equals("add_reference") || name.equals("add_belongs_to") || name.equals("belongs_to")) {
 				ret=createColumn(tab,"integer",n.getArgsNode().childNodes());
 				ret.setName(JRubyInflector.instance.foreignKey(ret.getName()));  /*+"_id"*/
 				//TODO:indexes according with http://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/TableDefinition.html#method-i-column

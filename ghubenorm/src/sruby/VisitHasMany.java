@@ -162,6 +162,8 @@ public class VisitHasMany implements LateVisitor {
 	private String[] fks=null;
 	private String[] pks=null;
 	private MProperty prop;
+	private String as;
+	private MProperty asProperty = null;
 	
 	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
 	public VisitHasMany(RubyRepo repo,MClass clazz,IArgumentNode node) {
@@ -192,10 +194,15 @@ public class VisitHasMany implements LateVisitor {
 		//remove properties for fks
 		
 		//Uma PROP so tem uma assoc no lado from(?), mas uma coluna pode ter v�rias(?)
+		if (asProperty!=null && prop.getTypeClass()==null) {
+			prop.setTypeClass(asProperty.getParent());			
+		}
 		type = prop.getTypeClass();
-		if (inverseOf!=null)
+		
+		if (inverseOf!=null && as==null)
 			createInverseOf();
-		if (prop.getAssociation()==null && type!=null) {
+		
+		if (prop.getAssociation()==null && type!=null && as==null) {
 			String clazz_under = JRubyInflector.getInstance().underscore(clazz.getName());
 			//visit SUPERCLASS PROPERTIES
 			String[] defFks = fks==null ? new String[]{JRubyInflector.getInstance().foreignKey(clazz.getName())} : fks;
@@ -221,22 +228,24 @@ public class VisitHasMany implements LateVisitor {
 					}
 				
 				}
-			}
-			
-			if (prop.getAssociation()==null && prop.getToAssociation()==null)
-				MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
-			if (fks!=null || pks!=null) {
-				createFKs();
-			}
+			}			
+						
 			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
 					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
 			//não tem inversa se não especifica com inverse_of, a não ser que tenha sido especificado do outro lado
 
 		}
+		if (prop.getAssociation()==null && prop.getToAssociation()==null)
+			MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
+		if (fks!=null || pks!=null) {
+			createFKs();
+		}
+		if (as!=null)
+			prop.getAssociation().setPolymorphicAs(as);
 		return true;
 	}
 	private void createInverseOf() {		
-		MClass ctype = prop.getTypeClass();
+		MClass ctype = prop.getTypeClass();		
 		if (ctype!=null) {
 			final String tmp=inverseOf;
 			MProperty inverse = ctype.getProperties().stream().
@@ -366,6 +375,8 @@ public class VisitHasMany implements LateVisitor {
 						 * something like "Object"
 						 * 
 						 */
+						as = value;
+						asProperty = repo.polymorphicProperties.get(as);
 						break;
 						
 				}
