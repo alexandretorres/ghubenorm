@@ -229,7 +229,7 @@ public class VisitBelongsTo implements LateVisitor {
 			LOG.warning("Foreing Key exist but DataSource not found for class:"+clazz+". Creating a table source");
 			source =daoMTable.persit(
 					clazz.newTableSource(								
-							JRubyInflector.getInstance().tableize(clazz.getName())));
+							JRubyInflector.getInstance().tableize(clazz.getName()),clazz.isPersistent()));
 		}
 		int len = fks==null ? pks.length : fks.length;
 		for (int i=0;i<len;i++) {

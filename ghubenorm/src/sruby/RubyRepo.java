@@ -163,6 +163,8 @@ public class RubyRepo {
 				for (Iterator<MClass> it2=lst.iterator();it2.hasNext();) {					
 					MClass c = it2.next();					
 					MClass parent = getClazz(c.getSuperClassName());
+					if (c.equals(parent))
+						parent=null;
 					boolean wait = parent!=null && !Util.isNullOrEmpty(parent.getSuperClassName()) && incomplete.containsKey(parent);
 					if (c.equals(parent))
 						wait=false;

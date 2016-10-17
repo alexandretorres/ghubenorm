@@ -106,8 +106,11 @@ public class MClass implements Visitable {
 	 * @return
 	 */
 	public MTable newTableSource(String name) {
+		return newTableSource(name,true);
+	}
+	public MTable newTableSource(String name,boolean persistent) {
 		MTable t= MTable.newMTable(repo,name);
-		persistence = setPersistent();		
+		persistence = getPersistence().setPersistent(persistent);		
 		persistence.setDataSource(t);		
 		return t;
 	}

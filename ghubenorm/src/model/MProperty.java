@@ -1,12 +1,17 @@
 package model;
 
+import javax.persistence.AssociationOverride;
+import javax.persistence.AttributeOverride;
+import javax.persistence.AttributeOverrides;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
@@ -37,6 +42,15 @@ public class MProperty implements Visitable {
 	//Lazy Fetch prevents duplicate loading due to outer join
 	@OneToOne(fetch=FetchType.LAZY,mappedBy="to",cascade=CascadeType.PERSIST)
 	private MAssociation toAssociation;
+	/**
+	 * Used for polymorphic associations when a type column specifies the type of the association
+	 */
+	@Embedded
+	@AttributeOverrides({
+		@AttributeOverride(name="value",column=@Column(name="polymorphic_value"))		
+	})
+	@AssociationOverride(name="column",joinColumns=@JoinColumn(name="polymorphic_discr"))
+	private MDiscriminator discriminatorColumn;
 	
 	protected MProperty() {
 		
@@ -162,7 +176,16 @@ public class MProperty implements Visitable {
 	public void setToAssociation(MAssociation toAssociation) {
 		this.toAssociation = toAssociation;
 	}
-	@Override
+	
+	public MDiscriminator getDiscriminatorColumn() {
+		if (discriminatorColumn==null)
+			discriminatorColumn = new MDiscriminator();
+		return discriminatorColumn;
+	}
+	protected void setDiscriminatorColumn(MDiscriminator discriminatorColumn) {
+		this.discriminatorColumn = discriminatorColumn;
+	}
+	@Override	
 	public void accept(ReflectiveVisitor visitor) {
 		visitor.callAccept(getAssociationDef());
 		visitor.callAccept(association);

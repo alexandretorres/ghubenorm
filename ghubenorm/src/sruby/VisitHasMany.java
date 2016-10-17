@@ -269,7 +269,7 @@ public class VisitHasMany implements LateVisitor {
 			LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+". Creating a table source");
 			source =daoMTable.persit(
 					type.newTableSource(								
-							JRubyInflector.getInstance().tableize(type.getName())));
+							JRubyInflector.getInstance().tableize(type.getName()),type.isPersistent()));
 		}
 		//The property of the "other side"
 		final MProperty iprop = prop.getAssociation()==null ? 
@@ -357,6 +357,15 @@ public class VisitHasMany implements LateVisitor {
 						break;
 					case "inverse_of": 
 						this.inverseOf = value;
+						break;
+					case "as":
+						/* TODO: :as can be implemented using DiscriminatorColumn applied to one end of the 
+						 * association (the belongs to side has the column). The :as declares the "global name"
+						 * of the polimorphic association. The belongs to name refers to this name, instead of the
+						 * class, because many classes will be in the other side. The association type may be
+						 * something like "Object"
+						 * 
+						 */
 						break;
 						
 				}

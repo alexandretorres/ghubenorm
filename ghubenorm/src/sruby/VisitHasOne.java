@@ -244,7 +244,7 @@ public class VisitHasOne implements LateVisitor {
 			LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+". Creating a table source");
 			source =daoMTable.persit(
 					type.newTableSource(								
-							JRubyInflector.getInstance().tableize(type.getName())));
+							JRubyInflector.getInstance().tableize(type.getName()),type.isPersistent()));
 		}
 		//The property of the "other side"
 		final MProperty iprop = prop.getAssociation()==null ? 
