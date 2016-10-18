@@ -42,6 +42,9 @@ public class MProperty implements Visitable {
 	//Lazy Fetch prevents duplicate loading due to outer join
 	@OneToOne(fetch=FetchType.LAZY,mappedBy="to",cascade=CascadeType.PERSIST)
 	private MAssociation toAssociation;
+	
+	private boolean derived=false;
+	
 	/**
 	 * Used for polymorphic associations when a type column specifies the type of the association
 	 */
@@ -185,6 +188,15 @@ public class MProperty implements Visitable {
 	protected void setDiscriminatorColumn(MDiscriminator discriminatorColumn) {
 		this.discriminatorColumn = discriminatorColumn;
 	}
+	
+	public boolean isDerived() {
+		return derived;
+	}
+	public MProperty setDerived(boolean derived) {
+		this.derived = derived;
+		return this;
+	}
+
 	@Override	
 	public void accept(ReflectiveVisitor visitor) {
 		visitor.callAccept(getAssociationDef());

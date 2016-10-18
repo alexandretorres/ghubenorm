@@ -39,6 +39,7 @@ import model.Repo;
 public class RubyRepo {
 	private Repo repo;
 	Stack<LateVisitor> visitors = new Stack<LateVisitor>() ;
+	List<LateVisitor> currentVisitors = visitors;
 	Map<MClass,ClassNode> incomplete = new HashMap<MClass,ClassNode>();
 	Map<String,MProperty> polymorphicProperties = new HashMap<String,MProperty>();
 	private Dir root;
@@ -199,10 +200,15 @@ public class RubyRepo {
 			}
 		}
 		subclasses.clear();
-		visitors.sort(LateVisitor.comparator);
-		for (LateVisitor v:visitors) {
-			v.exec();
-		}		
+		
+		while(!visitors.isEmpty()) {
+			currentVisitors = visitors;
+			currentVisitors.sort(LateVisitor.comparator);
+			visitors= new Stack<LateVisitor>() ;
+			for (LateVisitor v:currentVisitors) {
+				v.exec();
+			}
+		}				
 	}
 	public void listTables() {
 		for (MTable t:getTables()) {

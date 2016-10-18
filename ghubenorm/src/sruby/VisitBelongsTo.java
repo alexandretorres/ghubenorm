@@ -121,71 +121,50 @@ import model.MTable;
  * @author torres
  *
  */
-public class VisitBelongsTo implements LateVisitor {
-	//public static final VisitBelongsTo instance = new VisitBelongsTo();
-	// arguments:-----------
-	private RubyRepo repo;
-	private MClass clazz;
-	private IArgumentNode node;
-	// values....
+public class VisitBelongsTo extends AbstractVisitAssoc {
+	
 	private String pname;
-	private MClass type;
-	private String typeName;
-	private MProperty prop;
-	private String[] fks=null;
-	private String[] pks=null;
-	private String inverseOf;
 	private boolean polymorphic=false;
 	private String foreignType;
-	
-	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
-	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
-	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
-	public VisitBelongsTo(RubyRepo repo,MClass clazz,IArgumentNode node) {
-		this.repo=repo;
-		this.clazz = clazz;
-		this.node = node;
+
+	public VisitBelongsTo(RubyRepo repo, MClass clazz, IArgumentNode node) {
+		super(repo, clazz, node);
+		// TODO Auto-generated constructor stub
 	}
-	
-	public boolean exec() {
-		
-		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
-		Node nameNode = it.next();
-		//MProperty prop = clazz.newProperty();
-		pname=Helper.getValue(nameNode); 
-		// SE FK foi definido, ai ferrou, porque pname+id pode ser outro campo nada a ver
-		//clazz.getProperties().stream().filter(p->p.getName().equalsIgnoreCase(pname+"_id"));
-		/*
-		*/
-		this.type = repo.getClazzFromUnderscore(clazz,pname);
-		// collect data
-		while (it.hasNext()) {
-			Node in = it.next();
-			visitArg(in);
-			// search for inverse_of and other stuff
-		}
-		
-		prop  = clazz.getProperties().stream().
+	public MProperty findProperty(String pname) {
+		return clazz.getProperties().stream().
 				filter(p->p.getName().equalsIgnoreCase(pname+"_id")).
 				findFirst().orElse(
 						null);
-	
+	}
+	public boolean exec() {		
+		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
+		Node nameNode = it.next();
+		pname=Helper.getValue(nameNode); 		
+		
+		// collect data
+		while (it.hasNext()) {
+			Node in = it.next();
+			visitArg(in);			
+		}			
+		prop  = findProperty(pname);	
 		if (prop==null)
 			prop=daoProp.persit(clazz.newProperty());
 		prop.setName(pname);
-		if (typeName!=null)	
-			prop.setType(typeName);
-		
-		if (type!=null)
-			prop.setTypeClass(type);
-		else
-			type = prop.getTypeClass();
-		// Set FKs...
-		if (fks!=null || pks!=null) {
-			createFKs();
+		MClass type=null;
+		if (className!=null)	{
+			type = repo.getClazz(clazz,className);
+			if (type!=null)
+				prop.setTypeClass(type);
+			prop.setType(className);
 		}
-		if (inverseOf!=null)
-			createInverseOf();
+		if (type==null && !polymorphic) {
+			type = repo.getClazzFromUnderscore(clazz,getTypeName(pname));
+			prop.setTypeClass(type);
+		}
+		
+		createFKs();		
+		createInverseOf(false);
 		//remove properties for fks
 		if (polymorphic) {
 			String dname = foreignType ==null? pname+"_type" : foreignType;
@@ -220,8 +199,8 @@ public class VisitBelongsTo implements LateVisitor {
 		return true;
 		
 	}
-	private void findAssociationByName(String clazz_under) {
-		for (MProperty p:type.getProperties()) {
+	private void findAssociationByName(String clazz_under) {		
+		for (MProperty p:prop.getTypeClass().getProperties()) {
 			// this is for has_many in the other side
 			if (p.getName().equals(clazz_under) && !p.equals(prop) && (p.getToAssociation()==null || p.getToAssociation().getFrom()==prop)) {
 				if (p.getAssociation()==null) { //perhaps we should not create an association until the other side have one
@@ -237,110 +216,29 @@ public class VisitBelongsTo implements LateVisitor {
 			} 
 		}
 	}
-	private void createFKs() {
-		MAssociationDef def = prop.getOrInitAssociationDef();
-			
-		MTable source = (MTable) clazz.findDataSource();
-		if (source==null) {
-			LOG.warning("Foreing Key exist but DataSource not found for class:"+clazz+". Creating a table source");
-			source =daoMTable.persit(
-					clazz.newTableSource(								
-							JRubyInflector.getInstance().tableize(clazz.getName()),clazz.isPersistent()));
+	protected boolean isBelongsTo() {
+		return true;
+	}	
+	
+	@Override
+	protected void visitOtherArgs(String name, String value, Node valueNode) {
+		switch (name) {			
+			case "polymorphic":
+				polymorphic=true;						
+				className="<polymorphic::"+this.pname+">";						
+				break;
+			case "foreign_type":
+				foreignType=value;
+				break;
 		}
-		int len = fks==null ? pks.length : fks.length;
-		for (int i=0;i<len;i++) {
-			
-			String fk = fks==null ? null : fks[i];
-			String pk = pks==null ? null : pks[i];
-			
-			String jfk = fk;
-			if (fk==null && type!=null)
-				jfk = JRubyInflector.getInstance().foreignKey(type.getName());
-			
-			MJoinColumn jc = def.findJoinColumn(jfk);
-			MColumn col = source.findColumn(jfk);
-			if (col==null) {								
-				col =  daoColumn.persit(source.addColumn().setName(fk));
-			} else {
-				//remove property
-				MProperty delProp = clazz.getProperties().stream().
-						filter(p->p.getName().equalsIgnoreCase(fk) && !p.equals(prop)).
-						findFirst().orElse(null);
-				if (delProp!=null) {
-					delProp.getParent().getProperties().remove(delProp);
-					
-				}
-			}
-			if (jc==null) {
-				jc=def.newJoingColumn(col);				
-			}	
-			if (pk!=null && type!=null) {
-				MTable dest = (MTable) type.findDataSource();
-				MColumn invcol = dest.findColumn(pk);
-				jc.setInverse(invcol);
-			}
-		}	
 	}
-	private void createInverseOf() {
-		//MAssociationDef def = prop.getOrInitAssociationDef();
-		MClass ctype = prop.getTypeClass();
-		if (ctype!=null) {
-			final String tmp=inverseOf;
-			MProperty inverse = ctype.getProperties().stream().
-					filter(p->p.getName().equals(tmp)).
-					findFirst().orElse(null);
-
-			if (inverse!=null) {
-				if (inverse.getAssociation()==null) {									
-					MAssociation.newMAssociation(prop, inverse).setNavigableFrom(true).setNavigableTo(true);
-				} else {
-					//in this case the association is in the opposite side
-					inverse.getAssociation().setTo(prop).setNavigableTo(true);
-				}
-			}
-		}
-
+	
+	@Override
+	protected boolean isMany() {		
+		return false;
 	}
-	private void visitArg(Node arg) {
-		if (arg instanceof HashNode) {
-			HashNode hn = (HashNode) arg;
-			
-			for (KeyValuePair<Node, Node> pair:hn.getPairs()) {				
-				String name=Helper.getName(pair.getKey());
-				Node valueNode = pair.getValue();					
-				String value = Helper.getValue(valueNode);					
-								
-				switch (name.toLowerCase()) {
-					case "class_name": 
-						typeName = value;
-						this.type = repo.getClazz(clazz,value);
-						//if (type!=null)
-						//	prop.setTypeClass(type);
-						break;
-					case "inverse_of":
-						this.inverseOf = value;
-						break;
-					case "primary_key":	
-						this.pks = value.split(",");					
-						break;
-					case "foreign_key":				
-						this.fks = value.split(",");
-						break;
-					case "required":
-						// do nothing, it is a software check
-						break;
-					case "polymorphic":
-						polymorphic=true;
-						type=null;
-						typeName="<polymorphic::"+this.pname+">";						
-						break;
-					case "foreign_type":
-						foreignType=value;
-						break;
-				}
-				
-			}
-			
-		}
+	@Override
+	protected String getTypeName(String pname) {		
+		return pname;
 	}
 }

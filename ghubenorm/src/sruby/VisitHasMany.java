@@ -4,6 +4,7 @@ import static gitget.Log.LOG;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Optional;
 
 import org.jruby.ast.*;
 import org.jruby.util.KeyValuePair;
@@ -13,14 +14,14 @@ import dao.ConfigDAO;
 import dao.DAOInterface;
 import model.MAssociation;
 import model.MAssociationDef;
+import model.MAssociationOverride;
 import model.MCascadeType;
 import model.MClass;
 import model.MColumn;
 import model.MJoinColumn;
 import model.MProperty;
 import model.MTable;
-import static sruby.VisitHasOne.daoColumn;
-import static sruby.VisitHasOne.daoMTable;
+
 
 /**
  * :class_name
@@ -147,75 +148,30 @@ import static sruby.VisitHasOne.daoMTable;
  * @author torres
  *
  */
-public class VisitHasMany implements LateVisitor {
-	/**
-	 * On ruby, if you set the same FK in both sides of the association, it is not the same as setting inverseof,
-	 * because the retrived object will not be "the same" in memory. However it will be the same in the database (same PK)
-	 * Therefore we assume that only when the names matches OR the inverse is specified that it is a bidirectional relationship.
-	 * Otherwise they are two independent relationships.
-	 */
-	public static final boolean ASSUME_SAMEFK_AS_INVERSE=false;
-	private RubyRepo repo;
-	private MClass clazz;
-	private IArgumentNode node;
-	private String inverseOf;
-	private String[] fks=null;
-	private String[] pks=null;
-	private MProperty prop;
-	private String as;
-	private MProperty asProperty = null;
+public class VisitHasMany extends AbstractVisitAssoc {
+	public VisitHasMany(RubyRepo repo, MClass clazz, IArgumentNode node) {
+		super(repo, clazz, node);		
+	}
 	
-	static DAOInterface<MProperty> daoProp = ConfigDAO.getDAO(MProperty.class);
-	public VisitHasMany(RubyRepo repo,MClass clazz,IArgumentNode node) {
-		this.repo=repo;
-		this.clazz = clazz;
-		this.node = node;
+	public int getOrder() {
+		return 1;
 	}
 	@Override
-	public boolean exec() { 
-		//TODO: This is ALL WRONG! creating duplicated associations
-		Iterator<Node> it = node.getArgsNode().childNodes().iterator();
-		Node nameNode = it.next();
-		String pname=Helper.getValue(nameNode); 
-		
-		String typeName =  JRubyInflector.getInstance().singularize(pname);
-		prop=daoProp.persit(clazz.newProperty());
-		prop.setName(pname);
-		prop.setMax(-1);
-		
-		MClass type = repo.getClazzFromUnderscore(clazz,typeName);
-		if (type!=null)
-			prop.setTypeClass(type);
-		while (it.hasNext()) {
-			Node in = it.next();
-			visitArg(in);
-			// search for inverse_of and other stuff
-		}
-		//remove properties for fks
-		
-		//Uma PROP so tem uma assoc no lado from(?), mas uma coluna pode ter v�rias(?)
-		if (asProperty!=null && prop.getTypeClass()==null) {
-			prop.setTypeClass(asProperty.getParent());			
-		}
-		type = prop.getTypeClass();
-		
-		if (inverseOf!=null && as==null)
-			createInverseOf();
-		
-		if (prop.getAssociation()==null && type!=null && as==null) {
-			String clazz_under = JRubyInflector.getInstance().underscore(clazz.getName());
-			//visit SUPERCLASS PROPERTIES
+	protected boolean isMany() {		
+		return true;
+	}
+	@Override
+	protected String getTypeName(String pname) {
+		return JRubyInflector.getInstance().singularize(pname);
+	}
+	
+}
+
+/*
+ //visit SUPERCLASS PROPERTIES
 			String[] defFks = fks==null ? new String[]{JRubyInflector.getInstance().foreignKey(clazz.getName())} : fks;
-			for (MProperty p:type.getProperties()) {
-				// this is for belongs_to
-				if (p.getName().equals(clazz_under) && !p.equals(prop) && (p.getToAssociation()==null || p.getToAssociation().getFrom()==prop)) {
-					if (p.getAssociation()==null) {
-						continue;
-					} else if (p.getAssociation().getTo()==null || p.getAssociation().getTo()==prop) {
-						p.getAssociation().setTo(prop).setNavigableTo(true);
-						break;
-					}
-				} else if (ASSUME_SAMEFK_AS_INVERSE && p.getAssociation()!=null && p.getAssociationDef()!=null) {
+			
+ } else if (ASSUME_SAMEFK_AS_INVERSE && p.getAssociation()!=null && p.getAssociationDef()!=null) {
 					MAssociationDef def = p.getAssociationDef();
 					String[] jcs = def.getJoinColumns().stream().map(jc->jc.getColumn().getName()).toArray(String[]::new);
 					if (Arrays.equals(defFks, jcs)) {
@@ -227,166 +183,7 @@ public class VisitHasMany implements LateVisitor {
 						}
 					}
 				
-				}
-			}			
-						
-			/*MProperty inverse = prop.getTypeClass().getProperties().stream().filter(
-					p->p.getName().equals(prop.getN)).findFirst().orElse(null);*/
-			//não tem inversa se não especifica com inverse_of, a não ser que tenha sido especificado do outro lado
-
-		}
-		if (prop.getAssociation()==null && prop.getToAssociation()==null)
-			MAssociation.newMAssociation(prop).setNavigableFrom(true).setNavigableTo(false);
-		if (fks!=null || pks!=null) {
-			createFKs();
-		}
-		if (as!=null)
-			prop.getAssociation().setPolymorphicAs(as);
-		return true;
-	}
-	private void createInverseOf() {		
-		MClass ctype = prop.getTypeClass();		
-		if (ctype!=null) {
-			final String tmp=inverseOf;
-			MProperty inverse = ctype.getProperties().stream().
-					filter(p->p.getName().equals(tmp)).
-					findFirst().orElse(null);
-
-			if (inverse!=null) {
-				if (inverse.getAssociation()==null) {					
-					MAssociation.newMAssociation(inverse, prop).setNavigableFrom(true).setNavigableTo(true);
-				} else {
-					//in this case the association is in the opposite side
-					inverse.getAssociation().setTo(prop).setNavigableTo(true);
-				}
-			}
-		}		
-
-	}
-	private void createFKs() {
-		MClass type = prop.getTypeClass();
-		if (type==null) {
-			LOG.warning("Foreing Key exist for has_one "+prop.getName()+" but Type could not be found:"+prop.getType()+".");
-			return;
-		}			
-		MTable source = (MTable) type.findDataSource();
-		if (source==null) {
-			if (type.isAbstract()) {
-				LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+".");
-				return; // forget about it
-			}
-			LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+type+". Creating a table source");
-			source =daoMTable.persit(
-					type.newTableSource(								
-							JRubyInflector.getInstance().tableize(type.getName()),type.isPersistent()));
-		}
-		//The property of the "other side"
-		final MProperty iprop = prop.getAssociation()==null ? 
-				prop.getToAssociation().getFrom() : 
-				prop.getAssociation().getTo()==null ? 
-						prop :  
-						prop.getAssociation().getTo();
-		
-		MAssociationDef def = prop.getOrInitAssociationDef();
-		int len = fks==null ? pks.length : fks.length;
-		for (int i=0;i<len;i++) {
-			
-			String fk = fks==null ? null : fks[i];
-			String pk = pks==null ? null : pks[i];
-			
-			String jfk = fk==null ? JRubyInflector.getInstance().foreignKey(clazz.getName()) : fk;
-			MJoinColumn jc = def.findJoinColumn(jfk);
-			MColumn col = source.findColumn(jfk);
-			if (col==null) {								
-				col =  daoColumn.persit(source.addColumn().setName(fk));
-			} else {
-				//remove property
-				MProperty delProp = type.getProperties().stream().
-						filter(p->p.getName().equalsIgnoreCase(fk) && !p.equals(iprop)).
-						findFirst().orElse(null);
-				if (delProp!=null) {
-					delProp.getParent().getProperties().remove(delProp);
-					
-				}
-			}
-			if (jc==null) {
-				jc=def.newJoingColumn(col);				
-			}			
-			if (pk!=null) {
-				MTable dest = (MTable) clazz.findDataSource();
-				MColumn invcol = dest.findColumn(pk);
-				jc.setInverse(invcol);
-			}
-		}	
-	}
-	private void visitArg(Node arg) {
-		if (arg instanceof HashNode) {
-			HashNode hn = (HashNode) arg;
-			for (KeyValuePair<Node, Node> pair:hn.getPairs()) {				
-				String name=Helper.getName(pair.getKey());
-				Node valueNode = pair.getValue();					
-				String value = Helper.getValue(valueNode);
-				MAssociationDef def=null;
-				switch (name.toLowerCase()) {
-					case "class_name": 
-						MClass type = repo.getClazz(clazz,value);
-						prop.setType(value);
-						if (type!=null)
-							prop.setTypeClass(type);
-						break;
-					case "through": 
-						// This makes the association "transient", because it is fundamentally a read only shortcut (but ruby accepts dealing with them
-						// has_many :yyy <-- "real" association
-						// has_many :zzz :through :yyy   <-- shortcut for many-to-many OR "collapsed" one-to-many-to-many
-						prop.setTransient(true);
-						break;
-					case "dependent":
-						switch (value) {
-							case "destroy":
-							case "delete":
-								def = prop.getOrInitAssociationDef();
-								def.setOrphanRemoval(true);
-								def.addCascade(MCascadeType.REMOVE);
-								break;
-							
-						}
-						break;
-					case "autosave":
-						if (value==null || "true".equals(value)) {
-							def = prop.getOrInitAssociationDef();
-							def.addCascade(MCascadeType.PERSIST);
-						}
-						break;
-						
-					case "primary_key":	
-						this.pks = value.split(",");					
-						break;
-					case "foreign_key":				
-						this.fks = value.split(",");
-						break;
-					case "inverse_of": 
-						this.inverseOf = value;
-						break;
-					case "as":
-						/* TODO: :as can be implemented using DiscriminatorColumn applied to one end of the 
-						 * association (the belongs to side has the column). The :as declares the "global name"
-						 * of the polimorphic association. The belongs to name refers to this name, instead of the
-						 * class, because many classes will be in the other side. The association type may be
-						 * something like "Object"
-						 * 
-						 */
-						as = value;
-						asProperty = repo.polymorphicProperties.get(as);
-						break;
-						
-				}
-			}
-		}
-	}
-	public int getOrder() {
-		return 1;
-	};
-}
+ */
 /*
  * Inverso: has_many e belongs_to precisa especificar inverse para ser a mesma associa��o.
  * por�m, se voc� n�o especifica a foreign_key, ele acaba usando a mesma FK, pois o padrao � o nome da classe+id

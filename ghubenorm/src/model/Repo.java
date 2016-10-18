@@ -261,6 +261,8 @@ public class Repo implements Visitable {
 						pw.print("<PK>");
 					if (p.isTransient())
 						pw.print("θ ");
+					if (p.isDerived())
+						pw.print("/ ");
 					pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknow>>"));
 					//TODO:check Java not persitent can have decl.
 									
@@ -277,7 +279,7 @@ public class Repo implements Visitable {
 						pw.print( col.getColumn().getLength()==null ? "" : "("+col.getLengthDef()+")");
 					}
 						
-					pw.print( printAssociationDef(cl,p));
+					pw.print( printAssociationDef(p.getAssociationDef(), cl,p));
 					MAssociation assoc = p.getAssociation();
 					if (assoc==null)
 						assoc = p.getToAssociation();
@@ -318,7 +320,14 @@ public class Repo implements Visitable {
 								tx+=" to column "+ao.getColumn().getName()+"\n";
 							}
 						} else {
-							
+							MAssociationOverride ao = (MAssociationOverride) ov;
+							Stream<String> st1 = ao.getProperties().stream().map(MProperty::getName);
+							tx+=String.join(".",  st1.toArray(String[]::new));
+							MAssociationDef adef = ao.getDef();
+							if (adef!=null && !ao.getProperties().isEmpty()) {
+								tx+= " to association "+printAssociationDef(adef, cl,ao.getProperties().get(0));
+							}
+							tx+="\n";
 						}
 					}
 					if (tx.length()>0)
@@ -343,13 +352,13 @@ public class Repo implements Visitable {
 			return "0..";
 			
 	}
-	String printAssociationDef(MClass cl,MProperty p) {
+	String printAssociationDef(MAssociationDef adef,MClass cl,MProperty p) {
 		StringWriter sw =new StringWriter();
 		PrintWriter pw = new PrintWriter(sw);
 		
-		if (p.getAssociationMapping()!=null) {			
+		if (adef!=null) {
 			int f=0;
-			MAssociationDef adef = p.getAssociationMapping().getValue();
+			
 			String dsName=null;
 			if (adef.getDataSource()!=null && (dsName=adef.getDataSource().printName())!=null) {
 				pw.print("joinTable="+dsName);
