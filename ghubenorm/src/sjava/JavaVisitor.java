@@ -122,19 +122,24 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					comp.jrepo.addLateSubclass(superName, c,comp);
 				}*/
 			}
-			
+			Annotation entity=null;
 			for (AnnotationExpr mod:cd.getAnnotations()) {			
 				Annotation anot = Annotation.newAnnotation(mod);
 				annots.add(anot);
 				//System.out.println("class has annotation "+tokens.getText(mod.annotation().getSourceInterval()));
 				if (Entity.isType(anot,comp)) {
+					entity=anot;
 					c.setPersistent();					
 				} else if (MappedSuperclass.isType(anot,comp)) {
 					comp.jrepo.mappedSuperClasses.add(c);
 				} else if (AttributeOverride.isType(anot,comp)) {
-					comp.jrepo.visitors.add(new VisitOverrides(c, comp, anot, null));				
+					comp.jrepo.visitors.add(new VisitOverrides(c, comp, anot, null,true));				
 				} else if (AttributeOverrides.isType(anot,comp)) {
-					comp.jrepo.visitors.add(new VisitOverrides(c, comp, null,anot));				
+					comp.jrepo.visitors.add(new VisitOverrides(c, comp, null,anot,true));					
+				} else if (AssociationOverride.isType(anot,comp)) {
+					comp.jrepo.visitors.add(new VisitOverrides(c, comp, anot, null,false));				
+				} else if (AssociationOverrides.isType(anot,comp)) {
+					comp.jrepo.visitors.add(new VisitOverrides(c, comp, null,anot,false));	
 				} else if (Access.isType(anot, comp)) {	
 					if (!anot.getSingleValue("").contains("FIELD"))
 						comp.propertyAccess=true;
@@ -156,8 +161,13 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				if (asecTab!=null || asecTabs.length>0) {	
 					DAOInterface<MJoinedSource> DAOJoined = ConfigDAO.getDAO(MJoinedSource.class);
 					DAOJoined.persit(c.setJoinedSource());
+					String entityName = entity.getValueAsString("name");
 					if (atab!=null)
 						comp.toTable(c, atab);
+					else if (asecTab!=null || asecTabs.length>0 || entityName!=null) {						
+						//TODO: what about inheritance of a table??						
+						comp.toTable(c, entityName); //create a "default" table for the class
+					}
 					if (asecTab!=null) {					
 						comp.toTable(c, asecTab);
 					}
@@ -265,8 +275,11 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				filter(a->OneToMany.isType(a,comp) || ManyToMany.isType(a,comp) || ManyToOne.isType(a,comp) || OneToOne.isType(a,comp)).
 				findFirst().orElse(null);
 		Annotation embed = annots.stream().filter(a->Embedded.isType(a,comp)).findFirst().orElse(null);
-		Annotation override = annots.stream().filter(a->AttributeOverride.isType(a,comp)).findFirst().orElse(null);
-		Annotation overrides = annots.stream().filter(a->AttributeOverrides.isType(a,comp)).findFirst().orElse(null);
+		Annotation attrOver = annots.stream().filter(a->AttributeOverride.isType(a,comp)).findFirst().orElse(null);
+		Annotation attrOvers = annots.stream().filter(a->AttributeOverrides.isType(a,comp)).findFirst().orElse(null);
+		
+		Annotation assocOver = annots.stream().filter(a->AssociationOverride.isType(a,comp)).findFirst().orElse(null);
+		Annotation assocOvers = annots.stream().filter(a->AssociationOverrides.isType(a,comp)).findFirst().orElse(null);
 		
 		Annotation column = annots.stream().filter(a->Column.isType(a,comp)).findFirst().orElse(null);
 		//
@@ -307,8 +320,11 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			} else if (embeddedId!=null) {
 				prop.setPk(true);
 			}
-			if (override!=null || overrides!=null) {
-				comp.jrepo.visitors.add(new VisitOverrides(prop, comp, override, overrides));
+			if (attrOver!=null || attrOvers!=null) {
+				comp.jrepo.visitors.add(new VisitOverrides(prop, comp, attrOver, attrOvers,true));
+			}
+			if (assocOver!=null || assocOvers!=null) {
+				comp.jrepo.visitors.add(new VisitOverrides(prop, comp, assocOver, assocOvers,false));
 			}
 			if (column!=null) {
 				daoMCol.persit(createColumnMapping(prop,column));											

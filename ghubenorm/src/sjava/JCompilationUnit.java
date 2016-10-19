@@ -131,10 +131,19 @@ public class JCompilationUnit {
 			Index[] indexes() default {};
 	 */
 	//--
+	public MTable toTable(MClass c,String entityName) {
+		String name = entityName==null ? c.getName() : entityName;		
+		MTable tab = daoMTable.persit(c.newTableSource(name));		
+		jrepo.getDataSources().add(tab);
+		return tab;
+	}
 	public MTable toTable(MClass c,Annotation atab) {
-		MTable tab = daoMTable.persit(c.newTableSource(atab.getValue("name", c.getName())));
-		tab.setCatalog(atab.getValueAsString("catalog"));
-		tab.setSchema(atab.getValueAsString("schema"));
+		String name = atab==null ? c.getName() : atab.getValue("name", c.getName());		
+		MTable tab = daoMTable.persit(c.newTableSource(name));
+		if (atab!=null) {
+			tab.setCatalog(atab.getValueAsString("catalog"));
+			tab.setSchema(atab.getValueAsString("schema"));
+		}
 		jrepo.getDataSources().add(tab);
 		return tab;
 	}
@@ -321,6 +330,17 @@ class Annotation {
 	private static final String DEFAULT_KEY="value";
 	Map<String, ElementValue> values = new HashMap<String, ElementValue>();
 	private Annotation() {	}
+	public List<ElementValue> extractListValue(String aname) {
+		List<ElementValue> values = this.getListValue(aname);		
+		if (values==null) {
+			values = new ArrayList<ElementValue>();
+			ElementValue ev = this.getElementValue(aname);
+			if (ev!=null && ev.annotation!=null) {
+				values.add(ev);								
+			}
+		}
+		return values;
+	}
 	public Object getValue(String name) {
 		if (values.containsKey(name)) {
 			return values.get(name).getValue();

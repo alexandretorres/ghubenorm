@@ -1,5 +1,6 @@
 package sjava;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -154,29 +155,7 @@ public class VisitAssociation implements LateVisitor {
 		for (Annotation an:annotations) {
 			if (JoinTable.isType(an,unit)) {
 				MAssociationDef adef = prop.getOrInitAssociationDef();
-				String name = an.getValueAsString("name");				
-				MTable tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(unit.jrepo.getRepo(),name));
-				tab.setCatalog(an.getValueAsString("catalog"));
-				tab.setSchema(an.getValueAsString("schema"));
-				//TODO: missing inverseJoinColumns of JoinTable. The referencedColumns are named inverse, while the inverse are just normal JoinCols
-				adef.setDataSource(tab);
-				List<ElementValue> jcs = an.getListValue("joinColumns");
-				if (jcs!=null)
-					for (ElementValue ev:jcs) {
-						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc,true);
-						
-					}
-				jcs = an.getListValue("inverseJoinColumns");
-				if (jcs!=null)
-					for (ElementValue ev:jcs) {
-						Annotation ajc = ev.annotation;
-						if (toClass!=null)
-							createJoinColumn(unit.jrepo,toClass,tab,adef,ajc,true);
-						else
-							Log.LOG.warning("Join Column refers to unknown class");
-						
-					}
+				createJoinTable(unit,an,adef,fromClass,toClass);
 			} else if (JoinColumns.isType(an,unit)) {
 				MAssociationDef adef = prop.getOrInitAssociationDef();
 				List<ElementValue> jcs = an.getListValue();
@@ -203,22 +182,46 @@ public class VisitAssociation implements LateVisitor {
 					cdef.getColumn().setTable(tab); //@Column used by element collection is at the collection table
 				}
 				
-				List<ElementValue> jcs = an.getListValue("joinColumns");
-				if (jcs==null) {
-					ElementValue ev = an.getElementValue("joinColumns");
-					if (ev!=null && ev.annotation!=null) {
-						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ev.annotation,false);						
-					}
-				} else
+				List<ElementValue> jcs = an.extractListValue("joinColumns");
+				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc,false);
-						
+						createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc,false);							
 					}
 			}
 		}
 		return true;
 	}
+	
+	protected static void createJoinTable(JCompilationUnit unit,Annotation an,MAssociationDef adef,MClass fromClass,MClass toClass) {
+		
+		String name = an.getValueAsString("name");				
+		MTable tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(unit.jrepo.getRepo(),name));
+		tab.setCatalog(an.getValueAsString("catalog"));
+		tab.setSchema(an.getValueAsString("schema"));
+		//TODO: missing inverseJoinColumns of JoinTable. The referencedColumns are named inverse, while the inverse are just normal JoinCols
+		adef.setDataSource(tab);
+		
+		List<ElementValue> jcs = an.extractListValue("joinColumns");
+		if (jcs!=null)
+			for (ElementValue ev:jcs) {
+				Annotation ajc = ev.annotation;
+				createJoinColumn(unit.jrepo,fromClass,tab,adef,ajc,true);							
+			}
+		
+		jcs = an.extractListValue("inverseJoinColumns");
+		if (jcs!=null)
+			for (ElementValue ev:jcs) {
+				Annotation ajc = ev.annotation;
+				if (toClass!=null)
+					createJoinColumn(unit.jrepo,toClass,tab,adef,ajc,true);
+				else
+					Log.LOG.warning("Join Column refers to unknown class");
+				
+			}
+		
+	}
+
 	public static MJoinColumn createJoinColumn(JavaRepo repo,MClass clazz,MTable toTable,MAssociationDef adef,Annotation ajoin,boolean junctionTable) {
 		MColumn col = MColumn.newMColumn();					
 		JavaVisitor.daoMCol.persit(col);
