@@ -263,7 +263,7 @@ public class Repo implements Visitable {
 						pw.print("θ ");
 					if (p.isDerived())
 						pw.print("/ ");
-					pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknow>>"));
+					pw.print(p.getName()+"["+p.getMin()+".."+(p.getMax()<0 ? "*": p.getMax())+"]:"+Optional.ofNullable(p.getType()).orElse("<<unknown>>"));
 					//TODO:check Java not persitent can have decl.
 									
 					if (p.isEmbedded()) {
@@ -310,14 +310,16 @@ public class Repo implements Visitable {
 				if (!cl.getOverrides().isEmpty()) {
 					String header = "____________\n";
 					header += "Overrides:\n";
-					String tx="";
+					
+					List<String> ltx = new ArrayList<String>();
 					for (MOverride ov: cl.getOverrides()) {
+						String tx="";
 						if (ov instanceof MAttributeOverride) {
 							MAttributeOverride ao = (MAttributeOverride) ov;
 							if (ao.checkOverride()) {
 								Stream<String> st1 = ao.getProperties().stream().map(MProperty::getName);
 								tx+=String.join(".",  st1.toArray(String[]::new));		
-								tx+=" to column "+ao.getColumn().getName()+"\n";
+								tx+=" to column "+ao.getColumn().getName();
 							}
 						} else {
 							MAssociationOverride ao = (MAssociationOverride) ov;
@@ -327,11 +329,21 @@ public class Repo implements Visitable {
 							if (adef!=null && !ao.getProperties().isEmpty()) {
 								tx+= " to association "+printAssociationDef(adef, cl,ao.getProperties().get(0));
 							}
-							tx+="\n";
-						}
+							
+						}						
+						if (tx.length()>0)
+							ltx.add(tx);
 					}
-					if (tx.length()>0)
-						pw.print(header+tx);
+					Collections.sort(ltx);
+					if (!ltx.isEmpty())
+						pw.print(header);
+					for (String tx:ltx) {
+						pw.print(tx);
+						pw.print("\n");
+					}
+					//tx+="\n";
+					//if (tx.length()>0)
+					//	pw.print(header+tx);
 				}
 				pw.flush();
 			}

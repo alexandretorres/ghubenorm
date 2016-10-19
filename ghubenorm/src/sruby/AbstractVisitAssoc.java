@@ -39,11 +39,13 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 	protected MProperty prop;
 	protected String through;
 	protected String source;
+	protected String sourceType;
 	protected String dependent;
 	protected String as;
 	protected MProperty asProperty = null;
-	private boolean autosave;
-	private String autosaveValue;
+	protected boolean autosave;
+	protected String autosaveValue;
+	
 	
 
 	public AbstractVisitAssoc(RubyRepo repo,MClass clazz,IArgumentNode node) {
@@ -161,6 +163,9 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 					case "source":
 						source=value;
 						break;
+					case "source_type":
+						sourceType = value;
+						break;
 					default:
 						visitOtherArgs(name.toLowerCase(),value,valueNode);
 						break;
@@ -176,7 +181,7 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 			inverseOf=null;
 			prop.setTransient(true);
 			String psource = source==null? prop.getName() : source;
-			VisitThrough vt = new VisitThrough(repo,prop,through,psource);
+			VisitThrough vt = new VisitThrough(repo,prop,through,psource,sourceType);
 			repo.visitors.add(vt);
 		}
 	}
@@ -320,13 +325,15 @@ class VisitThrough implements LateVisitor {
 	String source;
 	MProperty prop;
 	boolean executed=false;
+	String sourceType = null;
 	//static DAOInterface<MAssociationOverride> daoAssocOver = ConfigDAO.getDAO(MAssociationOverride.class);
 	
-	VisitThrough(RubyRepo repo,MProperty prop,String through,String source) {
+	VisitThrough(RubyRepo repo,MProperty prop,String through,String source,String sourceType) {
 		this.repo=repo;
 		this.through = through;
 		this.prop=prop;
 		this.source=source;
+		this.sourceType=sourceType;
 	}
 	public boolean execVisitor(MProperty p) {
 		VisitThrough r = repo.currentVisitors.stream().filter(o->o instanceof VisitThrough).
@@ -342,7 +349,14 @@ class VisitThrough implements LateVisitor {
 				map(o->(MAssociationOverride)o).filter(ao->ao.getProperties().indexOf(p)==0).findFirst().orElse(null);
 		return r;
 	}
-	
+	private MAssociationOverride findOrInitOverride(MClass clazz,MProperty p) {
+		MAssociationOverride override = findOverride(clazz, p);
+		if (override==null) {
+			execVisitor(p);
+			override = findOverride(clazz, p);						
+		}
+		return override;
+	}
 	@Override
 	public boolean exec() {
 		if (executed)
@@ -359,12 +373,8 @@ class VisitThrough implements LateVisitor {
 		for (MProperty p:clazz.getAllProperties()) {
 			if (p.getName().equals(through)) {
 				if (p.isDerived()) {					
-					prevOverride = findOverride(clazz, p);
-					if (prevOverride==null) {
-						execVisitor(p);
-						prevOverride = findOverride(clazz, p);		
-						
-					}
+					prevOverride = findOrInitOverride(clazz, p);
+					
 					if (prevOverride!=null) {
 						tprop=p;
 					}
@@ -376,8 +386,9 @@ class VisitThrough implements LateVisitor {
 		}
 		
 		if (tprop!=null) {
-			MAssociationOverride ao = new MAssociationOverride();
-			clazz.getOverrides().add(ao);
+			MAssociationOverride ao = MAssociationOverride.newMAssociationOverride(clazz);
+			
+			//clazz.getOverrides().add(ao);
 			//daoAssocOver.persit(ao);
 			ao.getProperties().add(prop);
 			
@@ -385,17 +396,45 @@ class VisitThrough implements LateVisitor {
 				ao.getProperties().add(tprop);
 			else
 				ao.getProperties().addAll(prevOverride.getProperties());
-			MClass type = ao.getProperties().get(ao.getProperties().size()-1).getTypeClass();
+			MProperty last=ao.getProperties().get(ao.getProperties().size()-1);
+			MClass type = last.getTypeClass();
 			if (type==null) {
 				executed=true;
+				if (last.getDiscriminatorColumn()!=null && last.getType()!=null) {
+					prop.setType(last.getType());
+				}				
 				return false;
 			}
-			MProperty last = type.findInheritedProperty(source);
+			last = type.findInheritedProperty(source);
 			if (last==null)
 				last =  type.findInheritedProperty(JRubyInflector.instance.singularize(source));
+			MClass ctype = null;
+			while (last!=null && last.isDerived()) {
+				MAssociationOverride postOverride = findOrInitOverride(last.getParent(), last);
+				if (postOverride==null) {
+					last=null;				
+				} else {
+					ao.getProperties().addAll(postOverride.getProperties());
+					MProperty newlast = ao.getProperties().get(ao.getProperties().size()-1);
+					if (!newlast.isDerived() && newlast.getTypeClass()==null)
+						ctype=last.getTypeClass();
+					last=newlast;						
+				}
+			}
 			if (last!=null) {
-				ao.getProperties().add(last);
-				prop.setTypeClass(last.getTypeClass());
+				if (!ao.getProperties().contains(last))
+					ao.getProperties().add(last);
+				
+				if (last.getDiscriminatorColumn()!=null) {
+					if (this.sourceType!=null)
+						ctype=repo.getClazz(last.getParent(), sourceType);
+					else
+						prop.setType("<<polymorphic>>");
+				} else if (ctype==null) {
+					ctype = last.getTypeClass();
+				}	
+				
+				prop.setTypeClass(ctype);
 				if (!last.isDerived() && !last.isTransient() && last.getMax()==1)
 					prop.setTransient(false);
 			}

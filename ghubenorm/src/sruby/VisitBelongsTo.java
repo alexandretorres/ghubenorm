@@ -179,8 +179,10 @@ public class VisitBelongsTo extends AbstractVisitAssoc {
 				dcolumn = daoColumn.persit(MColumn.newMColumn().setName(dname).setTable(source));				
 			} else {
 				MProperty delProp = clazz.findProperty(dname);
-				if (delProp!=null && dcolumn.equals(delProp.getColumnDef()))
+				if (delProp!=null && dcolumn.equals(delProp.getColumnDef())) {
+					delProp.getParent().getProperties().remove(delProp);
 					daoProp.remove(delProp);
+				}
 			}
 			prop.setType("<polymorphic>"+dcolumn.getName());
 			this.repo.polymorphicProperties.put(pname, prop); //TODO: packaged names !
