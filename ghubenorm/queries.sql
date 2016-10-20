@@ -367,3 +367,11 @@ left outer join MAssociation assoc on assoc.id=p.association_id
 where cl.source_id<>col.table_id
 
 
+-- association overrides
+
+select * from MOverride o join MAssociationDef def on o.def_id=def.id
+join MJoinColumn jc on jc.associationdef_id=def.id 
+join MColumn toCol on toCol.id=jc.column_id
+left outer join MColumn inv on jc.inverse_id=inv.id
+left outer join MDataSource invTab on inv.table_id=invTab.id
+where clazz_id=<num>

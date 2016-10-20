@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -23,11 +24,12 @@ public class MAssociationDef implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	private MCascadeType cascade;
-	boolean orphanRemoval;
-	boolean enforce=false;
+	Boolean orphanRemoval=null;
+	Boolean enforce;
 	@OneToMany(mappedBy="associationDef",cascade=CascadeType.ALL)
 	private List<MJoinColumn> joinColumns = new ArrayList<MJoinColumn>();
-	
+	@Column(name="fetch_type")
+	private FetchType fetch;
 	/**
 	 * Association table used on many to many
 	 * OR
@@ -46,16 +48,26 @@ public class MAssociationDef implements Visitable {
 	public void setId(int id) {
 		this.id = id;
 	}
-	public boolean isOrphanRemoval() {
+	public Boolean isOrphanRemoval() {
 		return orphanRemoval;
 	}
-	public void setOrphanRemoval(boolean orphanRemoval) {
+	public boolean isOrphanRemovalDef() {
+		if (orphanRemoval==null)
+			return false;
+		return orphanRemoval;
+	}
+	public void setOrphanRemoval(Boolean orphanRemoval) {
 		this.orphanRemoval = orphanRemoval;
 	}
-	public boolean isEnforce() {
+	public Boolean isEnforce() {
 		return enforce;
 	}
-	public void setEnforce(boolean enforce) {
+	public boolean isEnforceDef() {
+		if (enforce==null)
+			return false;
+		return enforce;
+	}
+	public void setEnforce(Boolean enforce) {
 		this.enforce = enforce;
 	}
 	public List<MJoinColumn> getJoinColumns() {
@@ -101,6 +113,14 @@ public class MAssociationDef implements Visitable {
 	public void addCascade(MCascadeType cascadeOp) {
 		if (cascadeOp!=null)
 			this.cascade=cascadeOp.add(this.cascade);
+	}
+
+	public FetchType getFetch() {
+		return fetch;
+	}
+
+	public void setFetch(FetchType fetch) {
+		this.fetch = fetch;
 	}
 
 	@Override

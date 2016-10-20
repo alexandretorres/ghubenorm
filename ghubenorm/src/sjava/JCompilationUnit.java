@@ -366,6 +366,9 @@ class Annotation {
 		}
 		return def_value;
 	}
+	public boolean hasValue(String name) {
+		return values.containsKey(name);
+	}
 	public String getValue(String name,String def_value) {
 		if (values.containsKey(name)) {
 			return (String) values.get(name).getValue();

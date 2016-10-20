@@ -1,10 +1,11 @@
 package model;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 @Entity
 public class MAssociationOverride extends MOverride {
-	@ManyToOne
+	@ManyToOne(cascade=CascadeType.ALL)
 	private MAssociationDef def;
 	public static MAssociationOverride newMAssociationOverride(MClass clazz) {
 		return new MAssociationOverride( clazz);

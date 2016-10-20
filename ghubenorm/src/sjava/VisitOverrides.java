@@ -19,25 +19,25 @@ import model.MProperty;
 public class VisitOverrides implements LateVisitor {
 	MClass clazz;
 	MProperty prop;
-	Annotation override;
+	List<Annotation> overrideLst;
 	Annotation overrides;
 	JCompilationUnit unit;
 	boolean attribute=true;
 
 	static DAOInterface<MAttributeOverride> daoMAttrOverride = ConfigDAO.getDAO(MAttributeOverride.class);
 	
-	public VisitOverrides(MClass clazz, JCompilationUnit unit, Annotation override, Annotation overrides,boolean attribute) {
+	public VisitOverrides(MClass clazz, JCompilationUnit unit,List<Annotation> overrideLst, Annotation overrides,boolean attribute) {
 		super();
 		this.clazz = clazz;
-		this.override = override;
+		this.overrideLst = overrideLst;
 		this.overrides = overrides;
 		this.unit = unit;
 		this.attribute = attribute;
 	}
-	public VisitOverrides(MProperty prop,JCompilationUnit unit, Annotation override, Annotation overrides,boolean attribute) {
+	public VisitOverrides(MProperty prop,JCompilationUnit unit, List<Annotation> overrideLst, Annotation overrides,boolean attribute) {
 		super();
 		this.prop = prop;
-		this.override = override;
+		this.overrideLst = overrideLst;
 		this.overrides = overrides;
 		this.unit = unit;
 		this.clazz = prop.getParent();
@@ -56,12 +56,8 @@ public class VisitOverrides implements LateVisitor {
 		}
 		return propPath;
 	}
-	public void loadOverrides(Annotation override,Annotation overrides) {
-		if (overrides!=null) {
-			for (ElementValue v:overrides.getListValue()) {
-				loadOverrides(v.annotation,null);
-			}			
-		}
+	public void loadOverrides(Annotation override) {
+		
 		if (override!=null) {
 			String aname = override.getValueAsString("name");
 			
@@ -115,8 +111,15 @@ public class VisitOverrides implements LateVisitor {
 
 	@Override
 	public boolean exec() {
-		this.loadOverrides(override, overrides);
-		
+		if (overrides!=null) {
+			for (ElementValue v:overrides.getListValue()) {
+				loadOverrides(v.annotation);
+			}			
+		}
+		if (overrideLst!=null)
+			for (Annotation o:overrideLst)
+				this.loadOverrides(o);
+			
 		return true;
 	}
 	@Override

@@ -19,6 +19,7 @@ import org.jruby.ast.ClassNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.FCallNode;
+import org.jruby.ast.IArgumentNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
@@ -178,6 +179,12 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			
 					
 			}
+			AttrAssignNode pkNode = Helper.findAttrAssignNode(n.getBodyNode(), "primary_key");
+			if (pkNode==null)
+				 pkNode = Helper.findAttrAssignNode(n.getBodyNode(), "primary_keys");
+			if (pkNode!=null)
+				createPK(clazz, pkNode);
+			
 		}
 		
 		//---
@@ -267,6 +274,11 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 						daoMProp.persit(clazz.newProperty().setName(propName));
 					}
 					break;
+				case "default_scope":
+					repo.visitors.push(new VisitDefaultScope(repo,clazz,n));
+					
+					
+					break;
 			}
 			
 		}
@@ -311,31 +323,42 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	public Object visitCallNode(CallNode n) {
 		
 		//System.out.println("call node:"+n.getName());
-		if (!stack.isEmpty() && stack.peek() instanceof MClass && n.getReceiverNode() instanceof SelfNode) {
+		if (!stack.isEmpty() && stack.peek() instanceof MClass) {
 			MClass clazz = (MClass) stack.peek();
-			switch (n.getName()) {
-			case "primary_key":
-			case "primary_keys":				
-				String pk_value=Helper.getValue(n.getArgsNode());				
-				String[] pks = pk_value.split(",");
-				for (String pk:pks) {
-					MProperty pkProp = null;
-					for (MProperty p:clazz.getProperties()) {
-						if (p.getName().equalsIgnoreCase(pk)) {
-							pkProp = p;
-						}
-					}
-					if (pkProp==null) {
-						pkProp = clazz.newPKProperty().setName(pk).setType("integer").setMin(1);
-					} else {
-						pkProp.setMin(1).setPk(true);
-					}
-				}
-				
-				break;
-			}
+			/*switch (n.getName()) {
+				case "primary_key":
+				case "primary_keys":				
+					if (n.getReceiverNode() instanceof SelfNode)
+						createPK(clazz,n);
+					break;
+				}*/
 		}
 		return super.visitCallNode(n);
+	}
+	public void createPK(MClass clazz,IArgumentNode n) {
+		String pk_value=Helper.getValue(n.getArgsNode());				
+		String[] pks = pk_value.split(",");
+		for (String pk:pks) {
+			MProperty pkProp = null;
+			for (MProperty p:clazz.getProperties()) {
+				if (p.getName().equalsIgnoreCase(pk)) {
+					pkProp = p;
+				}
+			}
+			if (pkProp==null) {
+				pkProp = clazz.newPKProperty().setName(pk).setType("integer").setMin(1);						
+			} else {
+				pkProp.setMin(1).setPk(true);
+				if (pkProp.getColumnDef()!=null) {
+					if ("primary_key".equals(pkProp.getColumnDef().getColummnDefinition())) {
+						pkProp.setType("integer");
+						pkProp.getColumnDef().getColumn().setColummnDefinition("integer");
+						pkProp.setGenerated();
+					}
+				}
+			}
+		}
+		
 	}
 	
 	

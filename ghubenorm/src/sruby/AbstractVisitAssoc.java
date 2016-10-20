@@ -3,15 +3,27 @@ package sruby;
 import static gitget.Log.LOG;
 
 import java.util.Iterator;
+import java.util.logging.Level;
 
+import org.jruby.ast.BlockAcceptingNode;
+import org.jruby.ast.BlockNode;
+import org.jruby.ast.CallNode;
+import org.jruby.ast.DefNode;
+import org.jruby.ast.FCallNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.IArgumentNode;
+import org.jruby.ast.LambdaNode;
 import org.jruby.ast.Node;
+import org.jruby.ast.types.INameNode;
 import org.jruby.util.KeyValuePair;
+
+import com.github.javaparser.ast.NamedNode;
 
 import common.LateVisitor;
 import dao.ConfigDAO;
 import dao.DAOInterface;
+import gitget.Log;
+import model.FetchType;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MAssociationOverride;
@@ -45,6 +57,7 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 	protected MProperty asProperty = null;
 	protected boolean autosave;
 	protected String autosaveValue;
+	
 	
 	
 
@@ -102,8 +115,10 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 		}
 		if (as!=null)
 			prop.getAssociation().setPolymorphicAs(as);
+		
 		return true;
 	}
+	
 	protected MProperty findProperty() {
 		return null;
 	}
@@ -170,11 +185,10 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 						visitOtherArgs(name.toLowerCase(),value,valueNode);
 						break;
 				}
-			}
+			}		
 		}
 	}
-	
-	protected void setThrough() {
+		protected void setThrough() {
 		if (through!=null) { //ignore properties
 			fks=null;
 			pks=null;
@@ -449,4 +463,107 @@ class VisitThrough implements LateVisitor {
 		return 2;
 	}
 
+}
+/**
+ * Eager loader in ruby can be implemented by calling includes (and other two methods) over a collection
+ * inside the default_scope, declared at CLASS LEVEL(!)
+ * class Developer < ActiveRecord::Base {
+ * 		has_many :comments
+ * 		default_scope -> { includes(:comments)} // this is eager loading...
+ * }
+ * @param lnode
+ * @return
+ */
+
+class VisitDefaultScope implements LateVisitor {
+	MClass clazz;
+	RubyRepo repo;
+	IArgumentNode node;
+	
+	public VisitDefaultScope(RubyRepo repo,MClass clazz, IArgumentNode node) {
+		super();
+		this.repo=repo;
+		this.clazz = clazz;
+		this.node = node;
+	}
+
+	@Override
+	public boolean exec() {
+		try {
+			Node itNode=null;
+			if (node.getArgsNode()!=null && !node.getArgsNode().childNodes().isEmpty()) {
+				itNode=node.getArgsNode().childNodes().iterator().next();
+			} else {
+				if (node instanceof BlockAcceptingNode)
+					itNode = ((BlockAcceptingNode)node).getIterNode();
+			}
+			if (itNode instanceof DefNode) {
+				DefNode def = (DefNode) itNode;
+				Node body = def.getBodyNode();
+				return doExec(body);
+			}
+		} catch (Exception ex) {
+			Log.LOG.log(Level.INFO,"Non Fatal Error at VisitDefaultScope",ex);			
+		}
+		return false;
+	}
+	protected boolean doExec(Node body) {
+		boolean ret=false;
+		if (body instanceof BlockNode) {
+			for (Node child:((BlockNode)body).children()) {
+				if (child instanceof IArgumentNode) {						
+					ret=ret || doExec(child); 
+				}
+			}
+		}
+		while (body instanceof CallNode) {
+			CallNode call = (CallNode) body;
+			if (isEager(call) && call.getArgsNode()!=null) {
+				ret=ret||setEager(call);
+			}
+			body = call.getReceiverNode();
+		}
+		if (body instanceof FCallNode) {
+			FCallNode fcall  = (FCallNode) body;
+			if (isEager(fcall) && fcall.getArgsNode()!=null) {					
+				ret=ret||setEager(fcall);					
+			}				
+		}
+	
+		return ret;
+	}
+	/**
+	 * picks the association, if it exists, and sets the fetch to eager
+	 * @param fcall
+	 * @return
+	 */
+	public boolean setEager(IArgumentNode fcall) {
+		if (fcall.getArgsNode().childNodes().iterator().hasNext()) {			
+			Node n = fcall.getArgsNode().childNodes().iterator().next();
+			if (n instanceof INameNode) {
+				String rel = Helper.getValue(n);
+				MProperty p = clazz.findProperty(rel); // inherited properties would be an "override"
+				if (p!=null && (p.getAssociation()!=null || p.getToAssociation()!=null) ) {
+					p.getOrInitAssociationDef().setFetch(FetchType.EAGER);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	public int getOrder() {
+		return 3;
+	}
+	/**
+	 * includes is the default method for eager loading. Preload forces separated queries, and eager_load forces
+	 * an outer join
+	 * @param call symbol to be evaluated
+	 * @return
+	 */
+	public static boolean isEager(Node call) {
+		String val = Helper.getValue(call);
+		return (val.equals("includes") || val.equals("preload") || val.equals("eager_load"));
+	}
+	
+	
 }

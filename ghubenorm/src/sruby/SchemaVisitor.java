@@ -44,7 +44,8 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 	private RubyRepo repo;
 	
 	static String[] dbtypes = new String[] 
-			{"string","integer","datetime","boolean","decimal","binary"};
+			{"string","integer","datetime","timestamp","date","time","boolean","decimal","float",
+					"binary","text","primary_key"};
 	Stack<Object> stack = new Stack<Object>();
 	static DAOInterface<MTable> daoMTable = ConfigDAO.getDAO(MTable.class);
 	static DAOInterface<MColumn> daoColumn = ConfigDAO.getDAO(MColumn.class);
@@ -140,6 +141,9 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		return ret;
 	}*/
 	private MColumn createColumn(MTable tab,String type,List<Node> args){
+		return createColumn(tab,type,null,args);
+	}
+	private MColumn createColumn(MTable tab,String type,String name,List<Node> args){
 		Iterator<Node> it= args.iterator();
 		if (tab==null) {
 			if (it.hasNext()) {
@@ -149,8 +153,10 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				return null;
 		}
 		MColumn ret=null;
-		if (it.hasNext()) {
-			String name = Helper.getValue(it.next());
+		if (name==null && it.hasNext()) {
+			name = Helper.getValue(it.next());
+		}
+		if (name!=null) {
 			ret= daoColumn.persit(tab.addColumn().setName(name));
 		} else {
 			return null;
@@ -223,16 +229,21 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		if (!stack.isEmpty()) {
 			top = stack.peek();
 		}
-		MColumn ret=null;
+		Object ret=null;
 		if (top instanceof MTable) {
 			MTable tab = (MTable) top;
 			if (name.equals("references") || name.equals("add_reference") || name.equals("add_belongs_to") || name.equals("belongs_to")) {
-				ret=createColumn(tab,"integer",n.getArgsNode().childNodes());
-				ret.setName(JRubyInflector.instance.foreignKey(ret.getName()));  /*+"_id"*/
+				MColumn c=createColumn(tab,"integer",n.getArgsNode().childNodes());
+				c.setName(JRubyInflector.instance.foreignKey(c.getName()));  /*+"_id"*/
+				ret=c;
 				//TODO:indexes according with http://api.rubyonrails.org/classes/ActiveRecord/ConnectionAdapters/TableDefinition.html#method-i-column
-			}else if (name.equals("column") || name.equals("add_column")) {			
-				ret=createColumn(tab,null,n.getArgsNode().childNodes());
-					
+			} else if (name.equals("column") || name.equals("add_column")) {			
+				ret=createColumn(tab,name,n.getArgsNode().childNodes());				
+			} else if (name.equals("timestamps") ) {	
+				MColumn[] rets = new MColumn[2];
+				rets[0]=createColumn(tab,"timestamp","created_at",n.getArgsNode().childNodes());	
+				rets[1]=createColumn(tab,"timestamp","updated_at",n.getArgsNode().childNodes());
+				ret=rets;
 			} else if (Helper.in(dbtypes,name) && top instanceof MTable) {		
 				ret=createColumn(tab,name,n.getArgsNode().childNodes());
 				/*

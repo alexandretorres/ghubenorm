@@ -44,6 +44,8 @@ public class MProperty implements Visitable {
 	private MAssociation toAssociation;
 	
 	private boolean derived=false;
+	@Embedded	
+	private MGenerated generated=new MGenerated();
 	
 	/**
 	 * Used for polymorphic associations when a type column specifies the type of the association
@@ -196,7 +198,19 @@ public class MProperty implements Visitable {
 		this.derived = derived;
 		return this;
 	}
+	
 
+	public MGenerated getGenerated() {
+		
+		return generated;
+	}
+	protected void setGenerated(MGenerated generated) {
+		this.generated = generated;
+	}
+	public MProperty setGenerated() {
+		generated.setGenerated(true);
+		return this;
+	}
 	@Override	
 	public void accept(ReflectiveVisitor visitor) {
 		visitor.callAccept(getAssociationDef());

@@ -8,9 +8,11 @@ import javax.persistence.OneToMany;
 
 import common.LateVisitor;
 import gitget.Log;
+import model.FetchType;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MAttributeOverride;
+import model.MCascadeType;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
@@ -150,6 +152,8 @@ public class VisitAssociation implements LateVisitor {
 			toClass = fromClass;
 			fromClass = typeClass;
 		}
+		checkValues();
+		
 		//TODO: all other association parameters
 		//TODO: all other annotations that affect associations
 		for (Annotation an:annotations) {
@@ -162,8 +166,7 @@ public class VisitAssociation implements LateVisitor {
 				if (jcs!=null)
 					for (ElementValue ev:jcs) {
 						Annotation ajc = ev.annotation;
-						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,ajc,false);
-						
+						MJoinColumn jc= createJoinColumn(unit.jrepo,fromClass,null,adef,ajc,false);						
 					}
 			} else if (JoinColumn.isType(an,unit)) {
 				MAssociationDef adef = prop.getOrInitAssociationDef();
@@ -192,7 +195,57 @@ public class VisitAssociation implements LateVisitor {
 		}
 		return true;
 	}
-	
+	private void applyCascade(MAssociationDef adef,Object ocascade) {
+		if (ocascade instanceof String) {
+			String cascade = (String)ocascade;
+			if (cascade.toUpperCase().endsWith("ALL")) {
+				adef.addCascade(MCascadeType.ALL);
+			} else if (cascade.toUpperCase().endsWith("PERSIST")) {
+				adef.addCascade(MCascadeType.PERSIST);
+			} else if (cascade.toUpperCase().endsWith("MERGE")) {
+				adef.addCascade(MCascadeType.MERGE);
+			} else if (cascade.toUpperCase().endsWith("REMOVE")) {
+				adef.addCascade(MCascadeType.REMOVE);
+			} else if (cascade.toUpperCase().endsWith("REFRESH")) {
+				adef.addCascade(MCascadeType.REFRESH);
+			} else if (cascade.toUpperCase().endsWith("DETACH")) {
+				adef.addCascade(MCascadeType.DETACH);
+			}
+		} else if (ocascade instanceof List) {
+			List<ElementValue> cascades = (List<ElementValue>) ocascade;
+			for (ElementValue ev:cascades) {
+				applyCascade(adef,(String)ev.getValue());
+			}
+		} else {
+			Log.LOG.info("Unknown cascade annotation "+ocascade+" for "+prop);
+		}
+	}
+	private void checkValues() {
+		//ALL, PERSIST, MERGE, REMOVE, REFRESH, DETACH
+		if (assoc.hasValue("cascade")) {
+			MAssociationDef adef = prop.getOrInitAssociationDef();
+			Object ocascade = assoc.getValue("cascade");
+			applyCascade(adef, ocascade);		
+			
+		}
+		if (assoc.hasValue("fetch")) {
+			MAssociationDef adef = prop.getOrInitAssociationDef();
+			String fetch = assoc.getValueAsString("fetch");
+			if (fetch.toUpperCase().endsWith("LAZY"))
+				adef.setFetch(FetchType.LAZY);
+			else if (fetch.toUpperCase().endsWith("EAGER"))
+				adef.setFetch(FetchType.EAGER);
+			else
+				Log.LOG.info("Unknown fetch annotation "+fetch+" for "+prop);
+		}
+		if (assoc.hasValue("orphanRemoval")) {
+			MAssociationDef adef = prop.getOrInitAssociationDef();
+			boolean remov = assoc.getValue("orphanRemoval", false);
+			adef.setOrphanRemoval(remov);
+		}
+		
+	}
+
 	protected static void createJoinTable(JCompilationUnit unit,Annotation an,MAssociationDef adef,MClass fromClass,MClass toClass) {
 		
 		String name = an.getValueAsString("name");				

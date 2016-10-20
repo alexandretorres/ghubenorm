@@ -270,13 +270,19 @@ public class Repo implements Visitable {
 						pw.print(" <Embbeded> ");
 						
 					}	
+					if (p.getGenerated().isGenerated()) {
+						pw.print(" <Generated> ");
+						if (p.getGenerated().getType()!=null){
+							pw.print("(");
+							pw.print(p.getGenerated().getType());
+							pw.print(")");
+						}
+						
+					}
 					if (p.getColumnMapping()!=null) {
 						MColumnDefinition col = p.getColumnMapping().getColumnDefinition();
-						String colTab = mainTab==null || col.getTable()==null || col.getTable().getName().equals(mainTab.getName())? "" : col.getTable().getName()+".";
-						pw.print(" | "+colTab+Optional.ofNullable(col.getName()).orElse(""));
-						if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
-							pw.print(":"+col.getColummnDefinition());
-						pw.print( col.getColumn().getLength()==null ? "" : "("+col.getLengthDef()+")");
+						pw.print(" | ");
+						pw.print(printColumn(mainTab,col));
 					}
 						
 					pw.print( printAssociationDef(p.getAssociationDef(), cl,p));
@@ -319,7 +325,8 @@ public class Repo implements Visitable {
 							if (ao.checkOverride()) {
 								Stream<String> st1 = ao.getProperties().stream().map(MProperty::getName);
 								tx+=String.join(".",  st1.toArray(String[]::new));		
-								tx+=" to column "+ao.getColumn().getName();
+								tx+=" to column ";
+								tx+=printColumn(mainTab,ao.getColumn()).toString();
 							}
 						} else {
 							MAssociationOverride ao = (MAssociationOverride) ov;
@@ -355,6 +362,21 @@ public class Repo implements Visitable {
 			LOG.info("{Repo:End}----------------");
 		}
 			//System.out.println(sw.getBuffer());
+	}
+	private StringBuffer printColumn(MTable mainTab,MColumnDefinition col) {
+		StringBuffer buf = new StringBuffer(50);
+		String colTab = mainTab==null || col.getTable()==null || col.getTable().getName().equals(mainTab.getName())? "" : 
+			col.getTable().getName()+".";
+		buf.append(colTab+Optional.ofNullable(col.getName()).orElse(""));
+		if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
+			buf.append(":"+col.getColummnDefinition());
+		buf.append( col.getColumn().getLength()==null ? "" : "("+col.getLengthDef()+")");
+		if (col.getColumn().getDefaulValue()!=null) {
+			buf.append(" default:"+col.getColumn().getDefaulValue());
+		}
+		if (col.getColumn().isNullable()!=null)
+			buf.append(col.isNullableDef() ? "{nullable}" : "{not null}");
+		return buf;
 	}
 	public String getDefaultInverseMin(MProperty p) {
 		boolean notNull = p.getAssociationDef()==null ? false : p.getAssociationDef().getJoinColumns().stream().anyMatch(jc->!jc.getColumn().isNullableDef());
@@ -414,8 +436,16 @@ public class Repo implements Visitable {
 					pw.print(")");
 				
 			}
-								
+			if (adef.getCascade()!=null)
+				pw.print(" cascade "+adef.getCascade());	
+			if (adef.isOrphanRemovalDef()) {
+				pw.print(" orphan remove ");	
+			}
+			if (adef.getFetch()!=null) {
+				pw.print(" fetch "+adef.getFetch());	
+			}
 		}
+		
 		pw.flush();
 		String ret = sw.toString();
 		if (ret.length()>0)

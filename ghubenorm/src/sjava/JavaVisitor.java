@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
@@ -45,6 +46,7 @@ import model.MDiscriminator;
 import model.MDiscrminableGeneralization;
 import model.MFlat;
 import model.MGeneralization;
+import model.MGeneratorType;
 import model.MHorizontal;
 import model.MJoinColumn;
 import model.MJoinedSource;
@@ -123,6 +125,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				}*/
 			}
 			Annotation entity=null;
+		
+			
 			for (AnnotationExpr mod:cd.getAnnotations()) {			
 				Annotation anot = Annotation.newAnnotation(mod);
 				annots.add(anot);
@@ -133,11 +137,11 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				} else if (MappedSuperclass.isType(anot,comp)) {
 					comp.jrepo.mappedSuperClasses.add(c);
 				} else if (AttributeOverride.isType(anot,comp)) {
-					comp.jrepo.visitors.add(new VisitOverrides(c, comp, anot, null,true));				
-				} else if (AttributeOverrides.isType(anot,comp)) {
+					comp.jrepo.visitors.add(new VisitOverrides(c, comp, Collections.singletonList(anot), null,true));				
+				} else if (AttributeOverrides.isType(anot,comp)) {					
 					comp.jrepo.visitors.add(new VisitOverrides(c, comp, null,anot,true));					
 				} else if (AssociationOverride.isType(anot,comp)) {
-					comp.jrepo.visitors.add(new VisitOverrides(c, comp, anot, null,false));				
+					comp.jrepo.visitors.add(new VisitOverrides(c, comp, Collections.singletonList(anot), null,false));				
 				} else if (AssociationOverrides.isType(anot,comp)) {
 					comp.jrepo.visitors.add(new VisitOverrides(c, comp, null,anot,false));	
 				} else if (Access.isType(anot, comp)) {	
@@ -153,24 +157,21 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		
 			if (c.isPersistent()) {			
 				Annotation atab = annots.stream().filter(a->Table.isType(a,comp)).findFirst().orElse(null);
-				Annotation asecTab = annots.stream().filter(a->SecondaryTable.isType(a,comp)).findFirst().orElse(null);
-				Annotation[] asecTabs = 
-						annots.stream().filter(a->SecondaryTables.isType(a,comp)).findFirst().map(s->s.getListValue()).orElse(Collections.EMPTY_LIST)
-						.stream().map(v->v.annotation).toArray(Annotation[]::new);
-				//asecTabs.getSingleValue().
-				if (asecTab!=null || asecTabs.length>0) {	
+				List<Annotation> asecTabs = annots.stream().
+						filter(a->SecondaryTable.isType(a,comp)).collect(Collectors.toList());
+				annots.stream().filter(a->SecondaryTables.isType(a,comp)).findFirst().map(s->s.getListValue()).orElse(Collections.EMPTY_LIST)
+						.stream().map(v->v.annotation).forEachOrdered(asecTabs::add);//toArray(Annotation[]::new);
+				
+				if (!asecTabs.isEmpty()) {	
 					DAOInterface<MJoinedSource> DAOJoined = ConfigDAO.getDAO(MJoinedSource.class);
 					DAOJoined.persit(c.setJoinedSource());
 					String entityName = entity.getValueAsString("name");
 					if (atab!=null)
 						comp.toTable(c, atab);
-					else if (asecTab!=null || asecTabs.length>0 || entityName!=null) {						
+					else if (!asecTabs.isEmpty()) {						
 						//TODO: what about inheritance of a table??						
 						comp.toTable(c, entityName); //create a "default" table for the class
-					}
-					if (asecTab!=null) {					
-						comp.toTable(c, asecTab);
-					}
+					}					
 					for (Annotation a:asecTabs) {
 						comp.toTable(c, a);
 					}				
@@ -275,13 +276,17 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				filter(a->OneToMany.isType(a,comp) || ManyToMany.isType(a,comp) || ManyToOne.isType(a,comp) || OneToOne.isType(a,comp)).
 				findFirst().orElse(null);
 		Annotation embed = annots.stream().filter(a->Embedded.isType(a,comp)).findFirst().orElse(null);
-		Annotation attrOver = annots.stream().filter(a->AttributeOverride.isType(a,comp)).findFirst().orElse(null);
+		
+		List<Annotation> attrOver = annots.stream().filter(a->AttributeOverride.isType(a,comp)).collect(Collectors.toList());
 		Annotation attrOvers = annots.stream().filter(a->AttributeOverrides.isType(a,comp)).findFirst().orElse(null);
 		
-		Annotation assocOver = annots.stream().filter(a->AssociationOverride.isType(a,comp)).findFirst().orElse(null);
+		//long teste = annots.stream().filter(a->AssociationOverride.isType(a,comp)).count();
+		
+		List<Annotation> assocOver = annots.stream().filter(a->AssociationOverride.isType(a,comp)).collect(Collectors.toList());
 		Annotation assocOvers = annots.stream().filter(a->AssociationOverrides.isType(a,comp)).findFirst().orElse(null);
 		
 		Annotation column = annots.stream().filter(a->Column.isType(a,comp)).findFirst().orElse(null);
+		Annotation generated = annots.stream().filter(a->GeneratedValue.isType(a,comp)).findFirst().orElse(null);
 		//
 		Annotation id = annots.stream().filter(a->Id.isType(a,comp)).findFirst().orElse(null);
 		Annotation joinTable = annots.stream().filter(a->JoinTable.isType(a,comp)).findFirst().orElse(null);
@@ -319,18 +324,36 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				prop.setPk(true);
 			} else if (embeddedId!=null) {
 				prop.setPk(true);
-			}
-			if (attrOver!=null || attrOvers!=null) {
+			}			
+			if (!attrOver.isEmpty() || attrOvers!=null) {
 				comp.jrepo.visitors.add(new VisitOverrides(prop, comp, attrOver, attrOvers,true));
 			}
-			if (assocOver!=null || assocOvers!=null) {
+			if (!assocOver.isEmpty() || assocOvers!=null) {
 				comp.jrepo.visitors.add(new VisitOverrides(prop, comp, assocOver, assocOvers,false));
 			}
 			if (column!=null) {
 				daoMCol.persit(createColumnMapping(prop,column));											
-			}				
+			}	
+			if (generated!=null) {
+				prop.getGenerated().setGenerated(true);
+				prop.getGenerated().setGenerator(generated.getValueAsString("generator"));
+				
+				String gtype = generated.getValue("strategy",null);				
+				prop.getGenerated().setType(findStrategy(gtype));
+				
+			}
 		
 		}
+	}
+	public MGeneratorType findStrategy(String str) {
+		if (str==null || str.length()==0)
+			return null;
+		for (MGeneratorType v:MGeneratorType.values()) {
+			if (str.toUpperCase().endsWith(str)) {
+				return v;
+			}
+		}
+		return null;
 	}
 	@Override
 	public void visit(MethodDeclaration ctx, Object arg1) {
@@ -511,9 +534,11 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					Annotation pkJoins = PrimaryKeyJoinColumns.findAnnotation(annots, unit);					
 										
 					if (pkJoins==null) {
-						Annotation pkJoin=PrimaryKeyJoinColumn.findAnnotation(annots, unit);
-						if (pkJoin!=null)
-							loadPKJoin(superClass,subClass,(MVertical)gen,pkJoin,null);
+						List<Annotation> pkJoinLst=PrimaryKeyJoinColumn.findAnnotations(annots, unit);
+						if (!pkJoinLst.isEmpty()) {
+							for (Annotation pkJoin:pkJoinLst) 
+								loadPKJoin(superClass,subClass,(MVertical)gen,pkJoin,null);
+						}
 					} else {
 						List<ElementValue> lst = pkJoins.getListValue("value");
 						Annotation fk = (Annotation)pkJoins.getValue("foreignKey");

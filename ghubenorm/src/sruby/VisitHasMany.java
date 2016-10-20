@@ -143,7 +143,7 @@ import model.MTable;
  * --- test results:
  * 
  * The foreign_key can be used to specify the inverse on practice. Notice that if no foreign_key is specified, 
- * and there is a match by default foreign_key, it is still an inverse. Ruby imediatelly flushes updates and 
+ * and there is a match by default foreign_key, it is still an inverse. Ruby immediately flushes updates and 
  * always selects back the belongs_to
  * @author torres
  *

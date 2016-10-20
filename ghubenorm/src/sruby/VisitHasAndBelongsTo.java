@@ -12,6 +12,7 @@ import dao.ConfigDAO;
 import dao.DAOInterface;
 import model.MAssociation;
 import model.MAssociationDef;
+import model.MCascadeType;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
@@ -81,6 +82,8 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 	MTable tab=null;
 	private String[] fks=null;
 	private String[] assoc_fks=null;
+	private boolean autosave;
+	private String autosaveValue;
 	public VisitHasAndBelongsTo(RubyRepo repo, MClass clazz, IArgumentNode node) {
 		this.repo = repo;
 		this.clazz = clazz;
@@ -123,6 +126,13 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 		if (tab!=null) {
 			createFKs(prop);
 		}
+		if (autosave) {
+			if (autosaveValue==null || "true".equals(autosaveValue)) {
+				MAssociationDef def = prop.getOrInitAssociationDef();
+				def.addCascade(MCascadeType.PERSIST);
+			}
+		}
+
 		if (prop.getAssociation()==null && type!=null) {
 			String clazz_under = JRubyInflector.getInstance().underscore(JRubyInflector.getInstance().pluralize(clazz.getName()));
 			for (MProperty p:type.getProperties()) {				
@@ -233,9 +243,25 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 					case "association_foreign_key":				
 						this.assoc_fks = value.split(",");
 						break;							
+					case "autosave":
+						autosave = true;
+						autosaveValue = value;
 						
+						break;				
 				}
 			}
 		}
 	}
 }
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+

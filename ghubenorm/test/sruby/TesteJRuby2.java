@@ -58,7 +58,7 @@ public class TesteJRuby2 {
 		Node n=null;
 		try {
 			ConfigDAO.config(JPA_DAO.instance);
-	//		ConfigDAO.config(new ConfigNop());
+		//	ConfigDAO.config(new ConfigNop());
 			DAOInterface<Repo> dao = ConfigDAO.getDAO(Repo.class);
 			
 			dao.beginTransaction();

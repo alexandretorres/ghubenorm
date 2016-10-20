@@ -1,6 +1,8 @@
 package sjava;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.MappedSuperclass;
 
@@ -55,6 +57,9 @@ public enum JPATags {
 	}
 	public Annotation findAnnotation(Collection<Annotation> sannots,JCompilationUnit unit) {
 		return sannots.stream().filter(a->this.isType(a, unit)).findFirst().orElse(null);		
+	}
+	public List<Annotation> findAnnotations(Collection<Annotation> sannots,JCompilationUnit unit) {
+		return sannots.stream().filter(a->this.isType(a, unit)).collect(Collectors.toList());	
 	}
 	
 }

@@ -21,8 +21,8 @@ import model.Repo;
 
 public class JavaLoaderTest {
 	static {
-		//ConfigDAO.config(JPA_DAO.instance);	
-		ConfigDAO.config(new ConfigNop());	
+		ConfigDAO.config(JPA_DAO.instance);	
+		//ConfigDAO.config(new ConfigNop());	
 	}
 	private JavaLoader loader = new JavaLoader();
 	JavaRepo jrepo=new JavaRepo(new Repo(Language.JAVA));
