@@ -79,6 +79,9 @@ public class RubyRepoLoader {
 				LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
 				Log.log(RubyRepoLoader.getCurrentRepo(),Level.INFO,sex.getMessage(),sex);	
 				return null;
+			} catch (org.jruby.exceptions.RaiseException rex) {
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.INFO,rex.getMessage(),rex);
+				return null;
 			}
 			
 		} catch (Exception ex) {	
@@ -115,7 +118,9 @@ public class RubyRepoLoader {
 			} catch (SyntaxException sex) {
 				LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
 				Log.log(RubyRepoLoader.getCurrentRepo(),Level.INFO,sex.getMessage(),sex);	
-			}	
+			} catch (org.jruby.exceptions.RaiseException rex) {
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.INFO,rex.getMessage(),rex);
+			}
 			return null;
 		} catch (Exception ex) {	
 			String msg = GitHubCaller.instance.getErrorStream(connection);			
