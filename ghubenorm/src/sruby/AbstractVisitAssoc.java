@@ -500,7 +500,7 @@ class VisitDefaultScope implements LateVisitor {
 				return doExec(body);
 			}
 		} catch (Exception ex) {
-			Log.LOG.log(Level.INFO,"Non Fatal Error at VisitDefaultScope",ex);			
+			Log.log(RubyRepoLoader.getCurrentRepo(),Level.INFO,"Non Fatal Error at VisitDefaultScope",ex);			
 		}
 		return false;
 	}

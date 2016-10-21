@@ -17,6 +17,7 @@ import dao.ConfigDAO;
 import db.daos.RepoDAO;
 import model.Language;
 import model.Repo;
+import model.SkipReason;
 import sjava.Prof;
 import sruby.RubyRepo;
 import sruby.RubyRepoLoader;
@@ -35,7 +36,7 @@ class RubyCrawler  {
 		repo.setBranch(repoJson.getString("default_branch"));
 		return repo;
 	}
-	public void processRepo(Repo repo)  {
+	public SkipReason processRepo(Repo repo)  {
 		String fullName = repo.getName();
 		Prof.open("processRubyRepo");
 		try {			
@@ -47,7 +48,7 @@ class RubyCrawler  {
 			Prof.close("listFileTreeRuby");
 			if (result==null) {
 				LOG.info("no files at the branch "+repo.getBranchGit()+". Skipping repo.");
-				return;
+				return SkipReason.NO_FILES_AT_BRANCH;
 			}
 			boolean truncated = result.getBoolean("truncated");
 			if (truncated)
@@ -88,6 +89,7 @@ class RubyCrawler  {
 				loadRepo(rrepo);
 				Prof.close("loadRubyRepo");
 			} else {
+				repo.setSkipReason(SkipReason.NO_CONFIG_FOUND);
 				LOG.info(" no suitable dbPath for "+fullName);
 			}
 			
@@ -96,8 +98,10 @@ class RubyCrawler  {
 			
 		} catch (Exception ex) {
 			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);	
+			return SkipReason.ERROR;
 		}
 		Prof.close("processRubyRepo");
+		return SkipReason.NONE;
 	}
 	
 	public RubyRepo loadRepo(RubyRepo rrepo) throws MalformedURLException, URISyntaxException {	

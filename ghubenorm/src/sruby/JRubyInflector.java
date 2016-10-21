@@ -8,6 +8,8 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+
+import gitget.Log;
 /**
  * to install gem on jruby:
  * jruby -S gem install rails
@@ -52,7 +54,7 @@ public class JRubyInflector {
 		try {
 			return (String) rubyEngine.eval("\""+className+"\".tableize", context);
 		} catch (ScriptException ex) {
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+			Log.log(RubyRepoLoader.getCurrentRepo(),Level.WARNING,ex.getMessage(),ex);		   
 		    return "";
 		}
 	}
@@ -60,7 +62,7 @@ public class JRubyInflector {
 		try {
 			return (String) rubyEngine.eval("\""+value+"\".foreign_key", context);
 		} catch (ScriptException ex) {
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+			Log.log(RubyRepoLoader.getCurrentRepo(),Level.WARNING,ex.getMessage(),ex);		   
 		    return "";
 		}
 	}
@@ -68,7 +70,7 @@ public class JRubyInflector {
 		try {
 			return (String) rubyEngine.eval("\""+value+"\".underscore", context);
 		} catch (ScriptException ex) {
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+			Log.log(RubyRepoLoader.getCurrentRepo(),Level.SEVERE,ex.getMessage(),ex);		   
 		    return "";
 		}
 	}
@@ -76,7 +78,7 @@ public class JRubyInflector {
 		try {
 			return (String) rubyEngine.eval("\""+value+"\".pluralize", context);
 		} catch (ScriptException ex) {
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+			Log.log(RubyRepoLoader.getCurrentRepo(),Level.SEVERE,ex.getMessage(),ex);		   
 		    return "";
 		}
 	}
@@ -84,7 +86,7 @@ public class JRubyInflector {
 		try {
 			return (String) rubyEngine.eval("\""+value+"\".singularize", context);
 		} catch (ScriptException ex) {
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+			Log.log(RubyRepoLoader.getCurrentRepo(),Level.SEVERE,ex.getMessage(),ex);		   
 		    return "";
 		}
 	}
@@ -92,7 +94,7 @@ public class JRubyInflector {
 		try {
 			return (String) rubyEngine.eval(st, context);
 		} catch (ScriptException ex) {
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+			Log.log(RubyRepoLoader.getCurrentRepo(),Level.WARNING,ex.getMessage(),ex);		   
 		    return "";
 		}
 		
@@ -101,7 +103,7 @@ public class JRubyInflector {
 		try {
 			return (String) rubyEngine.eval("derive_join_table_name(\""+tab1+"\",\""+tab2+"\")", context);
 		} catch (ScriptException ex) {
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);		   
+			Log.log(RubyRepoLoader.getCurrentRepo(),Level.WARNING,ex.getMessage(),ex);		   
 		    return "";
 		}
 	}

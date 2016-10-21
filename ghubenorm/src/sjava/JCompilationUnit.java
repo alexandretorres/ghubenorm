@@ -30,6 +30,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import common.Util;
 import dao.ConfigDAO;
 import dao.DAOInterface;
+import gitget.Log;
 import model.MClass;
 import model.MProperty;
 import model.MTable;
@@ -473,7 +474,7 @@ class ExprEval {
 		} catch (ScriptException e) {
 			LOG.fine("Java expression was not evaluated:"+expr);
 			// TODO Auto-generated catch block
-			LOG.log(Level.FINE, e.getMessage(),e);
+			LOG.log(Level.FINE, e.getMessage(),e);		
 			
 		} finally {
 			Prof.close("ExprEval.eval");

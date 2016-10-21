@@ -11,6 +11,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import model.Repo;
+
 public class Log {
 	public final static int SKIP_TIME = 60000;
 	public final static Logger LOG;// = Logger.getLogger(Log.class.getName()); 
@@ -72,4 +74,10 @@ public class Log {
 			h.setFormatter(formatter);
 		}
 	}
+	public static void log(Repo repo,Level level, String msg, Throwable thrown) {
+		if (repo!=null)
+			repo.setErrorLevel(level.intValue());
+		LOG.log(level, msg, thrown);
+	}
+	
 }

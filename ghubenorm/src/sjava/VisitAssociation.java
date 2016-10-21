@@ -9,9 +9,10 @@ import static sjava.JPATags.ManyToMany;
 import static sjava.JPATags.ManyToOne;
 import static sjava.JPATags.OneToMany;
 import static sjava.JPATags.OneToOne;
-
+import static gitget.Log.LOG;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import common.LateVisitor;
 import gitget.Log;
@@ -54,7 +55,7 @@ public class VisitAssociation implements LateVisitor {
 		try {
 			targetEntity = assoc.getValueAsString("targetEntity");
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			LOG.log(Level.FINE, ex.getMessage(), ex);
 		}
 		if (targetEntity!=null) {
 			int idx = targetEntity.indexOf(".class");
@@ -424,7 +425,7 @@ class VisitColumnRef implements LateVisitor {
 			} else
 				refCol = fromClazz.findColumnByName(refColName);
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			Log.log(repo.getRepo(), Level.INFO, ex.getMessage(), ex);			
 			
 		}
 		MTable tab=fromClazz.getPersistence().getMainTable();

@@ -28,6 +28,8 @@ import org.jruby.util.KeyValuePair;
 
 import com.google.common.base.CharMatcher;
 
+import gitget.Log;
+
 public class Helper {
 	
 	static public boolean in(Object a[],Object o) {
@@ -73,7 +75,7 @@ public class Helper {
 							reduce(null,(a, b) -> (a==null ? b : a+","+ b) );
 					return ret;
 				} catch (Exception ex) {
-					LOG.log(Level.SEVERE,ex.getMessage(),ex);						
+					Log.log(RubyRepoLoader.getCurrentRepo(),Level.SEVERE,ex.getMessage(),ex);						
 				}
 				return "";
 			}	
@@ -86,7 +88,7 @@ public class Helper {
 						reduce(null,(a, b) -> (a==null ? b : a+ b) );
 				return ret;
 			} catch (Exception ex) {
-				LOG.log(Level.SEVERE,ex.getMessage(),ex);						
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.SEVERE,ex.getMessage(),ex);						
 			}
 			return "";
 		} else if (node instanceof CallNode) {

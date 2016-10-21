@@ -13,6 +13,7 @@ import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
 
 import gitget.GitHubCaller;
+import gitget.Log;
 
 
 
@@ -34,7 +35,7 @@ public class JavaLoader {
 		// So we are catching all ERRORS and EXCEPTIONS here. In the future, list all Errors 
 		} catch (Throwable ex) {	
 			LOG.warning("could not visit file "+url);
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);				
+			Log.log(jrepo.getRepo(),Level.SEVERE,ex.getMessage(),ex);				
 			return null;		
 		} finally {	
 			Prof.close("LOAD");
@@ -51,8 +52,8 @@ public class JavaLoader {
 		        cu.accept(visitor, null);
 				
 			} catch (ParseException pe) {
-				LOG.log(Level.WARNING,"could not parse "+url);
-				LOG.log(Level.WARNING,pe.getMessage(),pe);
+				LOG.warning("could not parse "+url);
+				Log.log(jrepo.getRepo(),Level.WARNING,pe.getMessage(),pe);
 			}	
 		} catch (IOException iex) {
 			String msg = GitHubCaller.instance.getErrorStream(connection);

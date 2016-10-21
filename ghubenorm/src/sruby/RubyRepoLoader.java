@@ -16,6 +16,7 @@ import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.SyntaxException;
 
 import gitget.GitHubCaller;
+import gitget.Log;
 import model.Repo;
 /**
  * Class that encapsulates the Parser use for JRuby. In order to work, the JRUBY_HOME variable must be
@@ -53,6 +54,11 @@ public class RubyRepoLoader {
 		return rrepo;
 		
 	}
+	public static Repo getCurrentRepo() {
+		if (instance!=null && instance.rrepo!=null)
+			return instance.rrepo.getRepo();
+		return null;
+	}
 	public Node parse(InputStream in) {
 		return runtime.parseFile(in, "", runtime.getCurrentContext().getCurrentScope());
 	}
@@ -71,7 +77,7 @@ public class RubyRepoLoader {
 				return visitSchema(in);
 			} catch (SyntaxException sex) {
 				LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
-				LOG.log(Level.INFO,sex.getMessage(),sex);	
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.INFO,sex.getMessage(),sex);	
 				return null;
 			}
 			
@@ -81,9 +87,9 @@ public class RubyRepoLoader {
 			if (msg!=null)
 				LOG.warning("Error stream:" +msg);
 			if (ex instanceof FileNotFoundException)
-				LOG.log(Level.WARNING,ex.getMessage(),ex);
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.WARNING,ex.getMessage(),ex);
 			else
-				LOG.log(Level.SEVERE,ex.getMessage(),ex);	
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.SEVERE,ex.getMessage(),ex);	
 							
 			return null;		
 		}
@@ -108,7 +114,7 @@ public class RubyRepoLoader {
 				return visitFile(url.toString(),in);			
 			} catch (SyntaxException sex) {
 				LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
-				LOG.log(Level.INFO,sex.getMessage(),sex);	
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.INFO,sex.getMessage(),sex);	
 			}	
 			return null;
 		} catch (Exception ex) {	
@@ -117,9 +123,9 @@ public class RubyRepoLoader {
 			if (msg!=null)
 				LOG.warning("Error stream:" +msg);
 			if (ex instanceof FileNotFoundException)
-				LOG.log(Level.WARNING,ex.getMessage(),ex);
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.WARNING,ex.getMessage(),ex);
 			else
-				LOG.log(Level.SEVERE,ex.getMessage(),ex);	
+				Log.log(RubyRepoLoader.getCurrentRepo(),Level.SEVERE,ex.getMessage(),ex);	
 			
 			return null;		
 		}

@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.logging.Level;
 
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
@@ -23,6 +24,7 @@ import org.jruby.ast.visitor.AbstractNodeVisitor;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
+import gitget.Log;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
@@ -298,8 +300,8 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 					
 					//TODO: visitFile cannot "reset" our state!
 				} catch (MalformedURLException | URISyntaxException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					Log.log(repo.getRepo(), Level.INFO, e.getMessage(), e);
+					
 				}
 			}
 			//LOG.info(st);

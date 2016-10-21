@@ -19,6 +19,7 @@ import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
 import model.Language;
 import model.Repo;
+import model.SkipReason;
 import sjava.Prof;
 
 /**
@@ -33,8 +34,8 @@ public class GitHubCrawler implements Runnable {
 	 * after that, reload_repos will reload only the repositories where hasClasses is true, until the last publicid.
 	 * After that it works just as the normal githubcrawler.
 	 */
-	public static final boolean RELOAD_REPOS=true;
-	public static final long MAX_REPOS=1000000;	 
+	public static final boolean RELOAD_REPOS=false;
+	public static final long MAX_REPOS=10000000;	 
 	public static final long MAX_ERRORS=10;	
 	static {
 		ConfigDAO.config(JPA_DAO.instance);		
@@ -43,7 +44,7 @@ public class GitHubCrawler implements Runnable {
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
 
-	
+	RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
 	
 	public static void main(String[] args) {		
 		new Thread(new GitHubCrawler()).start();
@@ -58,7 +59,7 @@ public class GitHubCrawler implements Runnable {
 				LOG.info(obj.toString());				
 			}
 			//select...
-			RepoDAO dao = ConfigDAO.getDAO(Repo.class);
+			RepoDAO dao = repoDao;
 			dao.beginTransaction();
 			int lastId = 0;
 			try {
@@ -136,7 +137,7 @@ public class GitHubCrawler implements Runnable {
 	 * @param id
 	 * @throws MalformedURLException
 	 */
-	private void readByRepo(long id) throws MalformedURLException {
+	private void readByRepo(int id) throws MalformedURLException {
 		long cnt=0,p=1;
 		long errorCount=0;
 		//long id=0;
@@ -155,6 +156,7 @@ public class GitHubCrawler implements Runnable {
 				String fullName=null;
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
 					try {
+						String html_url = result.getString("html_url");
 						fullName = result.getString("full_name");					
 						boolean fork = result.containsKey("fork") ?  result.getBoolean("fork") : false;					
 						boolean priv = result.getBoolean("private");
@@ -165,10 +167,12 @@ public class GitHubCrawler implements Runnable {
 						cnt++;
 						if (priv) {
 							LOG.info("<Private>");
+							skipRepo(SkipReason.PRIVATE, Language.UNKNOWN, fullName, html_url, id, null);
 							continue;
 						}
 						if (fork) {
 							LOG.info(fullName+" is a FORK repo. Skipping");
+							skipRepo(SkipReason.FORK, Language.UNKNOWN, fullName, html_url, id, null);
 							continue;
 						}
 						LOG.info("-----------"+gh.getLimits());					
@@ -178,11 +182,15 @@ public class GitHubCrawler implements Runnable {
 						
 						//
 						result = gh.getRepoInfo(fullName);
-						if (result==null)
+						if (result==null) {
+							skipRepo(SkipReason.NULL_INFO, Language.UNKNOWN, fullName, html_url, id, null);
 							continue;
+						}
+						String branch = result.containsKey("default_branch") ? result.getString("default_branch") : null;
 						JsonValue parent = result.get("parent");
 						if (parent==JsonValue.NULL) {
 							LOG.severe("repo "+fullName+" has a parent but is not FORKED. Skipping");
+							skipRepo(SkipReason.HAS_PARENT, Language.UNKNOWN, fullName, html_url, id, branch);
 							continue;
 						}					
 						JsonValue lang_obj = result.get("language");
@@ -193,17 +201,33 @@ public class GitHubCrawler implements Runnable {
 							JsonArray array = (JsonArray)lang_obj;
 							lang = Language.getLanguage(array.getString(0));
 						} else if (lang_obj.getValueType()==ValueType.NULL) {
-							// do nothing
+							skipRepo(SkipReason.NO_LANGUAGE, Language.UNKNOWN, fullName, html_url, id, branch);
+							continue;							
 						} else {
 							LOG.info("unexpected language value for repo "+fullName);
+							skipRepo(SkipReason.NO_LANGUAGE, Language.UNKNOWN, fullName, html_url, id, branch);
+							continue;
 						}
+						//pick a repo
 						if (lang==Language.RUBY) {
-							ruby.processRepo(ruby.createRepo(result,fullName));
-						} else if (lang==Language.JAVA) {
-							java.processRepo(java.createRepo(result, fullName));
+							SkipReason skip =  ruby.processRepo(ruby.createRepo(result,fullName));
+							if (skip!=SkipReason.NONE) {
+								skipRepo(skip, lang, fullName, html_url, id, branch);
+								continue;
+							}
+						} else if (lang==Language.JAVA) {							
+							SkipReason skip = java.processRepo(java.createRepo(result, fullName));
+							if (skip!=SkipReason.NONE) {
+								skipRepo(skip, lang, fullName, html_url, id, branch);
+								continue;
+							}
+						} else {
+							skipRepo(SkipReason.OTHER_LANGUAGE, lang, fullName, html_url, id, branch);
+							continue;
 						}
 						fullName=null;
 					} catch (Exception ex) {
+						skipRepo(SkipReason.ERROR, Language.UNKNOWN, fullName, null, id, null);
 						errorCount++;
 						LOG.severe("Exception reading repo list ("+errorCount+"), repo '"+fullName+"'");
 						LOG.log(Level.SEVERE,ex.getMessage(),ex);
@@ -219,6 +243,21 @@ public class GitHubCrawler implements Runnable {
 			
 		} while(cnt<MAX_REPOS);
 		
+	}
+	public void skipRepo(SkipReason reason,Language lang,String name,String url,int publicId,String branch) {
+		try {
+			repoDao.beginTransaction();
+			Repo repo = new Repo(lang);			
+			repo.setBranch(branch);
+			repo.setName(name);			
+			repo.setUrl(url);//repoJson.getString("html_url")
+			repo.setPublicId(publicId);//repoJson.getInt("id")
+			repo.setSkipReason(reason);
+			repoDao.persist(repo);
+			repoDao.commitAndCloseTransaction();
+		} catch (Exception ex) {
+			LOG.log(Level.WARNING, ex.getMessage(), ex);
+		}
 	}
 	@Deprecated
 	private void readByAPI() throws MalformedURLException {

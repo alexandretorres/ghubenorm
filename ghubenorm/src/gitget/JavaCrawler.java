@@ -21,6 +21,7 @@ import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
 import model.Language;
 import model.Repo;
+import model.SkipReason;
 import sjava.JCompilationUnit;
 import sjava.JavaLoader;
 import sjava.JavaRepo;
@@ -75,7 +76,7 @@ public class JavaCrawler {
 	 * @param repoJson
 	 * @param fullName
 	 */
-	protected void processRepo(Repo repo)  {
+	protected SkipReason processRepo(Repo repo)  {
 		String fullName = repo.getName();
 		try {			
 			Prof.open("checkIfPersistent");
@@ -92,7 +93,7 @@ public class JavaCrawler {
 			JsonObject result = gh.listFileTree(fullName,repo.getBranchGit());
 			if (result==null) {
 				LOG.info("no files at the branch "+repo.getBranchGit()+". Skipping repo.");
-				return;
+				return SkipReason.NO_FILES_AT_BRANCH;
 			}
 			Prof.close("listFileTree");
 			boolean truncated = result.getBoolean("truncated");
@@ -143,13 +144,17 @@ public class JavaCrawler {
 				
 				jrepo.getRepo().print();
 				
+			} else {
+				repo.setSkipReason(SkipReason.NO_CONFIG_FOUND);
 			}
 			repo.checkHasClasses();
 			daoRepo.commitAndCloseTransaction();
 			//para cada path principal, pega um java, deduz o path real a partir do package
 		} catch (Exception ex) {
-			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);	
+			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);
+			return SkipReason.ERROR;
 		}
+		return SkipReason.NONE;
 	}
 	protected void readAllJavaFiles(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		for (Dir f:jrepo.getRoot().toLeafList()) {

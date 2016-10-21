@@ -19,6 +19,7 @@ import org.jruby.ast.visitor.AbstractNodeVisitor;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
+import gitget.Log;
 import model.MColumn;
 import model.MDefinition;
 import model.MDefinitionType;
@@ -170,7 +171,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				try {
 					ret.setLength(Helper.getHashArgument(hn.getPairs(), "limit",Integer.class));	
 				} catch (Exception ex) {
-					LOG.log(Level.SEVERE,tab.getName()+"."+ret.getName()+":"+ ex.getMessage(),ex);	
+					Log.log(RubyRepoLoader.getCurrentRepo(),Level.INFO,tab.getName()+"."+ret.getName()+":"+ ex.getMessage(),ex);	
 				}
 				//String index = Helper.getHashArgument(hn.getPairs(), "index");
 				Node nidx = Helper.getHashValue(hn.getPairs(), "index");
