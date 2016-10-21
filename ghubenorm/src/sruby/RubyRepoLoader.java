@@ -2,6 +2,7 @@ package sruby;
 
 import static gitget.Log.LOG;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
@@ -68,13 +69,22 @@ public class RubyRepoLoader {
 			
 			try (InputStream in =  connection.getInputStream()) {		
 				return visitSchema(in);
+			} catch (SyntaxException sex) {
+				LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
+				LOG.log(Level.INFO,sex.getMessage(),sex);	
+				return null;
 			}
+			
 		} catch (Exception ex) {	
 			String msg = GitHubCaller.instance.getErrorStream(connection);			
 			LOG.warning("could not visit file "+url);
 			if (msg!=null)
 				LOG.warning("Error stream:" +msg);
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);				
+			if (ex instanceof FileNotFoundException)
+				LOG.log(Level.WARNING,ex.getMessage(),ex);
+			else
+				LOG.log(Level.SEVERE,ex.getMessage(),ex);	
+							
 			return null;		
 		}
 	}
@@ -98,7 +108,7 @@ public class RubyRepoLoader {
 				return visitFile(url.toString(),in);			
 			} catch (SyntaxException sex) {
 				LOG.warning("Syntax exception on file "+url.toString()+" position "+sex.getLine());			
-				LOG.log(Level.SEVERE,sex.getMessage(),sex);	
+				LOG.log(Level.INFO,sex.getMessage(),sex);	
 			}	
 			return null;
 		} catch (Exception ex) {	
@@ -106,7 +116,10 @@ public class RubyRepoLoader {
 			LOG.warning("could not visit file "+url);
 			if (msg!=null)
 				LOG.warning("Error stream:" +msg);
-			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
+			if (ex instanceof FileNotFoundException)
+				LOG.log(Level.WARNING,ex.getMessage(),ex);
+			else
+				LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 			
 			return null;		
 		}

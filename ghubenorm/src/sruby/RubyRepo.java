@@ -83,12 +83,12 @@ public class RubyRepo {
 		}
 		
 		List<MClass> lst = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname)).collect(Collectors.toList());
-		return pickClassFromList(path, lst);
+		return pickClassFromList(from,path,JRubyInflector.getInstance().underscore(name), lst);
 		/*Optional<MClass> ret = getClasses().stream().filter(cl->cl.getName().equalsIgnoreCase(cname)).findFirst();
 		return ret.orElse(null);*/
 		
 	}
-	private MClass pickClassFromList(String pak,List<MClass> lst) {
+	private MClass pickClassFromList(MClass context,String pak,String under_name,List<MClass> lst) {
 		MClass ret = null;
 		do {
 			for (MClass cl:lst) {
@@ -106,18 +106,41 @@ public class RubyRepo {
 			else
 				pak=null;
 		} while (pak!=null);
-		if (ret==null && !lst.isEmpty())
+		if (context!=null && context.getFilePath()!=null && ret==null && !lst.isEmpty()) {
+			String path=context.getFilePath();
+			if (path.indexOf("/")>0)
+				path = path.substring(0, path.lastIndexOf("/"));
+			else
+				path="";
+			for (MClass cl:lst) {
+				if (cl.getFilePath().equals(path+"/"+under_name+".rb")) {
+					return cl;
+				}
+			}
+			for (MClass cl:lst) {
+				String cpath = cl.getFilePath();
+				if (cpath.indexOf("/")>0) {
+					cpath = path.substring(0, cpath.lastIndexOf("/"));
+					if (cpath.equals(path)) {
+						return cl;
+					}
+				}
+			}
+		}
+		if (ret==null && !lst.isEmpty()) {
 			ret= lst.iterator().next();
+		}
 		return ret;
 	}
 	public MClass getClazzFromUnderscore(MClass context,String underscore_name) {
-		 List<MClass> lst = getClasses().stream().filter(
+		//TODO: check folders. Read ruby autoloading policy. 
+		List<MClass> lst = getClasses().stream().filter(
 				cl->JRubyInflector.getInstance().underscore(cl.getName()).equalsIgnoreCase(underscore_name)).collect(Collectors.toList())
 				;
 		String pak = context.getPackageName();
 		pak = pak==null ? "" : pak; 
 		pak = pak.replaceAll("::", ".");
-		return pickClassFromList(pak, lst);
+		return pickClassFromList(context,pak,underscore_name ,lst);
 	}
 	private void completeClasses(RubyVisitor rv) {
 		Map<MClass, ClassNode> curList = incomplete;

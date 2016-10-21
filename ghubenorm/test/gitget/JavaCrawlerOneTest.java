@@ -5,21 +5,23 @@ import org.junit.Test;
 
 import dao.ConfigDAO;
 import dao.nop.ConfigNop;
+import db.daos.MyConfigNop;
 import sjava.Prof;
 
 public class JavaCrawlerOneTest {
 
 	@Before
 	public void setUp() throws Exception {
-		ConfigDAO.config(new ConfigNop());
+		ConfigDAO.config(new MyConfigNop());
 		//ConfigDAO.config(JPA_DAO.instance);
 	}
 
 	@Test
 	public void test() {	
 		String repos[]= new String[] {
+				"magnusart/ConsumerMaster"
 				//"johnragan/johnragan_org"
-				
+			/*	
 				"randi2/randi2",
 				"pancutan/ConcesionariaDB",
 			//

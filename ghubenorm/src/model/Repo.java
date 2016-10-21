@@ -509,7 +509,7 @@ public class Repo implements Visitable {
 					if (invColDef.equals(aover.getColumn())) {
 						String idName = "<id>";
 						for (MProperty pk:clazz.findPK()) {
-							if (pk.getColumnDef()!=null)
+							if (pk.getColumnDef()!=null && pk.getColumnDef().getName()!=null)
 								idName = pk.getColumnDef().getName();
 							if (idName.equals("<id>")) {
 								idName = pk.getName();
