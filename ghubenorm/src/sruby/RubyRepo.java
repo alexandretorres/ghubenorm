@@ -125,10 +125,11 @@ public class RubyRepo {
 					return cl;
 				}
 			}
+			
 			for (MClass cl:lst) {
 				String cpath = cl.getFilePath();
 				if (cpath.indexOf("/")>0) {
-					cpath = path.substring(0, cpath.lastIndexOf("/"));
+					cpath = cpath.substring(0, cpath.lastIndexOf("/"));
 					if (cpath.equals(path)) {
 						return cl;
 					}

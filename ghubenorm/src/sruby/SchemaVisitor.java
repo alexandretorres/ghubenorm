@@ -240,8 +240,8 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				ret=createColumn(tab,name,n.getArgsNode().childNodes());				
 			} else if (name.equals("timestamps") ) {	
 				MColumn[] rets = new MColumn[2];
-				rets[0]=createColumn(tab,"timestamp","created_at",n.getArgsNode().childNodes());	
-				rets[1]=createColumn(tab,"timestamp","updated_at",n.getArgsNode().childNodes());
+				rets[0]=createColumn(tab,"timestamp","created_at",Helper.safeGetChilds(n.getArgsNode()));	
+				rets[1]=createColumn(tab,"timestamp","updated_at",Helper.safeGetChilds(n.getArgsNode()));
 				ret=rets;
 			} else if (Helper.in(dbtypes,name) && top instanceof MTable) {		
 				ret=createColumn(tab,name,n.getArgsNode().childNodes());

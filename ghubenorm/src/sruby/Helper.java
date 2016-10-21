@@ -2,6 +2,7 @@ package sruby;
 import static gitget.Log.LOG;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -210,5 +211,17 @@ public class Helper {
 		}
 		
 		return null;
+	}
+	public static List<Node> safeGetChilds(Node n) {
+		List<Node> ret=null;
+		if (n!=null) {
+			ret = n.childNodes();
+			
+		}
+		if (ret==null) {
+			ret = Collections.emptyList();
+		}
+		return ret;
+		
 	}
 }

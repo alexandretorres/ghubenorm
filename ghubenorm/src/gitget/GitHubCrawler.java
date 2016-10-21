@@ -34,7 +34,7 @@ public class GitHubCrawler implements Runnable {
 	 * after that, reload_repos will reload only the repositories where hasClasses is true, until the last publicid.
 	 * After that it works just as the normal githubcrawler.
 	 */
-	public static final boolean RELOAD_REPOS=false;
+	public static final boolean RELOAD_REPOS=true;
 	public static final long MAX_REPOS=10000000;	 
 	public static final long MAX_ERRORS=10;	
 	static {

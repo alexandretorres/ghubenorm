@@ -76,7 +76,7 @@ public class Log {
 	}
 	public static void log(Repo repo,Level level, String msg, Throwable thrown) {
 		if (repo!=null)
-			repo.setErrorLevel(level.intValue());
+			repo.setErrorLevel(level.intValue());		
 		LOG.log(level, msg, thrown);
 	}
 	
