@@ -548,6 +548,9 @@ public class Repo implements Visitable {
 	public Integer getErrorLevel() {
 		return errorLevel;
 	}
+	public void overrideErrorLevel(Integer level) {
+		errorLevel=level;
+	}
 	public void setErrorLevel(Integer errorLevel) {
 		if (this.errorLevel==null || this.errorLevel<errorLevel)
 			this.errorLevel = errorLevel;

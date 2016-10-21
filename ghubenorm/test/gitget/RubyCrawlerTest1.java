@@ -1,12 +1,22 @@
 package gitget;
 
+import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import dao.ConfigDAO;
 import db.daos.MyConfigNop;
+import db.daos.RepoDAO;
+import db.jpa.JPA_DAO;
+import model.Language;
+import model.Repo;
 
 public class RubyCrawlerTest1 extends RubyCrawler {
+	/**
+	 * Use this option to reload a repo from github. All classes and tables of this repo must be removed before this, if they exist.
+	 */
+	public static boolean RETRIEVE_AGAIN=false;
 	GitHubCaller gh = GitHubCaller.instance;
 	@Before
 	public void setUp() throws Exception {
@@ -16,7 +26,8 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 
 	@Test
 	public void test() {
-		String repos[] = {				
+		String repos[] = {		
+				//"alexs/salva-old"
 				"scharfie/gabby"
 				//"james/freefall"
 				//"wesabe/pfc"
@@ -56,9 +67,24 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 				"francois/acctsoft",*/
 				
 		};
-		for (String repo:repos) 
-			processRepo(createRepo(gh.getRepoInfo(repo) ,repo));
-		
+		if (RETRIEVE_AGAIN) {
+			RepoDAO dao = ConfigDAO.getDAO(Repo.class);
+			for (String name:repos) {
+				dao.beginTransaction();
+				List<Repo> res = dao.findByName(name);
+				if (res.isEmpty())
+					continue;
+				Repo repo = res.iterator().next();				
+				dao.commitAndCloseTransaction();
+				if (repo.getClasses().isEmpty() && repo.getConfigPath()!=null ) {
+					repo.overrideErrorLevel(null);
+					processRepo(repo);
+				}
+			}			
+		} else {
+			for (String repo:repos) 
+				processRepo(createRepo(gh.getRepoInfo(repo) ,repo));
+		}
 	}
 
 }

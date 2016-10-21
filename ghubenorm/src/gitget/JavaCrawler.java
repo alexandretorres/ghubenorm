@@ -127,7 +127,11 @@ public class JavaCrawler {
 				}
 			}
 			daoRepo.beginTransaction();
+						
+			Integer level = repo.getErrorLevel();
 			repo = daoRepo.reattachOrSave(repo);
+			repo.overrideErrorLevel(level);
+					
 			jrepo.setRepo(repo);
 			//daoRepo.persist(repo);
 			Prof.close("checkIfPersistent");

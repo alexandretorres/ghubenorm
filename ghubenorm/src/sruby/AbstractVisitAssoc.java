@@ -347,6 +347,8 @@ class VisitThrough implements LateVisitor {
 		this.sourceType=sourceType;
 	}
 	public boolean execVisitor(MProperty p) {
+		if (p.equals(this.prop))
+			return false;
 		VisitThrough r = repo.currentVisitors.stream().filter(o->o instanceof VisitThrough).
 				map(o->(VisitThrough) o).filter(o->o.prop.equals(p)).findFirst().orElse(null);
 		if (r!=null)
@@ -361,6 +363,8 @@ class VisitThrough implements LateVisitor {
 		return r;
 	}
 	private MAssociationOverride findOrInitOverride(MClass clazz,MProperty p) {
+		if (p.equals(this.prop))
+			return null;
 		MAssociationOverride override = findOverride(clazz, p);
 		if (override==null) {
 			execVisitor(p);
@@ -382,7 +386,7 @@ class VisitThrough implements LateVisitor {
 		
 		MAssociationOverride prevOverride=null;
 		for (MProperty p:clazz.getAllProperties()) {
-			if (p.getName().equals(through)) {
+			if (p.getName().equals(through) && !p.equals(this.prop)) {
 				if (p.isDerived()) {					
 					prevOverride = findOrInitOverride(clazz, p);
 					

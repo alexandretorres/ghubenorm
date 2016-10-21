@@ -34,7 +34,7 @@ public class GitHubCrawler implements Runnable {
 	 * after that, reload_repos will reload only the repositories where hasClasses is true, until the last publicid.
 	 * After that it works just as the normal githubcrawler.
 	 */
-	public static final boolean RELOAD_REPOS=true;
+	public static final boolean RELOAD_REPOS=false;
 	public static final long MAX_REPOS=10000000;	 
 	public static final long MAX_ERRORS=10;	
 	static {
@@ -91,13 +91,15 @@ public class GitHubCrawler implements Runnable {
 			for (Repo repo:results) {
 				start++;
 				// if has classes is part of the query, id will never reach max publicid
-				if(repo.getHasClasses() && repo.getConfigPath()!=null && repo.getConfigPath().length()>0) {
+				if(repo.getHasClasses()!=null && repo.getHasClasses() && repo.getConfigPath()!=null && repo.getConfigPath().length()>0) {
 					if (!repo.getClasses().isEmpty()) {
 						throw new RuntimeException("reload repos cannot process repositories that are already loaded");
 					}
 					if (repo.getLanguage()==Language.JAVA) {
+						repo.overrideErrorLevel(null);
 						java.processRepo(repo);
 					} else if (repo.getLanguage()==Language.RUBY) {
+						repo.overrideErrorLevel(null);
 						ruby.processRepo(repo);
 					}
 				}

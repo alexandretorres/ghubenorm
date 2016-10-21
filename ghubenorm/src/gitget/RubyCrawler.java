@@ -77,8 +77,10 @@ class RubyCrawler  {
 				}
 				
 			}			
-			daoRepo.beginTransaction();			
+			daoRepo.beginTransaction();	
+			Integer level = repo.getErrorLevel();
 			repo = daoRepo.reattachOrSave(repo);
+			repo.overrideErrorLevel(level);
 		
 			//daoRepo.persist(repo);
 			if (repo.getConfigPath()!=null) {
