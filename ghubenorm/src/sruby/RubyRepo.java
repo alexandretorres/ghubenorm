@@ -1,5 +1,6 @@
 package sruby;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -90,22 +91,29 @@ public class RubyRepo {
 	}
 	private MClass pickClassFromList(MClass context,String pak,String under_name,List<MClass> lst) {
 		MClass ret = null;
+		List<MClass> subList = new ArrayList<MClass>();
 		do {
 			for (MClass cl:lst) {
 				String pakCl = cl.getPackageName();
 				pakCl = pakCl==null ? "" :pakCl;
 				pakCl = pakCl.replaceAll("::", ".");
 				if (pak.equals(pakCl)) {
-					return cl;
+					subList.add(cl);					
 					
 				}
 			}
-			int idx = pak.lastIndexOf('.');
-			if (idx>0)
-				pak=pak.substring(0,idx);
-			else
-				pak=null;
-		} while (pak!=null);
+			if (subList.isEmpty()) {
+				int idx = pak.lastIndexOf('.');
+				if (idx>0)
+					pak=pak.substring(0,idx);
+				else
+					pak=null;
+			}
+		} while (subList.isEmpty() && pak!=null);
+		if (subList.size()==1)
+			return subList.iterator().next();
+		if (!subList.isEmpty())
+			lst=subList;
 		if (context!=null && context.getFilePath()!=null && ret==null && !lst.isEmpty()) {
 			String path=context.getFilePath();
 			if (path.indexOf("/")>0)
