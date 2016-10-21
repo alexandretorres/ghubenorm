@@ -4,8 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.persistence.MappedSuperclass;
-
 //IdClass=Type
 public enum JPATags {
 	Entity,Id,IdClass,EmbeddedId,

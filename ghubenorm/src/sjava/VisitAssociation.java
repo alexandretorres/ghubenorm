@@ -1,10 +1,17 @@
 package sjava;
 
-import java.util.ArrayList;
+import static sjava.JPATags.CollectionTable;
+import static sjava.JPATags.ElementCollection;
+import static sjava.JPATags.JoinColumn;
+import static sjava.JPATags.JoinColumns;
+import static sjava.JPATags.JoinTable;
+import static sjava.JPATags.ManyToMany;
+import static sjava.JPATags.ManyToOne;
+import static sjava.JPATags.OneToMany;
+import static sjava.JPATags.OneToOne;
+
 import java.util.List;
 import java.util.Set;
-
-import javax.persistence.OneToMany;
 
 import common.LateVisitor;
 import gitget.Log;
@@ -23,8 +30,6 @@ import model.MOverride;
 import model.MProperty;
 import model.MTable;
 import model.MVertical;
-
-import static sjava.JPATags.*;
 
 public class VisitAssociation implements LateVisitor {
 	MProperty prop;
@@ -175,7 +180,7 @@ public class VisitAssociation implements LateVisitor {
 			} else if (CollectionTable.isType(an, unit)) {
 				MAssociationDef adef = prop.getOrInitAssociationDef();
 				String name = an.getValueAsString("name");				
-				MTable tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(unit.jrepo.getRepo(),name));
+				MTable tab = JCompilationUnit.daoMTable.persist(MTable.newMTable(unit.jrepo.getRepo(),name));
 				tab.setCatalog(an.getValueAsString("catalog"));
 				tab.setSchema(an.getValueAsString("schema"));
 				
@@ -249,7 +254,7 @@ public class VisitAssociation implements LateVisitor {
 	protected static void createJoinTable(JCompilationUnit unit,Annotation an,MAssociationDef adef,MClass fromClass,MClass toClass) {
 		
 		String name = an.getValueAsString("name");				
-		MTable tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(unit.jrepo.getRepo(),name));
+		MTable tab = JCompilationUnit.daoMTable.persist(MTable.newMTable(unit.jrepo.getRepo(),name));
 		tab.setCatalog(an.getValueAsString("catalog"));
 		tab.setSchema(an.getValueAsString("schema"));
 		//TODO: missing inverseJoinColumns of JoinTable. The referencedColumns are named inverse, while the inverse are just normal JoinCols
@@ -277,10 +282,10 @@ public class VisitAssociation implements LateVisitor {
 
 	public static MJoinColumn createJoinColumn(JavaRepo repo,MClass clazz,MTable toTable,MAssociationDef adef,Annotation ajoin,boolean junctionTable) {
 		MColumn col = MColumn.newMColumn();					
-		JavaVisitor.daoMCol.persit(col);
+		JavaVisitor.daoMCol.persist(col);
 		MJoinColumn jc = MJoinColumn.newMJoinColumn(adef, col);
 		adef.getJoinColumns().add(jc);
-		JavaVisitor.daoJoinCol.persit(jc);
+		JavaVisitor.daoJoinCol.persist(jc);
 		loadJoinColumn(repo,clazz,toTable,jc, ajoin,junctionTable);
 		
 		return jc;
@@ -361,7 +366,7 @@ class VisitColumnRef implements LateVisitor {
 						refCol=cdef.getColumn();						
 					} else {
 						MTable tab = fromClazz.getPersistence().getMainTable();
-						refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setTable(tab));
+						refCol = JavaVisitor.daoMCol.persist(MColumn.newMColumn().setTable(tab));
 						ppk.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
 						//TODO:This fix cannot be used for inherited PK because we have to know what is the destination class in the hierarqy
 					
@@ -396,11 +401,11 @@ class VisitColumnRef implements LateVisitor {
 								}
 							}
 							if (refCol==null) {
-								refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn());
+								refCol = JavaVisitor.daoMCol.persist(MColumn.newMColumn());
 								//TODO: Overrive is a "difference" column, do we need the previous override history?
 								MAttributeOverride over = MAttributeOverride.newMAttributeOverride(refCol, ppk);
 								fromClazz.override(over);
-								VisitOverrides.daoMAttrOverride.persit(over);
+								VisitOverrides.daoMAttrOverride.persist(over);
 							}
 						}
 					}
@@ -408,12 +413,12 @@ class VisitColumnRef implements LateVisitor {
 						//Create a column with a "reserved" name
 						MTable tab = fromClazz.getPersistence().getMainTable();
 						if (tab==null) {
-							tab = JCompilationUnit.daoMTable.persit(MTable.newMTable(repo.getRepo(),(String) null));
+							tab = JCompilationUnit.daoMTable.persist(MTable.newMTable(repo.getRepo(),(String) null));
 							fromClazz.getPersistence().setDataSource(tab);
 						} else
 							refCol = tab.findColumn(MColumn.ID_COLUMN_NAME);
 						if (refCol==null)
-							refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setTable(tab).setName(MColumn.ID_COLUMN_NAME));	
+							refCol = JavaVisitor.daoMCol.persist(MColumn.newMColumn().setTable(tab).setName(MColumn.ID_COLUMN_NAME));	
 					}
 				}
 			} else
@@ -432,7 +437,7 @@ class VisitColumnRef implements LateVisitor {
 					if (cp.getTypeClass()!=null)
 						for (MProperty embp:cp.getTypeClass().getProperties()) {
 							if (embp.getName().equals(refColName)) {
-								refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setName(refColName).setTable(tab));
+								refCol = JavaVisitor.daoMCol.persist(MColumn.newMColumn().setName(refColName).setTable(tab));
 								//embp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));								
 								break;
 							}
@@ -441,7 +446,7 @@ class VisitColumnRef implements LateVisitor {
 						break;
 				} else {					
 					if (cp.getName().equalsIgnoreCase(refColName)) {
-						refCol = JavaVisitor.daoMCol.persit(MColumn.newMColumn().setName(refColName).setTable(tab));
+						refCol = JavaVisitor.daoMCol.persist(MColumn.newMColumn().setName(refColName).setTable(tab));
 						if (cp.getColumnMapping()==null)
 							cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
 						break;

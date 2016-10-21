@@ -37,7 +37,7 @@ public class DAONop<C> implements DAOInterface<C> {
 	}
 
 	@Override
-	public C persit(C obj) {
+	public C persist(C obj) {
 		// TODO Auto-generated method stub
 		return obj;
 	}

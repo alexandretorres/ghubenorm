@@ -1,15 +1,14 @@
 package sjava;
 
 import static gitget.Log.LOG;
+
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -31,13 +30,9 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import common.Util;
 import dao.ConfigDAO;
 import dao.DAOInterface;
-
 import model.MClass;
 import model.MProperty;
 import model.MTable;
-import model.Repo;
-
-import static sjava.JPATags.*;
 
 public class JCompilationUnit {
 	String url;
@@ -75,7 +70,7 @@ public class JCompilationUnit {
 		return prefix;
 	}
 	public MClass createClass(String name) {		
-		MClass c = daoMClass.persit(MClass.newMClass(this.url,jrepo.getRepo()).setName(name));
+		MClass c = daoMClass.persist(MClass.newMClass(this.url,jrepo.getRepo()).setName(name));
 	
 		//new MClass(comp,ctx.Identifier().getText());
 		c.setPackageName(packageName);
@@ -133,13 +128,13 @@ public class JCompilationUnit {
 	//--
 	public MTable toTable(MClass c,String entityName) {
 		String name = entityName==null ? c.getName() : entityName;		
-		MTable tab = daoMTable.persit(c.newTableSource(name));		
+		MTable tab = daoMTable.persist(c.newTableSource(name));		
 		jrepo.getDataSources().add(tab);
 		return tab;
 	}
 	public MTable toTable(MClass c,Annotation atab) {
 		String name = atab==null ? c.getName() : atab.getValue("name", c.getName());		
-		MTable tab = daoMTable.persit(c.newTableSource(name));
+		MTable tab = daoMTable.persist(c.newTableSource(name));
 		if (atab!=null) {
 			tab.setCatalog(atab.getValueAsString("catalog"));
 			tab.setSchema(atab.getValueAsString("schema"));

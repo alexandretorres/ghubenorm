@@ -1,26 +1,8 @@
 package sruby;
 
-import static gitget.Log.LOG;
+import org.jruby.ast.IArgumentNode;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Optional;
-
-import org.jruby.ast.*;
-import org.jruby.util.KeyValuePair;
-
-import common.LateVisitor;
-import dao.ConfigDAO;
-import dao.DAOInterface;
-import model.MAssociation;
-import model.MAssociationDef;
-import model.MAssociationOverride;
-import model.MCascadeType;
 import model.MClass;
-import model.MColumn;
-import model.MJoinColumn;
-import model.MProperty;
-import model.MTable;
 
 
 /**

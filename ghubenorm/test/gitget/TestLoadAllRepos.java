@@ -8,7 +8,6 @@ import java.util.logging.Level;
 import org.junit.Test;
 
 import dao.ConfigDAO;
-import dao.jpa.ConfigJPA;
 import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
 import model.Repo;

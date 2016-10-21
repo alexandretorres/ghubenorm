@@ -1,11 +1,7 @@
 package model;
 
-import java.util.List;
-
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
-
-import common.Util;
 @Entity
 public class MAttributeOverride extends MOverride {
 	@ManyToOne

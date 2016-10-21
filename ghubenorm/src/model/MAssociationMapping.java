@@ -2,9 +2,6 @@ package model;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
 import javax.persistence.OneToOne;
 
 @Embeddable

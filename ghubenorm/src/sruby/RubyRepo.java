@@ -1,10 +1,5 @@
 package sruby;
 
-import static gitget.Log.LOG;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,25 +8,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
-import java.util.logging.Level;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.jruby.ast.ClassNode;
 
 import common.LateVisitor;
 import common.Util;
 import gitget.Dir;
-import gitget.Log;
 import model.Language;
-import model.MAssociation;
-import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
-import model.MColumnDefinition;
-import model.MJoinColumn;
-import model.MOverride;
 import model.MProperty;
 import model.MTable;
 import model.Repo;

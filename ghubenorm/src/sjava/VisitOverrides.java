@@ -13,7 +13,6 @@ import model.MAssociationOverride;
 import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
-import model.MJoinColumn;
 import model.MProperty;
 //Overrides after Associations?
 public class VisitOverrides implements LateVisitor {
@@ -80,10 +79,10 @@ public class VisitOverrides implements LateVisitor {
 			}
 			if (attribute) {
 				Annotation acol = override.getValue("column", null, Annotation.class);
-				MColumn col = JavaVisitor.daoMCol.persit(JavaVisitor.createMColumn(clazz,acol));
+				MColumn col = JavaVisitor.daoMCol.persist(JavaVisitor.createMColumn(clazz,acol));
 				MAttributeOverride over = MAttributeOverride.newMAttributeOverride(col, propPath);
 				clazz.override(over);
-				daoMAttrOverride.persit(over);
+				daoMAttrOverride.persist(over);
 			} else {
 				MAssociationOverride over = MAssociationOverride.newMAssociationOverride(clazz,propPath);
 				

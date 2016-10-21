@@ -12,12 +12,9 @@ import org.jruby.ast.DefNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.IArgumentNode;
-import org.jruby.ast.LambdaNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.types.INameNode;
 import org.jruby.util.KeyValuePair;
-
-import com.github.javaparser.ast.NamedNode;
 
 import common.LateVisitor;
 import dao.ConfigDAO;
@@ -75,7 +72,7 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 		Node nameNode = it.next();
 		String pname=Helper.getValue(nameNode);
 		
-		prop=daoProp.persit(clazz.newProperty());
+		prop=daoProp.persist(clazz.newProperty());
 		prop.setName(pname);
 		// collect data
 		while (it.hasNext()) {
@@ -282,7 +279,7 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 				return; // forget about it
 			}
 			LOG.warning("Foreing Key exist for "+prop.getName()+" but DataSource not found for class:"+fromType+". Creating a table source");
-			source =daoMTable.persit(
+			source =daoMTable.persist(
 					fromType.newTableSource(								
 							JRubyInflector.getInstance().tableize(fromType.getName()),fromType.isPersistent()));
 		}		
@@ -300,7 +297,7 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 			MJoinColumn jc = def.findJoinColumn(jfk);
 			MColumn col = source.findColumn(jfk);
 			if (col==null) {
-				col =  daoColumn.persit(source.addColumn().setName(fk));
+				col =  daoColumn.persist(source.addColumn().setName(fk));
 			} else {
 				//remove property
 				MProperty delProp = fromType.getProperties().stream().
@@ -403,7 +400,7 @@ class VisitThrough implements LateVisitor {
 			MAssociationOverride ao = MAssociationOverride.newMAssociationOverride(clazz);
 			
 			//clazz.getOverrides().add(ao);
-			//daoAssocOver.persit(ao);
+			//daoAssocOver.persist(ao);
 			ao.getProperties().add(prop);
 			
 			if (prevOverride==null)

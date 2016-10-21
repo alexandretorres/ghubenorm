@@ -1,10 +1,10 @@
 package sruby;
 
-import static gitget.Log.LOG;
-
 import java.util.Iterator;
 
-import org.jruby.ast.*;
+import org.jruby.ast.HashNode;
+import org.jruby.ast.IArgumentNode;
+import org.jruby.ast.Node;
 import org.jruby.util.KeyValuePair;
 
 import common.LateVisitor;
@@ -96,7 +96,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 		Node nameNode = it.next();
 		String pname = Helper.getValue(nameNode);
 		String typeName = JRubyInflector.getInstance().singularize(pname);
-		MProperty prop=daoProp.persit(clazz.newProperty());
+		MProperty prop=daoProp.persist(clazz.newProperty());
 		prop.setName(pname);
 		prop.setMax(-1);
 		MClass type = repo.getClazzFromUnderscore(clazz,typeName);
@@ -161,7 +161,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 	public static MColumn getOrCreatePKColumn(MProperty idProp) {
 		MColumnDefinition ret = idProp.getColumnDef();
 		if (ret==null) {
-			MColumn decoyId = daoColumn.persit(MColumn.newMColumn().setTable(idProp.getParent().getPersistence().getMainTable())).
+			MColumn decoyId = daoColumn.persist(MColumn.newMColumn().setTable(idProp.getParent().getPersistence().getMainTable())).
 					setName(idProp.getName());
 			idProp.setColumnMapping(MColumnMapping.newMColumnMapping(decoyId));
 			return decoyId;
@@ -180,7 +180,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 			MJoinColumn jc = def.findJoinColumn(fk);
 			MColumn col = tab.findColumn(fk);
 			if (col==null) {								
-				col =  daoColumn.persit(tab.addColumn().setName(fk));		
+				col =  daoColumn.persist(tab.addColumn().setName(fk));		
 			}
 			if (jc==null) {
 				jc=def.newJoingColumn(col);				
@@ -201,7 +201,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 				MJoinColumn jc = def.findJoinColumn(fk);
 				MColumn col = tab.findColumn(fk);
 				if (col==null) {								
-					col =  daoColumn.persit(tab.addColumn().setName(fk));		
+					col =  daoColumn.persist(tab.addColumn().setName(fk));		
 				}
 				if (jc==null) {
 					jc=def.newJoingColumn(col);				

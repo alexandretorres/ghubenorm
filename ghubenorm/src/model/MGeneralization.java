@@ -1,13 +1,12 @@
 package model;
 
-import javax.persistence.Embeddable;
+import static javax.persistence.InheritanceType.SINGLE_TABLE;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Inheritance;
-import static javax.persistence.InheritanceType.SINGLE_TABLE;
-import javax.persistence.MappedSuperclass;
 
 @Entity
 @Inheritance(strategy=SINGLE_TABLE)

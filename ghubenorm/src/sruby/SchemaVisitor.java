@@ -16,11 +16,9 @@ import org.jruby.ast.Node;
 import org.jruby.ast.TrueNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
-import org.jruby.util.KeyValuePair;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
-import model.MClass;
 import model.MColumn;
 import model.MDefinition;
 import model.MDefinitionType;
@@ -88,7 +86,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			Node nod = it.next();
 			String tabname = Helper.getValue(nod);
 			if (tabname!=null && tabname.length()>0) {							
-				table = daoMTable.persit(MTable.newMTable(repo.getRepo(),tabname));		
+				table = daoMTable.persist(MTable.newMTable(repo.getRepo(),tabname));		
 				repo.getTables().add(table);
 			}
 			if (table!=null)
@@ -157,7 +155,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 			name = Helper.getValue(it.next());
 		}
 		if (name!=null) {
-			ret= daoColumn.persit(tab.addColumn().setName(name));
+			ret= daoColumn.persist(tab.addColumn().setName(name));
 		} else {
 			return null;
 		}
@@ -185,7 +183,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				
 				boolean polymorphic = "true".equals(Helper.getHashArgument(hn.getPairs(), "polymorphic"));	
 				if (polymorphic) {
-					daoColumn.persit(tab.addColumn().setName(JRubyInflector.instance.polymorphicTypeName(ret.getName()) ));
+					daoColumn.persist(tab.addColumn().setName(JRubyInflector.instance.polymorphicTypeName(ret.getName()) ));
 				}
 			} else {				
 				type = Helper.getValue(n);

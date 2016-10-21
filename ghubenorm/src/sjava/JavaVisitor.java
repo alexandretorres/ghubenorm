@@ -1,6 +1,34 @@
 package sjava;
 
-import static sjava.JPATags.*;
+import static gitget.Log.LOG;
+import static sjava.JPATags.Access;
+import static sjava.JPATags.AssociationOverride;
+import static sjava.JPATags.AssociationOverrides;
+import static sjava.JPATags.AttributeOverride;
+import static sjava.JPATags.AttributeOverrides;
+import static sjava.JPATags.CollectionTable;
+import static sjava.JPATags.Column;
+import static sjava.JPATags.DiscriminatorColumn;
+import static sjava.JPATags.DiscriminatorValue;
+import static sjava.JPATags.ElementCollection;
+import static sjava.JPATags.Embedded;
+import static sjava.JPATags.EmbeddedId;
+import static sjava.JPATags.Entity;
+import static sjava.JPATags.GeneratedValue;
+import static sjava.JPATags.Id;
+import static sjava.JPATags.IdClass;
+import static sjava.JPATags.Inheritance;
+import static sjava.JPATags.JoinTable;
+import static sjava.JPATags.ManyToMany;
+import static sjava.JPATags.ManyToOne;
+import static sjava.JPATags.MappedSuperclass;
+import static sjava.JPATags.OneToMany;
+import static sjava.JPATags.OneToOne;
+import static sjava.JPATags.PrimaryKeyJoinColumn;
+import static sjava.JPATags.PrimaryKeyJoinColumns;
+import static sjava.JPATags.SecondaryTable;
+import static sjava.JPATags.SecondaryTables;
+import static sjava.JPATags.Table;
 
 import java.beans.Introspector;
 import java.util.ArrayList;
@@ -27,21 +55,15 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
-import com.github.javaparser.ast.visitor.GenericVisitorAdapter;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import common.LateVisitor;
 import dao.ConfigDAO;
 import dao.DAOInterface;
-
-import static gitget.Log.LOG;
-
 import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
-import model.MColumnDefinition;
 import model.MColumnMapping;
-import model.MDataSource;
 import model.MDiscriminator;
 import model.MDiscrminableGeneralization;
 import model.MFlat;
@@ -53,9 +75,7 @@ import model.MJoinedSource;
 import model.MOverride;
 import model.MProperty;
 import model.MTable;
-import model.MTableRef;
 import model.MVertical;
-import model.Repo;
 
 
 public class JavaVisitor extends VoidVisitorAdapter<Object>  {
@@ -164,7 +184,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				
 				if (!asecTabs.isEmpty()) {	
 					DAOInterface<MJoinedSource> DAOJoined = ConfigDAO.getDAO(MJoinedSource.class);
-					DAOJoined.persit(c.setJoinedSource());
+					DAOJoined.persist(c.setJoinedSource());
 					String entityName = entity.getValueAsString("name");
 					if (atab!=null)
 						comp.toTable(c, atab);
@@ -307,7 +327,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			typeName = utype.getType().toString();
 		}	
 		if (!isStatic) {			
-			MProperty prop = daoMProp.persit(clazz.newProperty().setName(pinf.name).setType(typeName));					
+			MProperty prop = daoMProp.persist(clazz.newProperty().setName(pinf.name).setType(typeName));					
 			prop.setTransient(trans);
 			if (pinf.var!=null && pinf.var.getId().getArrayCount()>0) {
 				prop.setMax(-1);
@@ -332,7 +352,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				comp.jrepo.visitors.add(new VisitOverrides(prop, comp, assocOver, assocOvers,false));
 			}
 			if (column!=null) {
-				daoMCol.persit(createColumnMapping(prop,column));											
+				daoMCol.persist(createColumnMapping(prop,column));											
 			}	
 			if (generated!=null) {
 				prop.getGenerated().setGenerated(true);
@@ -446,13 +466,13 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			MColumn col = MColumn.newMColumn();
 			col.setName(name);
 			col.setColummnDefinition(colDef);
-			JavaVisitor.daoMCol.persit(col);
+			JavaVisitor.daoMCol.persist(col);
 			MTable mainTab = subClass.getPersistence().getMainTable();			
 			if (mainTab!=null) {
 				col.setTable(mainTab);
 			}
 			MJoinColumn jc = MJoinColumn.newMJoinColumn(gen, col);
-			daoJoinCol.persit(jc);
+			daoJoinCol.persist(jc);
 			mainTab = superClass.getPersistence().getMainTable();
 			//TODO: this is a mess! question: can I DECLARE a column by referencing? don´t think so
 			//TODO: what is the order? Maybe references should be treated in a third stage, after declarations
@@ -576,14 +596,14 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						}
 						if (length!=null /*&& col.getLength()==null*/)
 							col.setLength(length);
-						JavaVisitor.daoMCol.persit(col);
+						JavaVisitor.daoMCol.persist(col);
 						dcol.setColumn(col);
 					} else if (dtype!=null || length!=null) {
 						col = MColumn.newMColumn();
 						col.setColummnDefinition(dtype);
 						if (length!=null)
 							col.setLength(length);
-						JavaVisitor.daoMCol.persit(col);
+						JavaVisitor.daoMCol.persist(col);
 						dcol.setColumn(col);
 					}
 				}

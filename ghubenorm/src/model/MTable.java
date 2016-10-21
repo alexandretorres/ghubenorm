@@ -1,19 +1,13 @@
 package model;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
 import common.ReflectiveVisitor;
-import dao.ConfigDAO;
-import dao.jpa.DAO;
 @Entity
 public class MTable extends MDataSource {
 	

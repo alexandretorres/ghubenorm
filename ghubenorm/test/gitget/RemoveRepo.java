@@ -1,14 +1,16 @@
 package gitget;
 
-import javax.activation.DataSource;
+import static gitget.Log.LOG;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 import javax.persistence.TypedQuery;
 
 import org.junit.Before;
 import org.junit.Test;
 
-import common.Util;
 import dao.ConfigDAO;
-import dao.DAOInterface;
 import dao.jpa.CascadeDeleteVisitor;
 import dao.jpa.DAO;
 import db.daos.RepoDAO;
@@ -16,16 +18,10 @@ import db.jpa.JPA_DAO;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MClass;
-import model.MColumn;
 import model.MColumnDefinition;
-import model.MDataSource;
 import model.MJoinColumn;
 import model.MProperty;
 import model.Repo;
-import static gitget.Log.LOG;
-
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 public class RemoveRepo {
 	@Before
 	public void setUp() throws Exception {

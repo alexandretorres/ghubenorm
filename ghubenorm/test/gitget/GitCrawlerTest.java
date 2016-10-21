@@ -1,7 +1,6 @@
 package gitget;
 
 import static gitget.Log.LOG;
-import static org.junit.Assert.*;
 
 import java.net.URL;
 

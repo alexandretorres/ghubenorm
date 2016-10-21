@@ -375,3 +375,13 @@ join MColumn toCol on toCol.id=jc.column_id
 left outer join MColumn inv on jc.inverse_id=inv.id
 left outer join MDataSource invTab on inv.table_id=invTab.id
 where clazz_id=<num>
+-- has classes
+ALTER TABLE repo
+   ADD COLUMN hasclasses boolean DEFAULT false;
+
+update repo r set hasclasses=true
+where exists 
+(select 1 from MClass c
+where  r.id=c.repo_id
+)
+

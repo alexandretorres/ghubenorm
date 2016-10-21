@@ -1,8 +1,5 @@
 package model;
 
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-
 import static gitget.Log.LOG;
 
 import java.io.PrintWriter;
@@ -17,20 +14,20 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
+import javax.persistence.Access;
+import javax.persistence.AccessType;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 
+import common.ReflectiveVisitor;
 import common.Util;
 import common.Visitable;
-import common.ReflectiveVisitor;
-import dao.ConfigDAO;
-import dao.jpa.DAO;
  
 
 @Entity
@@ -45,6 +42,8 @@ public class Repo implements Visitable {
 	private String url;
 	private Language language;	
 	private String branch;
+	@Access(AccessType.PROPERTY)
+	private Boolean hasClasses; 
 	/**
 	 * This is the internal path to the "base" file that defines the repository. For ruby it is the schema.db file,
 	 * for java it may be the presistence.xml. It is used to differentiate what portion of the repository is 
@@ -528,6 +527,16 @@ public class Repo implements Visitable {
 		if (name!=null)
 			name = (tabName==null ? "" : tabName+"." )+name;
 		return name;
+	}
+	public void checkHasClasses() {
+		hasClasses = this.classes.stream().anyMatch(c->c.isPersistent());		
+	}
+	
+	public Boolean getHasClasses() {		
+		return hasClasses;
+	}
+	public void setHasClasses(Boolean hasClasses) {
+		this.hasClasses = hasClasses;
 	}
 	@Override
 	public void accept(ReflectiveVisitor visitor) {

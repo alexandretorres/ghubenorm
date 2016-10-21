@@ -2,6 +2,8 @@ package db.jpa;
 
 import java.util.List;
 
+import javax.persistence.TypedQuery;
+
 import dao.DAOInterface;
 import dao.jpa.ConfigJPA;
 import dao.jpa.DAO;
@@ -49,5 +51,22 @@ class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 		return (int) getEm().createQuery("SELECT max(r.publicId) FROM Repo r").getSingleResult();
 	}
 
-	
+	@Override
+	public Repo merge(Repo repo) {
+		return getEm().merge(repo);
+		
+	}
+	public Repo reattachOrSave(Repo repo) {		
+		if (repo.getId()>0)
+			return getEm().merge(repo);
+		else
+			super.persist(repo);
+		return repo;
+	}
+
+	public List<Repo> findPage(int start,int max) {
+		TypedQuery<Repo> q =  getEm().createQuery("SELECT r FROM Repo r order by publicId",Repo.class);
+		q.setFirstResult(start).setMaxResults(max);
+		return q.getResultList();
+	}
 }

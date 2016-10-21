@@ -3,9 +3,7 @@ package model;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.Embeddable;
 import javax.persistence.Entity;
-
 import javax.persistence.OneToMany;
 
 import common.ReflectiveVisitor;

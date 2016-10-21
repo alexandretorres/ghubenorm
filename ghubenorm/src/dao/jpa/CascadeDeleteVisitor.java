@@ -1,7 +1,6 @@
 package dao.jpa;
 
 import common.ReflectiveVisitor;
-
 import dao.ConfigDAO;
 import gitget.Log;
 /**

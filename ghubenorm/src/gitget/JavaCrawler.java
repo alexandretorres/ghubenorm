@@ -3,26 +3,21 @@ package gitget;
 import static gitget.Log.LOG;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 import java.util.logging.Level;
 
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 
 import dao.ConfigDAO;
-import dao.DAOInterface;
-import dao.nop.ConfigNop;
+import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
 import model.Language;
 import model.Repo;
@@ -56,32 +51,38 @@ public class JavaCrawler {
 		
 		//ConfigDAO.config(new ConfigNop());
 		//https://github.com/rocioemera/SubscriptionSystem
-	
-		new JavaCrawler().processRepo(gh.getRepoInfo(repo) ,repo);		
+		JavaCrawler jc = new JavaCrawler(); 
+		jc.processRepo(jc.createRepo(gh.getRepoInfo(repo) ,repo));		
 		ConfigDAO.finish();
 		Prof.print();
 		//new JavaCrawler().processRepo(null,"BorisIvanov/com-iqbuzz-tickets");
 		
 	}
 	private static GitHubCaller gh = GitHubCaller.instance;
-	private DAOInterface<Repo> daoRepo;
+	private RepoDAO daoRepo;
 	private JavaLoader loader = new JavaLoader();
+	
+	public Repo createRepo(JsonObject repoJson,String fullName) {
+		Repo repo = new Repo(Language.JAVA);			
+		repo.setBranch(repoJson.getString("default_branch"));
+		repo.setName(fullName);			
+		repo.setUrl(repoJson.getString("html_url"));
+		repo.setPublicId(repoJson.getInt("id"));
+		return repo;
+	}
 	/**
 	 * Persistence.xml may not exist! Spring uses application.yaml or who knows!
 	 * @param repoJson
 	 * @param fullName
 	 */
-	public void processRepo(JsonObject repoJson,String fullName)  {
+	protected void processRepo(Repo repo)  {
+		String fullName = repo.getName();
 		try {			
 			Prof.open("checkIfPersistent");
 			String persistenceXML = null;			
 			if (daoRepo==null)
 				daoRepo = ConfigDAO.getDAO(Repo.class);	
-			Repo repo = new Repo(Language.JAVA);			
-			repo.setBranch(repoJson.getString("default_branch"));
-			repo.setName(fullName);			
-			repo.setUrl(repoJson.getString("html_url"));
-			repo.setPublicId(repoJson.getInt("id"));
+		
 			JavaRepo jrepo = new JavaRepo(repo);			
 			Dir root = Dir.newRoot();
 			jrepo.setRoot(root);
@@ -125,7 +126,9 @@ public class JavaCrawler {
 				}
 			}
 			daoRepo.beginTransaction();
-			daoRepo.persit(repo);
+			repo = daoRepo.reattachOrSave(repo);
+			jrepo.setRepo(repo);
+			//daoRepo.persist(repo);
 			Prof.close("checkIfPersistent");
 			if (persistenceXML!=null || !jrepo.JPAArtifacts.isEmpty() || !jrepo.JPAJars.isEmpty()) {
 				/*
@@ -141,6 +144,7 @@ public class JavaCrawler {
 				jrepo.getRepo().print();
 				
 			}
+			repo.checkHasClasses();
 			daoRepo.commitAndCloseTransaction();
 			//para cada path principal, pega um java, deduz o path real a partir do package
 		} catch (Exception ex) {

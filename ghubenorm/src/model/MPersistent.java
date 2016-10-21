@@ -1,11 +1,6 @@
 package model;
 
-import static gitget.Log.LOG;
-
-import javax.persistence.Column;
 import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
 import javax.persistence.OneToOne;
 
 @Embeddable

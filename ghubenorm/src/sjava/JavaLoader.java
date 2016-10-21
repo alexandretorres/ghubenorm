@@ -4,10 +4,10 @@ import static gitget.Log.LOG;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.logging.Level;
+
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.ast.CompilationUnit;
@@ -30,7 +30,7 @@ public class JavaLoader {
 				jrepo.getParsed().put(surl, comp);
 			}
 			return comp;				
-		// JavaParser MAY throw an TokenMgrError. This is a BAD design for JavaParser, since it should be a plain exception! I´m too lazy to see how many "errors" this lib is throwing
+		// JavaParser MAY throw an TokenMgrError. This is a BAD design for JavaParser, since it should be a plain exception! Iï¿½m too lazy to see how many "errors" this lib is throwing
 		// So we are catching all ERRORS and EXCEPTIONS here. In the future, list all Errors 
 		} catch (Throwable ex) {	
 			LOG.warning("could not visit file "+url);

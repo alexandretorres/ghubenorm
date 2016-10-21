@@ -1,28 +1,22 @@
 package sjava;
 
-import static gitget.Log.LOG;
-import static org.junit.Assert.*;
-
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 
 import org.junit.Test;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
 import dao.nop.ConfigNop;
-import dao.nop.DAONop;
 import db.jpa.JPA_DAO;
 import model.Language;
-import model.MClass;
 import model.Repo;
 
 
 public class JavaLoaderTest {
 	static {
-		ConfigDAO.config(JPA_DAO.instance);	
-		//ConfigDAO.config(new ConfigNop());	
+		//ConfigDAO.config(JPA_DAO.instance);	
+		ConfigDAO.config(new ConfigNop());	
 	}
 	private JavaLoader loader = new JavaLoader();
 	JavaRepo jrepo=new JavaRepo(new Repo(Language.JAVA));
@@ -53,7 +47,7 @@ public class JavaLoaderTest {
 			jrepo.getRepo().setName("TEST");
 			
 			daoRepo.beginTransaction();
-			daoRepo.persit(jrepo.getRepo());
+			daoRepo.persist(jrepo.getRepo());
 			//--
 			loader.setJrepo(jrepo);
 			//File baseFile = new File("trash/SmallTest.java");

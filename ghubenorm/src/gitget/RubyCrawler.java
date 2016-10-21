@@ -3,7 +3,6 @@ package gitget;
 import static gitget.Log.LOG;
 
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
@@ -15,7 +14,7 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 
 import dao.ConfigDAO;
-import dao.DAOInterface;
+import db.daos.RepoDAO;
 import model.Language;
 import model.Repo;
 import sjava.Prof;
@@ -26,18 +25,23 @@ class RubyCrawler  {
 	
 	private static RubyRepoLoader loader = RubyRepoLoader.getInstance();
 	private static GitHubCaller gh = GitHubCaller.instance;
-	private DAOInterface<Repo> daoRepo;
-	public void processRepo(JsonObject repoJson,String fullName)  {
+	private RepoDAO daoRepo;
+	public Repo createRepo(JsonObject repoJson,String fullName) {
+		Repo repo = new Repo(Language.RUBY);		
+		repo.setPublicId(repoJson.getInt("id"));
+		repo.setLanguage(Language.RUBY);
+		repo.setName(fullName);
+		repo.setUrl(repoJson.getString("html_url"));
+		repo.setBranch(repoJson.getString("default_branch"));
+		return repo;
+	}
+	public void processRepo(Repo repo)  {
+		String fullName = repo.getName();
 		Prof.open("processRubyRepo");
 		try {			
 			if (daoRepo==null)
 				daoRepo = ConfigDAO.getDAO(Repo.class);
-			Repo repo = new Repo(Language.RUBY);
-			repo.setPublicId(repoJson.getInt("id"));
-			repo.setLanguage(Language.RUBY);
-			repo.setName(fullName);
-			repo.setUrl(repoJson.getString("html_url"));
-			repo.setBranch(repoJson.getString("default_branch"));
+			
 			Prof.open("listFileTreeRuby");
 			JsonObject result = gh.listFileTree(fullName,repo.getBranchGit());
 			Prof.close("listFileTreeRuby");
@@ -73,8 +77,9 @@ class RubyCrawler  {
 				
 			}			
 			daoRepo.beginTransaction();			
-			
-			daoRepo.persit(repo);
+			repo = daoRepo.reattachOrSave(repo);
+		
+			//daoRepo.persist(repo);
 			if (repo.getConfigPath()!=null) {
 				RubyRepo rrepo = loader.setRepo(repo);
 				rrepo.setRoot(root);
@@ -86,7 +91,7 @@ class RubyCrawler  {
 				LOG.info(" no suitable dbPath for "+fullName);
 			}
 			
-			
+			repo.checkHasClasses();
 			daoRepo.commitAndCloseTransaction();
 			
 		} catch (Exception ex) {
@@ -177,7 +182,7 @@ class RubyCrawler  {
 				repo.setName(fullName);
 				repo.setUrl(repoJson.getString("html_url"));
 				repo.setBranch(repoJson.getString("default_branch"));
-				daoRepo.persit(repo);
+				daoRepo.persist(repo);
 				if (rdr==null) { //File not Found
 					LOG.info(" no suitable dbPath for "+fullName);
 					//return;
@@ -228,7 +233,7 @@ class RubyCrawler  {
 						} else 
 							LOG.info(" Rejected:"+fullName+"/raw/"+repo.getBranchGit()+"/"+dbpath);						
 					}
-					daoRepo.persit(repo);
+					daoRepo.persist(repo);
 					if (repo.getConfigPath()!=null) {
 						LOG.info(" dbPath:"+fullName+"/raw/"+repo.getBranchGit()+"/"+repo.getConfigPath());
 						loadRepo_old(repo);

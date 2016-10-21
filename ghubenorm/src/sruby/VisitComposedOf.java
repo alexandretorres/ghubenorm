@@ -2,7 +2,10 @@ package sruby;
 
 import java.util.Iterator;
 
-import org.jruby.ast.*;
+import org.jruby.ast.ArrayNode;
+import org.jruby.ast.HashNode;
+import org.jruby.ast.IArgumentNode;
+import org.jruby.ast.Node;
 import org.jruby.util.KeyValuePair;
 
 import common.LateVisitor;
@@ -12,9 +15,6 @@ import model.MAssociationDef;
 import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
-import model.MColumnDefinition;
-import model.MDataSource;
-import model.MOverride;
 import model.MProperty;
 import model.MTable;
 
@@ -42,7 +42,7 @@ public class VisitComposedOf implements LateVisitor {
 		Node nameNode = it.next();
 		String pname = Helper.getValue(nameNode);
 		String typeName = pname;
-		MProperty prop=daoProp.persit(clazz.newProperty().setName(pname).setMax(1));
+		MProperty prop=daoProp.persist(clazz.newProperty().setName(pname).setMax(1));
 		type = repo.getClazzFromUnderscore(clazz,typeName);
 		if (type!=null)
 			prop.setTypeClass(type);
@@ -70,7 +70,7 @@ public class VisitComposedOf implements LateVisitor {
 						filter(c->c.getName().equalsIgnoreCase(str[0]))
 						.findAny().orElse(null);
 				if (col==null) { // the column may be defined by the specizalizations (like a @Column in a @MappedSuperClass
-					col = daoColumn.persit( MColumn.newMColumn().setName(str[0]));
+					col = daoColumn.persist( MColumn.newMColumn().setName(str[0]));
 				}
 				MProperty embedRef=null;
 				final String delName= str[0];

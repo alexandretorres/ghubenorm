@@ -1,13 +1,10 @@
 package gitget;
 
-import static org.junit.Assert.*;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import dao.ConfigDAO;
 import dao.nop.ConfigNop;
-import db.jpa.JPA_DAO;
 import sjava.Prof;
 
 public class JavaCrawlerOneTest {
@@ -46,7 +43,8 @@ public class JavaCrawlerOneTest {
 		};
 		try {
 			for (String repo:repos) {
-				new JavaCrawler().processRepo(GitHubCaller.instance.getRepoInfo(repo) ,repo);	
+				JavaCrawler jc = new JavaCrawler(); 
+				jc.processRepo(jc.createRepo(GitHubCaller.instance.getRepoInfo(repo) ,repo));	
 			}
 			Prof.print();
 		} finally {

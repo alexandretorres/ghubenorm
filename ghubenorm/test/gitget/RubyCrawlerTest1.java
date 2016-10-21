@@ -1,19 +1,16 @@
 package gitget;
 
-import static org.junit.Assert.*;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import dao.ConfigDAO;
-import dao.nop.ConfigNop;
-import db.jpa.JPA_DAO;
+import db.daos.MyConfigNop;
 
 public class RubyCrawlerTest1 extends RubyCrawler {
 	GitHubCaller gh = GitHubCaller.instance;
 	@Before
 	public void setUp() throws Exception {
-		ConfigDAO.config(new ConfigNop());
+		ConfigDAO.config(new MyConfigNop());
 		//ConfigDAO.config(JPA_DAO.instance);
 	}
 
@@ -55,7 +52,7 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 				
 		};
 		for (String repo:repos) 
-			processRepo(gh.getRepoInfo(repo) ,repo);
+			processRepo(createRepo(gh.getRepoInfo(repo) ,repo));
 		
 	}
 

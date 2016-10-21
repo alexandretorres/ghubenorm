@@ -1,26 +1,15 @@
 package sruby;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-
-import org.jruby.ast.*;
-import org.jruby.util.KeyValuePair;
-
-import common.LateVisitor;
-
 import static gitget.Log.LOG;
 
+import java.util.Iterator;
 
-import dao.ConfigDAO;
-import dao.DAOInterface;
+import org.jruby.ast.IArgumentNode;
+import org.jruby.ast.Node;
+
 import model.MAssociation;
-import model.MAssociationDef;
 import model.MClass;
 import model.MColumn;
-import model.MDataSource;
-import model.MJoinColumn;
-import model.MPersistent;
 import model.MProperty;
 import model.MTable;
 //TODO: estes "visits" tem que ser executados depois que todas as classes forem visitadas.
@@ -149,7 +138,7 @@ public class VisitBelongsTo extends AbstractVisitAssoc {
 		}			
 		prop  = findProperty(pname);	
 		if (prop==null)
-			prop=daoProp.persit(clazz.newProperty());
+			prop=daoProp.persist(clazz.newProperty());
 		prop.setName(pname);
 		MClass type=null;
 		if (className!=null)	{
@@ -176,7 +165,7 @@ public class VisitBelongsTo extends AbstractVisitAssoc {
 			}
 			if (dcolumn==null) {
 				LOG.info("creating a discriminator column "+dname+" from table "+source+" of class "+clazz );				
-				dcolumn = daoColumn.persit(MColumn.newMColumn().setName(dname).setTable(source));				
+				dcolumn = daoColumn.persist(MColumn.newMColumn().setName(dname).setTable(source));				
 			} else {
 				MProperty delProp = clazz.findProperty(dname);
 				if (delProp!=null && dcolumn.equals(delProp.getColumnDef())) {

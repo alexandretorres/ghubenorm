@@ -2,17 +2,12 @@ package sruby;
 
 import static gitget.Log.LOG;
 
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.logging.Level;
 
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-
-import org.jruby.Ruby;
-import org.jruby.runtime.builtin.IRubyObject;
 /**
  * to install gem on jruby:
  * jruby -S gem install rails

@@ -2,7 +2,6 @@ package dao.jpa;
 
 import static gitget.Log.LOG;
 
-import java.lang.reflect.ParameterizedType;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,7 +78,7 @@ public class DAO<C> implements DAOInterface<C>{
 	public C find(Object pk) {
 		return em.find(clazz, pk);
 	}
-	public C persit(C obj) {
+	public C persist(C obj) {
 		em.persist(obj);
 		return obj;
 	}

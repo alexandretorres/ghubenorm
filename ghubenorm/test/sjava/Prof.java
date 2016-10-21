@@ -1,9 +1,9 @@
 package sjava;
 
+import static gitget.Log.LOG;
+
 import java.util.HashMap;
 import java.util.Map.Entry;
-
-import static gitget.Log.LOG;
 /**
  * A simple and totally unreliable profiler. 
  * @author torres

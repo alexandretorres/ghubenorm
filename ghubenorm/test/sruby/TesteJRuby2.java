@@ -1,39 +1,23 @@
 package sruby;
 
 
-import dao.ConfigDAO;
-import dao.DAOInterface;
-import dao.nop.ConfigNop;
-import db.daos.RepoDAO;
-
-import db.jpa.JPA_DAO;
-import gitget.Auth;
-import gitget.Log;
-import model.Language;
-import model.Repo;
-
 import static gitget.Log.LOG;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
-
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.RollbackException;
 
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.junit.Test;
+
+import dao.ConfigDAO;
+import dao.DAOInterface;
+import db.daos.MyConfigNop;
+import db.daos.RepoDAO;
+import db.jpa.JPA_DAO;
+import model.Language;
+import model.Repo;
 
 public class TesteJRuby2 { 
 	static int REPO_NUM=4;
@@ -57,8 +41,8 @@ public class TesteJRuby2 {
 	public void test()  {
 		Node n=null;
 		try {
-			ConfigDAO.config(JPA_DAO.instance);
-		//	ConfigDAO.config(new ConfigNop());
+		//	ConfigDAO.config(JPA_DAO.instance);
+			ConfigDAO.config(new MyConfigNop());
 			DAOInterface<Repo> dao = ConfigDAO.getDAO(Repo.class);
 			
 			dao.beginTransaction();
@@ -66,7 +50,7 @@ public class TesteJRuby2 {
 			RubyRepo repo =	loader.setRepo(new Repo(Language.RUBY));
 			repo.getRepo().setPublicId(REPO_NUM);
 			repo.getRepo().setName(names[REPO_NUM]);
-			dao.persit(repo.getRepo());
+			dao.persist(repo.getRepo());
 	        //first warm up the parser
 			FileInputStream in = new FileInputStream("warmup.rb");
 			n= loader.parse(in);			
@@ -122,7 +106,7 @@ public class TesteJRuby2 {
 			Repo repo = new Repo(Language.RUBY);
             repo.setName("abc123");
          //   repo.setUrl("http");
-            dao.persit(repo);
+            dao.persist(repo);
             dao.find(repo.getId());
             System.out.println(dao.findByURL("http"));
 			dao.commitAndCloseTransaction();

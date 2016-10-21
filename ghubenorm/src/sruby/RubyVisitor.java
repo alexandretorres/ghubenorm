@@ -1,16 +1,11 @@
 package sruby;
 
-import static gitget.Log.LOG;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 
 import org.jruby.ast.AttrAssignNode;
@@ -22,14 +17,12 @@ import org.jruby.ast.FCallNode;
 import org.jruby.ast.IArgumentNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 
 import dao.ConfigDAO;
 import dao.DAOInterface;
-import gitget.Log;
 import model.MClass;
 import model.MColumn;
 import model.MColumnDefinition;
@@ -110,7 +103,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			path = path.substring(0, path.lastIndexOf("."));			
 		}		
 		String name = n.getCPath().getName();
-		MClass clazz = daoMClass.persit(MClass.newMClass(currentURL,repo.getRepo()).setName(name));
+		MClass clazz = daoMClass.persist(MClass.newMClass(currentURL,repo.getRepo()).setName(name));
 		clazz.setPackageName(path);
 		repo.getClasses().add(clazz);
 		repo.incomplete.put(clazz,n);
@@ -163,12 +156,12 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			if (tabname!=null) {				
 				MTable tab = repo.getTable(tabname);
 				if (tab==null)
-					tab=daoMTable.persit(clazz.newTableSource(tabname));
+					tab=daoMTable.persist(clazz.newTableSource(tabname));
 				else
 					clazz.getPersistence().setDataSource(tab);
 				// add properties from the "class"
 				for (MColumnDefinition col:tab.getColumns()) {
-					daoMProp.persit(
+					daoMProp.persist(
 							clazz.newProperty().
 							setName(col.getName()).
 							setType(col.getColummnDefinition()).
@@ -271,7 +264,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 				case "attr_reader": case "attr_writer": case "attr_accessor":
 					for (Node cn:n.getArgsNode().childNodes()) {
 						String propName = Helper.getValue(cn);
-						daoMProp.persit(clazz.newProperty().setName(propName));
+						daoMProp.persist(clazz.newProperty().setName(propName));
 					}
 					break;
 				case "default_scope":
