@@ -38,9 +38,9 @@ public class Helper {
 		return false;
 	}
 	static public String getName(Node node) {		
-		if (node instanceof SymbolNode) {
-			return ((SymbolNode)node).getName();		
-		} 
+		if (node instanceof INameNode) {
+			return ((INameNode)node).getName();
+		}
 		return null;
 	}
 	static String getValue(Node node) {	
@@ -131,7 +131,7 @@ public class Helper {
 			buf.append(rn.getNumerator());
 			buf.append("/");
 			buf.append(rn.getDenominator());	
-			return buf.toString();
+			return buf.toString();		
 		} else {
 			LOG.warning("could not get value for ruby node of type "+node.getClass());
 			return "";  //visit(node);

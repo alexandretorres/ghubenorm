@@ -42,5 +42,10 @@
 			<type>2</type>
 			<location>C:/java/hibernate-release-5.1.0.Final/javax.persistence-2.1.0-sources</location>
 		</link>
+		<link>
+			<name>ufrgs</name>
+			<type>2</type>
+			<location>C:/Users/torres/Dropbox/ufrgs/logs</location>
+		</link>
 	</linkedResources>
 </projectDescription>

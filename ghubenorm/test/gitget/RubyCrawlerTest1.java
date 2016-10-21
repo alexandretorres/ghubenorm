@@ -17,7 +17,8 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 	@Test
 	public void test() {
 		String repos[] = {
-				"fatfreecrm/fat_free_crm"
+				"odambrine/pfolio"
+				//"fatfreecrm/fat_free_crm"
 				//"tslocke/hobo"
 				//"trevorturk/eldorado",
 				//---
