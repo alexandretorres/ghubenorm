@@ -55,8 +55,7 @@ public class VisitOverrides implements LateVisitor {
 		}
 		return propPath;
 	}
-	public void loadOverrides(Annotation override) {
-		
+	public void loadOverrides(Annotation override) {		
 		if (override!=null) {
 			String aname = override.getValueAsString("name");
 			
@@ -74,7 +73,7 @@ public class VisitOverrides implements LateVisitor {
 			
 			MProperty[] propPath = findPropPath(path, prop);
 			if (propPath==null) {				
-				LOG.info("Could not find Override path  "+aname+" for property "+prop.getName()+" in class "+prop.getParent());
+				LOG.info("Could not find Override path "+aname+" for property "+prop.getName()+" in class "+prop.getParent());
 				return;
 			}
 			if (attribute) {

@@ -4,6 +4,7 @@ import static gitget.Log.LOG;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 
 import javax.persistence.TypedQuery;
 
@@ -18,9 +19,11 @@ import db.jpa.JPA_DAO;
 import model.MAssociation;
 import model.MAssociationDef;
 import model.MClass;
+import model.MColumn;
 import model.MColumnDefinition;
 import model.MJoinColumn;
 import model.MProperty;
+import model.MTable;
 import model.Repo;
 public class RemoveRepo {
 	@Before
@@ -31,11 +34,15 @@ public class RemoveRepo {
 	@Test
 	public void test() {
 		String repos[] = {	
-				"jadeforrest/OpenACS-on-Rails",
+				
+
+
+
+			/*	"jadeforrest/OpenACS-on-Rails",
 				"steven-zhou/amazon",
 				"fisherv1/amazon_project",
 				"jgilliam/nb-deprecated",
-				"alexs/salva-old"
+				"alexs/salva-old"*/
 
 		/*		"SRabbelier/Netbeans",
 				"netspective/medigy-java",
@@ -60,7 +67,7 @@ public class RemoveRepo {
 		RepoDAO dao = ConfigDAO.getDAO(Repo.class);
 		dao.beginTransaction();
 		for (Repo r:dao.findByName(repoName)) {
-			CascadeDeleteVisitor del = new RemoveRepoVisitor(r);			
+			CascadeDeleteVisitor del = new CleanRepoVisitor(r);			
 			//dao.removeCascade(r);
 			LOG.info("visitor executed, now issuing commit for:"+r.getId()+" name "+repoName);
 			f=true;
@@ -73,14 +80,51 @@ public class RemoveRepo {
 			LOG.info("repo removed:"+repoName);
 	}
 }
+/**
+ * Just cleans the repo (removing classes, sources and everything else)
+ * @author torres
+ *
+ */
+class CleanRepoVisitor extends RemoveRepoVisitor {
+
+	CleanRepoVisitor(Repo r) {
+		super(r);
+		// TODO Auto-generated constructor stub
+	}
+	public void visitRepo(Repo r) {
+		r.getClasses().clear();
+		r.getDataSources().clear();
+	}
+	
+}
+/**
+ * Removes the repo from database
+ * @author torres
+ *
+ */
 class RemoveRepoVisitor extends CascadeDeleteVisitor {
-	RemoveRepoVisitor(Repo r) {
+	RemoveRepoVisitor(Repo r) {		
 		int cnt=DAO.getEm().createQuery(
 				"update MClass c set c.superClass=null "
 				+ "where c.superClass is not null"
 				+ "  and c.repo=:repo").setParameter("repo", r) .executeUpdate();
+		
 		DAO.getEm().flush();
 		LOG.info("seted "+cnt+" superclasses to null");
+		
+		cnt=DAO.getEm().createQuery(
+				"delete from MOverride o2 "				
+				+ "where o2.id in (select o.id from MOverride o "
+				+ "where o.clazz.repo=:repo)").setParameter("repo", r) .executeUpdate();
+		if (cnt>0)
+			LOG.info("removed  "+cnt+" overrides");
+		cnt=DAO.getEm().createQuery(
+				"delete from MDefinition d2 "				
+				+ "where d2.id in (select d.id from MDefinition d "
+				+ "where d.table.repo=:repo)").setParameter("repo", r) .executeUpdate();
+		if (cnt>0)
+			LOG.info("removed  "+cnt+" constraint defs");
+		DAO.getEm().flush();
 		DAO.getEm().refresh(r);
 		r.accept(this);	
 	}

@@ -37,6 +37,8 @@ public class GitHubCrawler implements Runnable {
 	public static final boolean RELOAD_REPOS=false;
 	public static final long MAX_REPOS=10000000;	 
 	public static final long MAX_ERRORS=10;	
+	// The maximum number of files retrieved by github query API
+	public static final long MAX_RETRIEVE=1000;
 	static {
 		ConfigDAO.config(JPA_DAO.instance);		
 	}

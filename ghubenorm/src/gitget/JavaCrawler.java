@@ -77,6 +77,7 @@ public class JavaCrawler {
 	 * @param fullName
 	 */
 	protected SkipReason processRepo(Repo repo)  {
+		SkipReason skip = SkipReason.NONE;
 		String fullName = repo.getName();
 		try {			
 			Prof.open("checkIfPersistent");
@@ -141,8 +142,9 @@ public class JavaCrawler {
 				findBasePaths(jrepo);
 				Prof.close("findBasePaths");
 				*/
-				Prof.open("findJavaPersistenceRefs");
-				findJavaPersistenceRefs(jrepo);
+				Prof.open("findJavaPersistenceRefs");				
+				SkipReason procResult = findJavaPersistenceRefs(jrepo);
+				jrepo.getRepo().setSkipReason(procResult);				
 				Prof.close("findJavaPersistenceRefs");
 				//readAllJavaFiles(jrepo); or...		
 				
@@ -158,7 +160,7 @@ public class JavaCrawler {
 			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);
 			return SkipReason.ERROR;
 		}
-		return SkipReason.NONE;
+		return skip;
 	}
 	protected void readAllJavaFiles(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		for (Dir f:jrepo.getRoot().toLeafList()) {
@@ -169,21 +171,21 @@ public class JavaCrawler {
 			}
 		}
 	}
-	protected void findJavaPersistenceRefs(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
+	protected SkipReason findJavaPersistenceRefs(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		int p=1;
 		int total=0;
 		do {
 			URL url = gh.newURL("api.github.com","/search/code", "page=" + p + "&per_page=100"
 					+ "&q=javax.persistence+in:file+language:java+repo:" + jrepo.getRepo().getName() + "&access_token=" + gh.oauth);
-			/*
-			URL url = new URL("https://api.github.com/search/code?page=" + p + "&per_page=100"
-					+ "&q=javax.persistence+in:file+language:java+repo:" + jrepo.getRepo().getName() + "&access_token=" + gh.oauth);
-			*/
-			//try (InputStream is = url.openStream(); JsonReader rdr = Json.createReader(is)) {
+			
+			//Max is 1000! if total >1000, the repo cannot be loaded
 			try (JsonReader rdr = gh.callApi(url,true)) {
 				JsonObject obj = rdr.readObject();
-				if (total==0)
+				if (total==0) {
 					total = obj.getInt("total_count");
+					if (total>1000)
+						return SkipReason.TOO_MANY_FILES;
+				}
 				JsonArray results = obj.getJsonArray("items");
 	
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
@@ -198,10 +200,11 @@ public class JavaCrawler {
 					//System.out.println(result);
 					total--;
 				}
+				p++;
 			}
 		} while (total>0);
 		jrepo.solveRefs();
-		
+		return SkipReason.NONE;
 		
 	}
 	protected void findPOMArtifacts(JavaRepo jrepo,String path) {

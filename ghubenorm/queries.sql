@@ -384,4 +384,11 @@ where exists
 (select 1 from MClass c
 where  r.id=c.repo_id
 )
+-- how many classes (in total) a java repo has - check for page limit of 1000 on ruby API
+select r2.id,r2.name,cnt from
+repo r2 join (
+select r.id,count(*) as cnt from repo r join mclass c on r.id=c.repo_id
+group by r.id) as res on res.id=r2.id 
+where r2.language=0
+order by cnt desc
 

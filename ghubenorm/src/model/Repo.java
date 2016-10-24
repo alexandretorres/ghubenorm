@@ -560,6 +560,8 @@ public class Repo implements Visitable {
 		return skipReason;
 	}
 	public void setSkipReason(SkipReason skipReason) {
+		if (skipReason==SkipReason.NONE)
+			skipReason=null;
 		this.skipReason = skipReason;
 	}
 	@Override
