@@ -99,6 +99,7 @@ class RubyCrawler  {
 			daoRepo.commitAndCloseTransaction();
 			
 		} catch (Exception ex) {
+			daoRepo.rollbackAndCloseTransaction();
 			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);	
 			return SkipReason.ERROR;
 		}

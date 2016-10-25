@@ -34,7 +34,7 @@ public class RemoveRepo {
 	@Test
 	public void test() {
 		String repos[] = {	
-				
+				"identityxx/velo1"
 
 
 
@@ -67,7 +67,7 @@ public class RemoveRepo {
 		RepoDAO dao = ConfigDAO.getDAO(Repo.class);
 		dao.beginTransaction();
 		for (Repo r:dao.findByName(repoName)) {
-			CascadeDeleteVisitor del = new CleanRepoVisitor(r);			
+			CascadeDeleteVisitor del = new RemoveRepoVisitor(r);			
 			//dao.removeCascade(r);
 			LOG.info("visitor executed, now issuing commit for:"+r.getId()+" name "+repoName);
 			f=true;

@@ -249,7 +249,7 @@ public class GitHubCrawler implements Runnable {
 		
 	}
 	public void skipRepo(SkipReason reason,Language lang,String name,String url,int publicId,String branch) {
-		try {
+		try {			
 			repoDao.beginTransaction();
 			Repo repo = new Repo(lang);			
 			repo.setBranch(branch);

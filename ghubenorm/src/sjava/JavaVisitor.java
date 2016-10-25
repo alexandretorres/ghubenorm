@@ -55,6 +55,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.PrimitiveType;
 import com.github.javaparser.ast.type.ReferenceType;
 import com.github.javaparser.ast.type.Type;
+import com.github.javaparser.ast.type.VoidType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import common.LateVisitor;
@@ -386,8 +387,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			List<Annotation> annots = procAnnotations(ctx);
 			if (!annots.isEmpty())
 				comp.hasMethodAnnotations=true;
-			String bname = getBeanName(ctx.getName());
-			if (bname!=null)
+			String bname = getBeanName(ctx.getName()); 
+			if (bname!=null && !(type instanceof VoidType))
 				info.propInfo.add(new PropInfo(bname,ctx, annots, type, modifiers, null));
 			//if (comp.propertyAccess || !comp.hasFieldAnnotations)
 			//ONLY IF USING METHOD ANNOTATION

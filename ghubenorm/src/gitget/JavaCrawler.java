@@ -156,7 +156,8 @@ public class JavaCrawler {
 			repo.checkHasClasses();
 			daoRepo.commitAndCloseTransaction();
 			//para cada path principal, pega um java, deduz o path real a partir do package
-		} catch (Exception ex) {
+		} catch (Exception ex) {			
+			daoRepo.rollbackAndCloseTransaction();			
 			LOG.log(Level.SEVERE,"Repository "+fullName+":"+ex.getMessage(),ex);
 			return SkipReason.ERROR;
 		}

@@ -84,7 +84,11 @@ public class VisitOverrides implements LateVisitor {
 				daoMAttrOverride.persist(over);
 			} else {
 				MAssociationOverride over = MAssociationOverride.newMAssociationOverride(clazz,propPath);
-				
+				if (prop==null) {
+					LOG.warning("Could not find Association Override path "+aname+" with null property in class "+clazz);
+					return;
+				}
+					
 				MClass fromClass = prop.getParent(); 
 				MClass toClass = propPath[propPath.length-1].getTypeClass();//prop.getTypeClass();
 				List<ElementValue> jcs = override.extractListValue("joinColumns");
