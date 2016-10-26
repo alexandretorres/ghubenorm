@@ -331,6 +331,7 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 	}
 }
 class VisitThrough implements LateVisitor {
+	private int stack=0;
 	private RubyRepo repo;
 	String through;
 	String source;
@@ -347,12 +348,23 @@ class VisitThrough implements LateVisitor {
 		this.sourceType=sourceType;
 	}
 	public boolean execVisitor(MProperty p) {
+		
 		if (p.equals(this.prop))
 			return false;
+		
 		VisitThrough r = repo.currentVisitors.stream().filter(o->o instanceof VisitThrough).
 				map(o->(VisitThrough) o).filter(o->o.prop.equals(p)).findFirst().orElse(null);
-		if (r!=null)
-			return r.exec();
+		if (r!=null) {
+			stack++;
+			if (stack>6) {
+				LOG.warning("Stack overflow prevented visiting through "+through+" of property "+p+ " on class "+p.getParent().getFilePath());
+				return false;
+			}
+			boolean ret =r.exec();
+			stack--;
+			return ret;
+		}
+		
 		return false;
 		
 	}
