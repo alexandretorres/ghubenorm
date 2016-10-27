@@ -179,9 +179,12 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 					addIndex(nidx,tab, ret);
 				}
 				ret.setDefaultValue(Helper.getHashArgument(hn.getPairs(), "default"));
-				ret.setPrecision(Helper.getHashArgument(hn.getPairs(), "precision",Integer.class));
-				ret.setScale(Helper.getHashArgument(hn.getPairs(), "scale",Integer.class));
-				
+				try {
+					ret.setPrecision(Helper.getHashArgument(hn.getPairs(), "precision",Integer.class));
+				} catch (Exception ex) {}
+				try {
+					ret.setScale(Helper.getHashArgument(hn.getPairs(), "scale",Integer.class));
+				} catch (Exception ex) {}
 				boolean polymorphic = "true".equals(Helper.getHashArgument(hn.getPairs(), "polymorphic"));	
 				if (polymorphic) {
 					daoColumn.persist(tab.addColumn().setName(JRubyInflector.instance.polymorphicTypeName(ret.getName()) ));

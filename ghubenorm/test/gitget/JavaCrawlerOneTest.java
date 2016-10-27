@@ -6,20 +6,21 @@ import org.junit.Test;
 import dao.ConfigDAO;
 import dao.nop.ConfigNop;
 import db.daos.MyConfigNop;
+import db.jpa.JPA_DAO;
 import sjava.Prof;
 
 public class JavaCrawlerOneTest {
 
 	@Before
 	public void setUp() throws Exception {
-		ConfigDAO.config(new MyConfigNop());
+		ConfigDAO.config(new MyConfigNop()); 
 		//ConfigDAO.config(JPA_DAO.instance);
 	}
 
 	@Test
 	public void test() {	
 		String repos[]= new String[] {
-				"mathibodeau/petstore"
+				"liferay/liferay-portal"
 		//	"identityxx/velo1"
 				//	"daveangulo/ivolunteer_ori"
 				//"apache/openjpa" //TOO MANY FILES
