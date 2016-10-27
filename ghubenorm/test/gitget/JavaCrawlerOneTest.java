@@ -19,7 +19,8 @@ public class JavaCrawlerOneTest {
 	@Test
 	public void test() {	
 		String repos[]= new String[] {
-			"identityxx/velo1"
+				"mathibodeau/petstore"
+		//	"identityxx/velo1"
 				//	"daveangulo/ivolunteer_ori"
 				//"apache/openjpa" //TOO MANY FILES
 				//"magnusart/ConsumerMaster"

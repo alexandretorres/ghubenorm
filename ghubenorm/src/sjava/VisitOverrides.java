@@ -114,7 +114,10 @@ public class VisitOverrides implements LateVisitor {
 	@Override
 	public boolean exec() {
 		if (overrides!=null) {
-			for (ElementValue v:overrides.getListValue()) {
+			List<ElementValue> ovr = overrides.getListValue();
+			if (ovr==null)
+				ovr =overrides.extractListValue("value");
+			for (ElementValue v:ovr) {
 				loadOverrides(v.annotation);
 			}			
 		}
