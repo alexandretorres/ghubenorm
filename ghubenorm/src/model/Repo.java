@@ -42,6 +42,7 @@ public class Repo implements Visitable {
 	@Column(unique=true,nullable=false)
 	private int publicId;
 	private String name;
+	@Column(length=1024)
 	private String url;
 	private Language language;	
 	private String branch;
@@ -56,6 +57,7 @@ public class Repo implements Visitable {
 	 * under analysis. Notice that a repository MAY have more than one "database", in distinct source directories. 
 	 * Sometimes these will be just "test" databases. 
 	 */
+	@Column(length=1024)
 	private String configPath;
 	
 	@OneToMany(fetch=FetchType.EAGER,mappedBy="repo",cascade=CascadeType.ALL)
@@ -376,8 +378,8 @@ public class Repo implements Visitable {
 		if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
 			buf.append(":"+col.getColummnDefinition());
 		buf.append( col.getColumn().getLength()==null ? "" : "("+col.getLengthDef()+")");
-		if (col.getColumn().getDefaulValue()!=null) {
-			buf.append(" default:"+col.getColumn().getDefaulValue());
+		if (col.getColumn().getDefaultValue()!=null) {
+			buf.append(" default:"+col.getColumn().getDefaultValue());
 		}
 		if (col.getColumn().isNullable()!=null)
 			buf.append(col.isNullableDef() ? "{nullable}" : "{not null}");

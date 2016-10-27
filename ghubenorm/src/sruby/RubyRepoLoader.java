@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.logging.Level;
 
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.ast.Node;
 import org.jruby.lexer.yacc.SyntaxException;
@@ -38,7 +39,9 @@ public class RubyRepoLoader {
 	private Set<URL> visitList ;
 	
 	private RubyRepoLoader() {		
-		runtime = Ruby.newInstance();		      
+		runtime = Ruby.newInstance();	  
+		runtime.setDefaultInternalEncoding(UTF8Encoding.INSTANCE);
+
 		
 	}
 	public static RubyRepoLoader getInstance() {

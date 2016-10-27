@@ -17,4 +17,10 @@ public class Util {
 	public static void removeAll(Collection col) {
 		col.removeAll(col);
 	}
+	public static String capSize(String str,int size) {
+		if (str!=null && str.length()>size)
+			str = str.substring(0,size);
+		return str;
+		
+	}
 }

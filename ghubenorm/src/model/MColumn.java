@@ -5,6 +5,8 @@ import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 
+import common.Util;
+
 @Entity
 public class MColumn extends MColumnDefinition{
 	//TODO: Use nullable types for length, precision and so forth. 
@@ -16,6 +18,7 @@ public class MColumn extends MColumnDefinition{
 	private Boolean nullable;
 	private Boolean insertable;
 	private Boolean updatable;
+	@Column(length=1024)
 	private String colummnDefinition;
 	private Integer length;
 	private Integer precision;
@@ -27,7 +30,8 @@ public class MColumn extends MColumnDefinition{
 	/**
 	 * This property was not included on the original ENORM
 	 */
-	private String defaulValue;
+	@Column(length=2048)
+	private String defaultValue;
 	
 	private static MColumn createDefaultColumn() {
 		MColumn c = new MColumn();
@@ -49,6 +53,7 @@ public class MColumn extends MColumnDefinition{
 		return name;
 	}
 	public MColumn setName(String name) {
+		name= Util.capSize(name,255);
 		this.name = name;
 		return this;
 	}
@@ -77,6 +82,7 @@ public class MColumn extends MColumnDefinition{
 		return colummnDefinition;
 	}
 	public MColumn setColummnDefinition(String colummnDefinition) {
+		colummnDefinition= Util.capSize(colummnDefinition,1024);		
 		this.colummnDefinition = colummnDefinition;
 		return this;
 	}
@@ -108,11 +114,12 @@ public class MColumn extends MColumnDefinition{
 		this.unique = unique;
 		return this;
 	}
-	public String getDefaulValue() {
-		return defaulValue;
+	public String getDefaultValue() {
+		return defaultValue;
 	}
-	public void setDefaulValue(String defaulValue) {
-		this.defaulValue = defaulValue;
+	public void setDefaultValue(String defaultValue) {
+		defaultValue= Util.capSize(defaultValue,2048);		
+		this.defaultValue = defaultValue;
 	}
 	public MTable getTable() {
 		return table;
@@ -170,7 +177,7 @@ public class MColumn extends MColumnDefinition{
 	}
 	public boolean isDummy() {
 		boolean ret = this.insertable==null && this.nullable==null && this.unique==null && this.updatable==null
-				&& this.colummnDefinition==null && this.defaulValue==null && this.length==null &&
+				&& this.colummnDefinition==null && this.defaultValue==null && this.length==null &&
 				this.name==null && this.precision==null && this.scale==null;
 		ret = ret && (table==null || table.isDummy());
 		return ret;

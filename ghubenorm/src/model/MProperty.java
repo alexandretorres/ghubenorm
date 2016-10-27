@@ -16,6 +16,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
 import common.ReflectiveVisitor;
+import common.Util;
 import common.Visitable;
 
 @Entity
@@ -23,6 +24,7 @@ public class MProperty implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	private String name;
+	@Column(length=1024)
 	private String type;	
 	private int max=1;
 	private int min=0;
@@ -72,6 +74,7 @@ public class MProperty implements Visitable {
 		return name;
 	}
 	public MProperty setName(String name) {
+		name= Util.capSize(name,255);
 		this.name = name;
 		return this;
 	}
@@ -81,6 +84,7 @@ public class MProperty implements Visitable {
 		return type;
 	}
 	public MProperty setType(String type) {
+		type= Util.capSize(type,1024);
 		this.type = type;
 		return this;
 	}

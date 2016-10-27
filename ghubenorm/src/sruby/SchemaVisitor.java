@@ -178,7 +178,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				if (nidx!=null) {
 					addIndex(nidx,tab, ret);
 				}
-				ret.setDefaulValue(Helper.getHashArgument(hn.getPairs(), "default"));
+				ret.setDefaultValue(Helper.getHashArgument(hn.getPairs(), "default"));
 				ret.setPrecision(Helper.getHashArgument(hn.getPairs(), "precision",Integer.class));
 				ret.setScale(Helper.getHashArgument(hn.getPairs(), "scale",Integer.class));
 				

@@ -14,7 +14,33 @@ CREATE OR REPLACE VIEW Embeddable AS
 ALTER TABLE Embeddable
   OWNER TO pdoc;
 
+-- Fix length of columns
 
+
+ALTER TABLE mcolumn
+   ALTER COLUMN defaulvalue TYPE character varying(2048);
+ALTER TABLE mcolumn RENAME defaulvalue  TO defaultvalue;
+ALTER TABLE mcolumn
+   ALTER COLUMN colummndefinition TYPE character varying(1024);
+ALTER TABLE mproperty
+   ALTER COLUMN name TYPE character varying(1024);
+ALTER TABLE repo
+   ALTER COLUMN configpath TYPE character varying(1024);
+
+ALTER TABLE repo
+   ALTER COLUMN url TYPE character varying(1024);
+   
+ALTER TABLE mclass
+   ALTER COLUMN packageName TYPE character varying(1024);
+
+ALTER TABLE mclass
+   ALTER COLUMN superClassName TYPE character varying(1024);
+ALTER TABLE mclass
+   ALTER COLUMN filepath TYPE character varying(2048);
+   
+
+-- look at http://stackoverflow.com/questions/5090858/how-do-you-change-the-character-encoding-of-a-postgres-database 
+-- set LC_CTYPE
 --====
 --Repositorios selecionados que possuem classes: (relevant repositories)
 

@@ -20,7 +20,7 @@ import model.Language;
 import model.Repo;
 
 public class TesteJRuby2 { 
-	static int REPO_NUM=4;
+	static int REPO_NUM=5;
 	static int fileCnt=0;
 	static RubyRepoLoader loader = RubyRepoLoader.getInstance();
 	String[][] repos = {			
@@ -28,14 +28,16 @@ public class TesteJRuby2 {
 			{"repos/ps-deathstar-master/db/schema.rb","repos/ps-deathstar-master/app/models/"},	//1
 			{"repos/promoweb-master/db/schema.rb","repos/promoweb-master/app/models/"},			//2
 			{"repos/gitlabhq-master/db/schema.rb","repos/gitlabhq-master/app/models/"},			//3
-			{"repos/activerecord_test/schema/schema.rb","repos/activerecord_test/models/"}		//4
+			{"repos/activerecord_test/schema/schema.rb","repos/activerecord_test/models/"},		//4
+			{"repos/boothmgr-master/db/schema.rb","repos/boothmgr-master/app/models/"}				//5
 		};
 	String[] names = {
 			"repos/chroma32-master",
 			"repos/ps-deathstar-master",
 			"repos/promoweb-master",
 			"repos/gitlabhq-master",
-			"repos/activerecord_test"
+			"repos/activerecord_test",
+			"repos/boothmgr-master"
 			};
 	@Test
 	public void test()  {

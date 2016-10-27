@@ -137,8 +137,7 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 						// This makes the association "transient", because it is fundamentally a read only shortcut (but ruby accepts dealing with them
 						// has_many :yyy <-- "real" association
 						// has_many :zzz :through :yyy   <-- shortcut for many-to-many OR "collapsed" one-to-many-to-many
-						through = value;
-						prop.setDerived(true);
+						through = value;				
 						
 						break;
 					case "inverse_of":
@@ -185,8 +184,9 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 			}		
 		}
 	}
-		protected void setThrough() {
+	protected void setThrough() {
 		if (through!=null) { //ignore properties
+			prop.setDerived(true);
 			fks=null;
 			pks=null;
 			inverseOf=null;
@@ -312,8 +312,10 @@ public abstract class AbstractVisitAssoc implements LateVisitor {
 			}
 			if (pk!=null && toType!=null) {
 				MTable dest = (MTable) toType.findDataSource();
-				MColumn invcol = dest.findColumn(pk);
-				jc.setInverse(invcol);
+				if (dest!=null) {
+					MColumn invcol = dest.findColumn(pk);
+					jc.setInverse(invcol);
+				}
 			}
 		}	
 	}

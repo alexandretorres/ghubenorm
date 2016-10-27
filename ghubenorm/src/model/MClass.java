@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -18,12 +19,14 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 
 import common.ReflectiveVisitor;
+import common.Util;
 import common.Visitable;
 @Entity
 public class MClass implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
 	private String name;
+	@Column(length=1024)
 	private String packageName;
 	private boolean isAbstract=false;
 	@ManyToOne(optional=false)
@@ -32,6 +35,7 @@ public class MClass implements Visitable {
 	private MPersistent persistence=new MPersistent();
 	@ManyToOne(cascade=CascadeType.PERSIST)
 	private MClass superClass;
+	@Column(length=1024)
 	private String superClassName;
 	@OneToMany(mappedBy="parent",cascade=CascadeType.PERSIST)
 	@OrderBy
@@ -45,12 +49,13 @@ public class MClass implements Visitable {
 	@Embedded
 	private MDiscriminator discriminatorColumn;
 	@Basic(optional=false)
+	@Column(length=2048)
 	private String filePath;
 	public static MClass newMClass(String path,Repo repo) {
 		return new MClass(path,repo);
 	}
 	protected MClass(String path,Repo repo) {
-		this.filePath=path;
+		this.filePath=Util.capSize(path,2048);
 		this.repo=repo;
 	}	
 	protected MClass() {
@@ -81,6 +86,7 @@ public class MClass implements Visitable {
 		return packageName+"."+name;
 	}
 	public MClass setName(String name) {
+		name = Util.capSize(name, 255);
 		this.name = name;
 		return this;
 	}
@@ -88,6 +94,7 @@ public class MClass implements Visitable {
 		return packageName;
 	}
 	public MClass setPackageName(String packageName) {
+		name = Util.capSize(name, 1024);
 		this.packageName = packageName;
 		return this;
 	}
@@ -166,6 +173,7 @@ public class MClass implements Visitable {
 		return superClassName;
 	}
 	public void setSuperClassName(String superClassName) {
+		superClassName = Util.capSize(superClassName, 1024);
 		this.superClassName = superClassName;
 	}
 	public MProperty newProperty() {

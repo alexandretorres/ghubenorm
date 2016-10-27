@@ -8,6 +8,7 @@ import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 
 import common.ReflectiveVisitor;
+import common.Util;
 @Entity
 public class MTable extends MDataSource {
 	
@@ -32,6 +33,7 @@ public class MTable extends MDataSource {
 		return name;
 	}
 	public MTable setName(String name) {
+		name= Util.capSize(name,255);
 		this.name = name;
 		return this;
 	}
@@ -39,13 +41,15 @@ public class MTable extends MDataSource {
 		return catalog;
 	}
 	public MTable setCatalog(String catalog) {
+		catalog= Util.capSize(catalog,255);
 		this.catalog = catalog;
 		return this;
 	}
-	public String getSchema() {
+	public String getSchema() {		
 		return schema;
 	}
 	public MTable setSchema(String schema) {
+		schema= Util.capSize(schema,255);
 		this.schema = schema;
 		return this;
 	}

@@ -25,6 +25,7 @@ import org.jruby.ast.StrNode;
 import org.jruby.ast.SymbolNode;
 import org.jruby.ast.ZArrayNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.util.ByteList;
 import org.jruby.util.KeyValuePair;
 
 import com.google.common.base.CharMatcher;
@@ -46,6 +47,13 @@ public class Helper {
 		}
 		return null;
 	}
+	static String decode(ByteList str) {
+		if (str==null || str.bytes()==null)
+			return null;
+		if (str.getEncoding()==null)
+			return str.toString();
+		return ByteList.decode(str.bytes(), str.getEncoding().getCharsetName());
+	}
 	static String getValue(Node node) {	
 		
 		if (node instanceof SymbolNode) {
@@ -54,8 +62,9 @@ public class Helper {
 			return null;
 		} else if (node instanceof KeywordArgNode) {
 			return ((KeywordArgNode)node).toString();	
-		} else if (node instanceof StrNode) {			
-			String s = ((StrNode) node).getValue().toString();
+		} else if (node instanceof StrNode) {	
+			StrNode stNode = (StrNode) node;
+			String s = decode(stNode.getValue());
 			CharMatcher matcher = CharMatcher.is('"');
 			s = matcher.trimFrom(s);
 			return s;
