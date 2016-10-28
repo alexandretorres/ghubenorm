@@ -10,6 +10,7 @@ import java.util.logging.Level;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
+import com.github.javaparser.TokenMgrException;
 import com.github.javaparser.ast.CompilationUnit;
 
 import gitget.GitHubCaller;
@@ -49,9 +50,8 @@ public class JavaLoader {
 			try (InputStream in =  connection.getInputStream()) {	
 				CompilationUnit cu = JavaParser.parse(in);
 		        visitor.setComp(comp);
-		        cu.accept(visitor, null);
-				
-			} catch (ParseException pe) {
+		        cu.accept(visitor, null);		        
+			} catch (ParseException|TokenMgrException pe) {
 				LOG.warning("could not parse "+url);
 				Log.log(jrepo.getRepo(),Level.WARNING,pe.getMessage(),pe);
 			}	
