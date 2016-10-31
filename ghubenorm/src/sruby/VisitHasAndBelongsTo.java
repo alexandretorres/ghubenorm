@@ -186,7 +186,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 				jc=def.newJoingColumn(col);				
 			}
 			if (clazz.getPK().isEmpty())
-				clazz.newPKProperty().setName("<id>").setType("integer"); 	
+				daoProp.persist(clazz.newPKProperty().setName("<id>").setType("integer")); 	
 			if (clazz.getPK().size()>i) {
 				MColumnDefinition idef = getOrCreatePKColumn(clazz.getPK().get(i));
 				jc.setInverse(idef);
@@ -207,7 +207,7 @@ public class VisitHasAndBelongsTo implements LateVisitor {
 					jc=def.newJoingColumn(col);				
 				}	
 				if (clazz.getPK().isEmpty())
-					clazz.newPKProperty().setName("<id>").setType("integer");
+					daoProp.persist(clazz.newPKProperty().setName("<id>").setType("integer"));
 				if (tclass.getPK().size()>i) {
 					MColumnDefinition idef = getOrCreatePKColumn(tclass.getPK().get(i));				
 					jc.setInverse(idef);

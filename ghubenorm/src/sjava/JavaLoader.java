@@ -8,6 +8,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.logging.Level;
 
+import javax.persistence.PersistenceException;
+
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseException;
 import com.github.javaparser.TokenMgrException;
@@ -34,9 +36,11 @@ public class JavaLoader {
 			return comp;				
 		// JavaParser MAY throw an TokenMgrError. This is a BAD design for JavaParser, since it should be a plain exception! I�m too lazy to see how many "errors" this lib is throwing
 		// So we are catching all ERRORS and EXCEPTIONS here. In the future, list all Errors 
-		} catch (Throwable ex) {	
+		} catch (Throwable ex) {			
 			LOG.warning("could not visit file "+url);
-			Log.log(jrepo.getRepo(),Level.SEVERE,ex.getMessage(),ex);				
+			Log.log(jrepo.getRepo(),Level.SEVERE,ex.getMessage(),ex);	
+			if (!JCompilationUnit.daoMClass.checkTransactionState(ex))
+				throw new RuntimeException("Transaction marked for rollback");			
 			return null;		
 		} finally {	
 			Prof.close("LOAD");

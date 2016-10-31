@@ -48,6 +48,11 @@ public class DAONop<C> implements DAOInterface<C> {
 		
 	}
 
+	@Override
+	public boolean checkTransactionState(Throwable t) {	
+		return true;
+	}
+
 	
 
 }

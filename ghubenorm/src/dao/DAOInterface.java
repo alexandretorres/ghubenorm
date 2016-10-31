@@ -10,5 +10,6 @@ public interface DAOInterface<C> {
 	public C find(Object pk) ;
 	public C persist(C obj);
 	public void remove(C obj);
+	public boolean checkTransactionState(Throwable t);
 	
 }

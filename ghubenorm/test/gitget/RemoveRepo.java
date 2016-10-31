@@ -34,7 +34,8 @@ public class RemoveRepo {
 	@Test
 	public void test() {
 		String repos[] = {	
-				"identityxx/velo1"
+				"alexeymuranov/raclette"
+				//"identityxx/velo1"
 
 
 

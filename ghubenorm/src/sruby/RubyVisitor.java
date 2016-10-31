@@ -341,7 +341,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 				}
 			}
 			if (pkProp==null) {
-				pkProp = clazz.newPKProperty().setName(pk).setType("integer").setMin(1);						
+				pkProp = daoMProp.persist(clazz.newPKProperty().setName(pk).setType("integer").setMin(1));						
 			} else {
 				pkProp.setMin(1).setPk(true);
 				if (pkProp.getColumnDef()!=null) {

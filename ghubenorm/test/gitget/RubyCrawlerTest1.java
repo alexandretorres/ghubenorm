@@ -27,7 +27,8 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 	@Test
 	public void test() {
 		String repos[] = {		
-				"deiga/ilmo2"
+				"alexeymuranov/raclette"
+				//"deiga/ilmo2"
 				//"kgbu/boothmgr"
 				//"opinsys/puavo-users"
 				//"mikeymckay/formtastic.us"

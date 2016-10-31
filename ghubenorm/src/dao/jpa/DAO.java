@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.PersistenceException;
 
 import dao.DAOInterface;
 import gitget.Auth;
@@ -99,6 +100,26 @@ public class DAO<C> implements DAOInterface<C>{
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 		}
 		
+	}
+	@Override
+	public boolean checkTransactionState(Throwable t) {
+		if (t==null) {
+			try {
+				return !getEm().getTransaction().getRollbackOnly();
+			} catch (Exception e) {
+				return true;
+			}
+		}
+		if (t instanceof PersistenceException) {
+			//PersistenceException pex = (PersistenceException) t;
+			try {
+				return !getEm().getTransaction().getRollbackOnly();
+			} catch (Exception e) {
+				return false;
+			}
+		}
+		
+		return true;
 	}
 	
 	
