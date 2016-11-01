@@ -135,7 +135,7 @@ public class GitHubCrawler implements Runnable {
 		else
 			return lang;			
 		
-	}
+	}	
 	/**
 	 * first id, usually zero.
 	 * @param id
@@ -166,7 +166,7 @@ public class GitHubCrawler implements Runnable {
 						boolean priv = result.getBoolean("private");
 						id = result.getInt("id");
 						LOG.info(cnt+" (ID:"+id+")"+":"+fullName+
-								" owner:"+result.getJsonObject("owner").getString("login"));
+								" owner:"+getOwner(result));
 						
 						cnt++;
 						if (priv) {
@@ -246,6 +246,15 @@ public class GitHubCrawler implements Runnable {
 			p++;
 			
 		} while(cnt<MAX_REPOS);
+		
+	}
+	private static String getOwner(JsonObject result) {
+		try {			
+			String res = result.getJsonObject("owner").getString("login");
+			return res;
+		} catch (Exception ex) {
+			return "<unknown>";
+		}
 		
 	}
 	public void skipRepo(SkipReason reason,Language lang,String name,String url,int publicId,String branch) {
