@@ -133,21 +133,13 @@ public class GitHubCaller {
 			} catch (Exception e) {	}			
 			
 			if (connection!=null) {
-				
+				String msg="";
 				try {
-					String msg = getErrorStream(connection);
-					LOG.warning("Error stream:" +msg);
-					streamError = IoError.find(msg);
-					/*
-					InputStream error = connection.getErrorStream();
-					java.util.Scanner s = new java.util.Scanner(error).useDelimiter("\\A");
-				    if (s.hasNext()) {
-				    	String msg = s.next();
-				    	LOG.warning("Error stream:" +msg);
-				    	streamError = IoError.find(msg);
-				    	
-				    }*/
+					msg = getErrorStream(connection);					
+					streamError = IoError.find(msg);					
 				} catch (Exception e) {	}
+				if (streamError==IoError.OTHER && msg!=null)
+					LOG.warning("Error stream:" +msg);
 				try {
 					String st = "Headers:";
 					for (Entry<String, List<String>> header : connection.getHeaderFields().entrySet()) {
@@ -221,6 +213,7 @@ enum IoError {
 	REPO_BLOCKED("Repository access blocked"),
 	API_LIMIT_REACHED("API rate limit exceeded for"),
 	EMPTY_REPO("Git Repository is empty"),
+	FILE_NOT_FOUND("<title>Page not found &middot; GitHub</title>"),
 	OTHER("");
 	
 	public final String fragment;
