@@ -332,6 +332,8 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	}
 	public void createPK(MClass clazz,IArgumentNode n) {
 		String pk_value=Helper.getValue(n.getArgsNode());				
+		if (pk_value==null)
+			return;		
 		String[] pks = pk_value.split(",");
 		for (String pk:pks) {
 			MProperty pkProp = null;
