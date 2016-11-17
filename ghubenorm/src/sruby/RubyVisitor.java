@@ -131,8 +131,8 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	public void visitClass(MClass clazz,ClassNode n,MClass superclazz,boolean isPersistent) {	
 		repo.incomplete.remove(clazz);
 		stack.push(clazz);
-		
-		clazz.setSuperClass(superclazz);
+		if (!clazz.equals(superclazz))
+			clazz.setSuperClass(superclazz);
 		//self.table_name
 		if (isPersistent) {			
 			AttrAssignNode abstrN = Helper.findAttrAssignNode(n.getBodyNode(), "abstract_class");

@@ -172,7 +172,7 @@ public class JCompilationUnit {
 						isClass=isClass==0?isClass=1:isClass;
 					}*/
 				} else if (superName.equals(newClass.getName()) ){
-					if (importClass(newClass) && acceptBase) {
+					if (importClass(newClass) && acceptBase && !cl.equals(newClass)) {
 						cl.setSuperClass(newClass);
 						isClass=isClass==0?isClass=1:isClass;
 					} else {

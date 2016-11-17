@@ -163,6 +163,8 @@ public class MClass implements Visitable {
 		return superClass;
 	}
 	public MClass setSuperClass(MClass superClass) {
+		if (this.equals(superClass))
+			throw new RuntimeException("A class could not extend itself");
 		this.superClass = superClass;
 		if (superClass!=null)
 			superClass.getSpecializations().add(this);
