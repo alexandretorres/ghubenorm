@@ -31,6 +31,7 @@ class MDataSourceDaoImpl extends DAO<MDataSource> implements DAOInterface<MDataS
 class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 	final static String FindByURL = "Repo.FindByURL";
 	final static String FindByName = "Repo.FindByName";
+	final static String FindByPublicId = "Repo.FindByPublicId";
 	public RepoDaoImpl() {
 		super(Repo.class);
 		// TODO Auto-generated constructor stub
@@ -68,5 +69,12 @@ class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 		TypedQuery<Repo> q =  getEm().createQuery("SELECT r FROM Repo r order by publicId",Repo.class);
 		q.setFirstResult(start).setMaxResults(max);
 		return q.getResultList();
+	}
+	public List<Repo> findByPublicId(int pid) {
+		return getEm().createNamedQuery(FindByPublicId,Repo.class).setParameter("pid", pid).getResultList();
+	}
+	public void cleanRepo(int publicId) {
+		//getEm().createNamedStoredProcedureQuery("CleanRepo").setParameter(1, publicId).execute();
+		getEm().createNativeQuery("select count(*) from \"CleanRepo\"("+publicId+")").getResultList();	
 	}
 }

@@ -12,6 +12,9 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
+
 import common.ReflectiveVisitor;
 import common.Visitable;
 /**
@@ -20,6 +23,7 @@ import common.Visitable;
  *
  */
 @Entity
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public class MAssociationDef implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;

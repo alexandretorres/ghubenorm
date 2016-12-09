@@ -11,12 +11,16 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OrderColumn;
+
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
 @Entity
 /**
  * Constraints and indexes definitions
  * @author torres
  *
  */
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public class MDefinition {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;

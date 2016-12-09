@@ -232,7 +232,7 @@ public class RubyRepo {
 		for (MTable t:getTables()) {
 			System.out.println("Table "+t.getName());
 			for (MColumn c:t.getColumns()) {
-				System.out.println("	"+c.getName()+":"+c.getColummnDefinition());
+				System.out.println("	"+c.getName()+":"+c.getColumnDefinition());
 			}
 		}
 	}

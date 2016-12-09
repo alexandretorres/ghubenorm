@@ -7,8 +7,12 @@ import javax.persistence.Id;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
+
 @Entity
 @Inheritance(strategy=InheritanceType.JOINED)
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public abstract class MColumnDefinition {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
@@ -23,7 +27,7 @@ public abstract class MColumnDefinition {
 
 	public abstract boolean isUpdatableDef();
 
-	public abstract String getColummnDefinition() ;
+	public abstract String getColumnDefinition() ;
 
 	public abstract int getLengthDef();
 
@@ -36,4 +40,7 @@ public abstract class MColumnDefinition {
 	public abstract MTable getTable();
 	
 	public abstract MColumn getColumn();
+	public String get_Type() {
+		return this.getClass().getSimpleName();
+	}
 }

@@ -49,19 +49,21 @@ public class Log {
 			}
 			
 		};
+		if (!Options.WEB) {
 		FileHandler fhandler;
-		try {
-			fhandler = new FileHandler("logs/java%u.%g.log", 1024*1024, 1000);
-			fhandler.setLevel(Level.ALL);
-			fhandler.setFormatter(formatter);
-			LOG.addHandler(fhandler);
-			
-		} catch (SecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			try {
+				fhandler = new FileHandler("logs/java%u.%g.log", 1024*1024, 1000);
+				fhandler.setLevel(Level.ALL);
+				fhandler.setFormatter(formatter);
+				LOG.addHandler(fhandler);
+				
+			} catch (SecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
 		      public void uncaughtException(Thread t, Throwable e) {		    	  

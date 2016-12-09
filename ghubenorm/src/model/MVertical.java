@@ -6,10 +6,14 @@ import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
+
 import common.ReflectiveVisitor;
 import common.Visitable;
 
 @Entity
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public class MVertical extends MDiscrminableGeneralization implements Visitable{
 	@OneToMany(mappedBy="generalization")
 	private Set<MJoinColumn> joinCols = new HashSet<MJoinColumn>();

@@ -13,7 +13,15 @@ CREATE OR REPLACE VIEW Embeddable AS
 
 ALTER TABLE Embeddable
   OWNER TO pdoc;
+-- casacade delete
+ALTER TABLE mcolumn
+  DROP CONSTRAINT fk1fnp2gnjrvlhk2q231y20hdxq;
 
+
+ALTER TABLE mcolumn
+  ADD CONSTRAINT mcolumn_mcolumndefinition FOREIGN KEY (id)
+      REFERENCES mcolumndefinition (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE CASCADE;
 -- Fix length of columns
 -- has classes
 ALTER TABLE repo
@@ -46,6 +54,7 @@ ALTER TABLE mclass
 ALTER TABLE mclass
    ALTER COLUMN filepath TYPE character varying(2048);
    
+ALTER TABLE mcolumn RENAME colummndefinition  TO columndefinition;
 
 -- look at http://stackoverflow.com/questions/5090858/how-do-you-change-the-character-encoding-of-a-postgres-database 
 -- set LC_CTYPE
@@ -418,3 +427,11 @@ group by r.id) as res on res.id=r2.id
 where r2.language=0
 order by cnt desc
 
+-- all "MFlat" repos
+SELECT CAST(r.publicid as text) as id
+from mgeneralization g,mclass_mgeneralization mg,mclass c,repo r
+where dtype='MFlat'
+and g.id=mg.generalization_id
+and mg.mclass_id=c.id
+and c.repo_id = r.id
+group by r.publicid

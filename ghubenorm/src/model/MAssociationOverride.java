@@ -3,7 +3,11 @@ package model;
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
+
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
 @Entity
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public class MAssociationOverride extends MOverride {
 	@ManyToOne(cascade=CascadeType.ALL)
 	private MAssociationDef def;

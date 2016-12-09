@@ -42,8 +42,8 @@ public class MColumnRef extends MColumnDefinition {
 		return column.isUpdatableDef();
 	}
 
-	public String getColummnDefinition() {
-		return column.getColummnDefinition();
+	public String getColumnDefinition() {
+		return column.getColumnDefinition();
 	}
 
 	public int getLengthDef() {

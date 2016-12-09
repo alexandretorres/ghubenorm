@@ -12,8 +12,12 @@ import javax.persistence.InheritanceType;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OrderColumn;
+
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
 @Entity
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public abstract class MOverride {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
@@ -46,5 +50,7 @@ public abstract class MOverride {
 	protected void setClazz(MClass clazz) {
 		this.clazz = clazz;
 	}
-	
+	public String get_Type() {
+		return this.getClass().getSimpleName();
+	}
 }

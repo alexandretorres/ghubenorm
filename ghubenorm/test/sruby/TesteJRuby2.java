@@ -16,11 +16,12 @@ import dao.DAOInterface;
 import db.daos.MyConfigNop;
 import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
+import gitget.RepoToJSON;
 import model.Language;
 import model.Repo;
 
 public class TesteJRuby2 { 
-	static int REPO_NUM=5;
+	static int REPO_NUM=4;
 	static int fileCnt=0;
 	static RubyRepoLoader loader = RubyRepoLoader.getInstance();
 	String[][] repos = {			
@@ -80,7 +81,7 @@ public class TesteJRuby2 {
 			loader.solveRefs();
 			System.out.println("files:"+fileCnt);
 			repo.getRepo().print();
-			
+			RepoToJSON.toJson(repo.getRepo(),"code.txt");
 			
 			dao.commitAndCloseTransaction();		
 			

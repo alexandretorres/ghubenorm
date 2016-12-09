@@ -18,10 +18,15 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
+
 import common.ReflectiveVisitor;
 import common.Util;
 import common.Visitable;
 @Entity
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public class MClass implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;
@@ -30,6 +35,7 @@ public class MClass implements Visitable {
 	private String packageName;
 	private boolean isAbstract=false;
 	@ManyToOne(optional=false)
+	@JsonBackReference
 	private Repo repo;
 	@Embedded
 	private MPersistent persistence=new MPersistent();
@@ -37,8 +43,8 @@ public class MClass implements Visitable {
 	private MClass superClass;
 	@Column(length=1024)
 	private String superClassName;
-	@OneToMany(mappedBy="parent",cascade=CascadeType.PERSIST)
-	@OrderBy
+	@OneToMany(mappedBy="parent",cascade=CascadeType.PERSIST)	
+	@OrderBy	
 	private List<MProperty> properties = new ArrayList<MProperty>();
 	@OneToMany(mappedBy="clazz",cascade=CascadeType.ALL)
 	private Set<MOverride> overrides = new HashSet<MOverride>();

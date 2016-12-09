@@ -5,9 +5,13 @@ import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
+
 import common.Util;
 
 @Entity
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public class MColumn extends MColumnDefinition{
 	//TODO: Use nullable types for length, precision and so forth. 
 	@Transient public static final int DEFAULT_LENGTH = 255;	
@@ -19,7 +23,7 @@ public class MColumn extends MColumnDefinition{
 	private Boolean insertable;
 	private Boolean updatable;
 	@Column(length=1024)
-	private String colummnDefinition;
+	private String columnDefinition;
 	private Integer length;
 	private Integer precision;
 	private Integer scale;
@@ -57,57 +61,57 @@ public class MColumn extends MColumnDefinition{
 		this.name = name;
 		return this;
 	}
-	protected Boolean isNullable() {
+	public Boolean isNullable() {
 		return nullable;
 	}
 	public MColumn setNullable(Boolean nullable) {
 		this.nullable = nullable;
 		return this;
 	}
-	protected Boolean isInsertable() {
+	public Boolean isInsertable() {
 		return insertable;
 	}
 	public MColumn setInsertable(Boolean insertable) {
 		this.insertable = insertable;
 		return this;
 	}
-	protected Boolean isUpdatable() {
+	public Boolean isUpdatable() {
 		return updatable;
 	}
 	public MColumn setUpdatable(Boolean updatable) {
 		this.updatable = updatable;
 		return this;
 	}
-	public String getColummnDefinition() {
-		return colummnDefinition;
+	public String getColumnDefinition() {
+		return columnDefinition;
 	}
-	public MColumn setColummnDefinition(String colummnDefinition) {
-		colummnDefinition= Util.capSize(colummnDefinition,1024);		
-		this.colummnDefinition = colummnDefinition;
+	public MColumn setColumnDefinition(String columnDefinition) {
+		columnDefinition= Util.capSize(columnDefinition,1024);		
+		this.columnDefinition = columnDefinition;
 		return this;
 	}
-	protected Integer getLength() {
+	public Integer getLength() {
 		return length;
 	}
 	public MColumn setLength(Integer length) {		
 		this.length = length;
 		return this;
 	}
-	protected Integer getPrecision() {
+	public Integer getPrecision() {
 		return precision;
 	}
 	public MColumn setPrecision(Integer precision) {
 		this.precision = precision;
 		return this;
 	}
-	protected Integer getScale() {
+	public Integer getScale() {
 		return scale;
 	}
 	public MColumn setScale(Integer scale) {
 		this.scale = scale;
 		return this;
 	}
-	protected Boolean isUnique() {
+	public Boolean isUnique() {
 		return unique;
 	}
 	public MColumn setUnique(Boolean unique) {
@@ -177,7 +181,7 @@ public class MColumn extends MColumnDefinition{
 	}
 	public boolean isDummy() {
 		boolean ret = this.insertable==null && this.nullable==null && this.unique==null && this.updatable==null
-				&& this.colummnDefinition==null && this.defaultValue==null && this.length==null &&
+				&& this.columnDefinition==null && this.defaultValue==null && this.length==null &&
 				this.name==null && this.precision==null && this.scale==null;
 		ret = ret && (table==null || table.isDummy());
 		return ret;

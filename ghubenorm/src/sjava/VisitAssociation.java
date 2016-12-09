@@ -300,7 +300,7 @@ public class VisitAssociation implements LateVisitor {
 		col.setNullable(ajoin.getValue("nullable",null,Boolean.class));
 		col.setInsertable(ajoin.getValue("insertable",null,Boolean.class));
 		col.setUpdatable(ajoin.getValue("updatable",null,Boolean.class));
-		col.setColummnDefinition(ajoin.getValue("columnDefinition", null)); 
+		col.setColumnDefinition(ajoin.getValue("columnDefinition", null)); 
 		//TODO: foreignKey
 		String tabName=ajoin.getValueAsString("table");
 		String refColName = ajoin.getValue("referencedColumnName", null); 

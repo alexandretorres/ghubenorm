@@ -56,7 +56,15 @@ class RepoDAONop extends DAONop<Repo> implements RepoDAO {
 	public Repo reattachOrSave(Repo repo) {		
 		return repo;
 	}
-	
+	public List<Repo> findByPublicId(int pid) {
+		throw new RuntimeException("not implemented in NOP");
+	}
+
+	@Override
+	public void cleanRepo(int publicId) {
+		throw new RuntimeException("not implemented in NOP");
+		
+	}
 }
 }
 

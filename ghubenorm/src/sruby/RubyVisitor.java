@@ -166,7 +166,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 					daoMProp.persist(
 							clazz.newProperty().
 							setName(col.getName()).
-							setType(col.getColummnDefinition()).
+							setType(col.getColumnDefinition()).
 							setMin(col.isNullableDef() ? 0 :1).
 							setColumnMapping(MColumnMapping.newMColumnMapping(col)));
 					
@@ -347,9 +347,9 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			} else {
 				pkProp.setMin(1).setPk(true);
 				if (pkProp.getColumnDef()!=null) {
-					if ("primary_key".equals(pkProp.getColumnDef().getColummnDefinition())) {
+					if ("primary_key".equals(pkProp.getColumnDef().getColumnDefinition())) {
 						pkProp.setType("integer");
-						pkProp.getColumnDef().getColumn().setColummnDefinition("integer");
+						pkProp.getColumnDef().getColumn().setColumnDefinition("integer");
 						pkProp.setGenerated();
 					}
 				}

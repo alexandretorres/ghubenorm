@@ -23,7 +23,7 @@ public class Auth {
 		InputStream input = null;
 
 		try {
-			input = new FileInputStream("oauth.properties");
+			input = new FileInputStream(Options.AUTH_PATH+"oauth.properties");
 			// load a properties file
 			prop.load(input);
 			// get the property value and print it out

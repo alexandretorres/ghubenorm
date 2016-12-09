@@ -15,11 +15,15 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
+
 import common.ReflectiveVisitor;
 import common.Util;
 import common.Visitable;
 
 @Entity
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public class MProperty implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;

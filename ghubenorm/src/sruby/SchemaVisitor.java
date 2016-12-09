@@ -194,7 +194,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 				
 			}
 		}
-		ret.setColummnDefinition(type);
+		ret.setColumnDefinition(type);
 		return ret;
 	}
 	private MDefinition addIndex(Node nidx,MTable tab,MColumn... cols) {		

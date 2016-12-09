@@ -5,6 +5,9 @@ public abstract class ConfigDAO {
 	public static ConfigDAO getConfig() {
 		return config;
 	}
+	public static boolean isConfigured() {
+		return config!=null;
+	}
 	public static void config(ConfigDAO configDAO) {
 		config = configDAO;
 		configDAO.setup();

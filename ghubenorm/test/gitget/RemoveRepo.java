@@ -157,6 +157,8 @@ class RemoveRepoVisitor extends CascadeDeleteVisitor {
 	}
 	public void visitMAssociationDef(MAssociationDef def) {
 		def.getJoinColumns().clear();
+		
+		def.setDataSource(null); //TODO: check
 		visitObject(def);
 		
 	}

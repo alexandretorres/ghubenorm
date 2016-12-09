@@ -1,7 +1,10 @@
 package sjava;
 
+import static gitget.Log.LOG;
+
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
 
 import org.junit.Test;
 
@@ -10,6 +13,7 @@ import dao.DAOInterface;
 import dao.nop.ConfigNop;
 import db.daos.MyConfigNop;
 import db.jpa.JPA_DAO;
+import gitget.RepoToJSON;
 import model.Language;
 import model.Repo;
 
@@ -44,7 +48,7 @@ public class JavaLoaderTest {
 	public void testLoad() {
 		try {
 			
-			DAOInterface<Repo> daoRepo = ConfigDAO.getDAO(Repo.class);
+			DAOInterface<Repo> daoRepo = ConfigDAO.getDAO(Repo.class);			
 			jrepo.getRepo().setName("TEST");
 			
 			daoRepo.beginTransaction();
@@ -55,11 +59,11 @@ public class JavaLoaderTest {
 			//File baseFile = new File("repos/MSD_File_Sharing-e1d5650d8cf477355ebe69b52f507c85c12b2ba6/WHAM project war/WHAM/src");
 			//File baseFile = new File("repos/cosmo-master");
 			File baseFile = new File(
-					//"C:\\java\\eclipselink\\eclipselink_test_src"
+					"C:\\java\\eclipselink\\eclipselink_test_src"
 					//"C:\\dev\\eclipselink_test_src"
 					//"C:\\repos\\PDFFilter-master" 
 					//"C:\\Users\\torres\\Downloads\\javarepos\\PDFFilter-master\\PDFFilter-master"
-					"src/"
+					//"src/"
 					);
 			Prof.open("loadDir");
 			loadDir(baseFile);
@@ -72,6 +76,8 @@ public class JavaLoaderTest {
 		    //System.out.println("compilation unit:\n"+listner.comp);
 		    daoRepo.commitAndCloseTransaction();
 		    jrepo.getRepo().print();
+		    RepoToJSON.toJson(jrepo.getRepo(),"code.txt");
+			
 		    Prof.print();
 		    
 		    

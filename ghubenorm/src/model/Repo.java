@@ -28,13 +28,17 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.voodoodyne.jackson.jsog.JSOGGenerator;
+
 import common.ReflectiveVisitor;
 import common.Util;
 import common.Visitable;
  
 
 @Entity
-
+@JsonIdentityInfo(generator=JSOGGenerator.class)
 public class Repo implements Visitable {
 	
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)	
@@ -61,8 +65,10 @@ public class Repo implements Visitable {
 	private String configPath;
 	
 	@OneToMany(fetch=FetchType.EAGER,mappedBy="repo",cascade=CascadeType.ALL)
+	@JsonManagedReference
 	Set<MClass> classes = new HashSet<MClass>();
 	@OneToMany(fetch=FetchType.EAGER,mappedBy="repo",cascade=CascadeType.PERSIST)
+	@JsonManagedReference
 	Set<MDataSource> dataSources = new HashSet<MDataSource>();
 	
 	protected Repo() {}
@@ -375,8 +381,8 @@ public class Repo implements Visitable {
 		String colTab = mainTab==null || col.getTable()==null || col.getTable().getName().equals(mainTab.getName())? "" : 
 			col.getTable().getName()+".";
 		buf.append(colTab+Optional.ofNullable(col.getName()).orElse(""));
-		if (col.getColummnDefinition()!=null && col.getColummnDefinition().length()>0)
-			buf.append(":"+col.getColummnDefinition());
+		if (col.getColumnDefinition()!=null && col.getColumnDefinition().length()>0)
+			buf.append(":"+col.getColumnDefinition());
 		buf.append( col.getColumn().getLength()==null ? "" : "("+col.getLengthDef()+")");
 		if (col.getColumn().getDefaultValue()!=null) {
 			buf.append(" default:"+col.getColumn().getDefaultValue());

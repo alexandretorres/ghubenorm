@@ -422,7 +422,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		col.setNullable(column.getValue("nullable",null,Boolean.class));
 		col.setInsertable(column.getValue("insertable",null,Boolean.class));
 		col.setUpdatable(column.getValue("updatable",null,Boolean.class));
-		col.setColummnDefinition(column.getValue("columnDefinition",null));
+		col.setColumnDefinition(column.getValue("columnDefinition",null));
 		col.setLength(column.getValue("length",null,Integer.class));
 		col.setPrecision(column.getValue("precision",null,Integer.class));
 		col.setScale(column.getValue("scale",null,Integer.class));
@@ -466,7 +466,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			
 			MColumn col = MColumn.newMColumn();
 			col.setName(name);
-			col.setColummnDefinition(colDef);
+			col.setColumnDefinition(colDef);
 			JavaVisitor.daoMCol.persist(col);
 			MTable mainTab = subClass.getPersistence().getMainTable();			
 			if (mainTab!=null) {
@@ -513,7 +513,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				}
 				if (refCol==null) { //second pass is on property names
 					for (MProperty cp:superClass.getProperties()) { //TODO: get "ALL" properties	
-						if (cp.isEmbedded()) { 							
+						if (cp.isEmbedded() && cp.getTypeClass()!=null) { 							
 							for (MProperty embp:cp.getTypeClass().getProperties()) {
 								if (embp.getName().equals(refCol)) {
 									refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
@@ -534,21 +534,53 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				gen.getJoinCols().add(jc);
 			}
 		}
+		public MClass findPersistentRoot(MClass c) {
+			MClass root = c.getSuperClass();
+			if (root==null)
+				return null;
+			{
+				MClass step = root;
+				while (step.getSuperClass()!=null) {
+					step = step.getSuperClass();
+					if (step.isPersistent())
+						root = step;
+				}
+			}
+			return root;
+		}
 		@Override
 		public boolean exec() {
 			MClass superClass = subClass.getSuperClass();
-			if (superClass==null || !subClass.isPersistent())
+			if (superClass==null)
 				return true;
+		/*	if (!subClass.isPersistent()) {
+				if (unit.jrepo.mappedSuperClasses.contains(superClass)) {
+					subClass.addGeneralization(MHorizontal.class);
+				}
+				return true;
+			}*/
+			MClass root = findPersistentRoot(subClass);
+			
+			boolean mappedSup = unit.jrepo.mappedSuperClasses.contains(superClass) && !superClass.isPersistent();
 			//--
 			MGeneralization gen=null;
 			List<Annotation> sannots = unit.jrepo.classAnnot.get(superClass);
+			JCompilationUnit sunit = unit.jrepo.getParsed().get(superClass.getFilePath());
 			List<Annotation> annots = unit.jrepo.classAnnot.get(subClass);
-			Annotation inheritance =  Inheritance.findAnnotation(sannots, unit);
+			Annotation inheritance =  Inheritance.findAnnotation(sannots, sunit);
 			String type="";
-			if (inheritance!=null) {
-				type = ExprEval.getConstant(inheritance.getValue("strategy",""));
+			if (!mappedSup) {
+				if (inheritance!=null) {
+					type = ExprEval.getConstant(inheritance.getValue("strategy",""));
+				}
+				if (type.equals("") && root!=superClass && subClass.isPersistent()) {
+					sannots = unit.jrepo.classAnnot.get(root);
+					sunit = unit.jrepo.getParsed().get(root.getFilePath());
+					inheritance =  Inheritance.findAnnotation(sannots, sunit);
+					if (inheritance!=null)
+						type = ExprEval.getConstant(inheritance.getValue("strategy",""));
+				}
 			}
-			
 			switch (type){
 				case "JOINED":
 					gen = subClass.addGeneralization(MVertical.class);
@@ -572,11 +604,17 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				case "TABLE_PER_CLASS":
 					gen = subClass.addGeneralization(MHorizontal.class);
 					break;
-				default:
+				case "SINGLE_TABLE":
 					gen = subClass.addGeneralization(MFlat.class);
+					break;
+				default:
+					if (mappedSup)
+						gen = subClass.addGeneralization(MHorizontal.class);
+					else if (root.isPersistent() && subClass.isPersistent())
+						gen = subClass.addGeneralization(MFlat.class);
 					
 			}	
-			Annotation discrCol = DiscriminatorColumn.findAnnotation(sannots, unit);
+			Annotation discrCol = DiscriminatorColumn.findAnnotation(sannots, sunit);
 			if (discrCol!=null) {
 				MDiscriminator dcol = superClass.getDiscriminatorColumn();
 				if (dcol==null) {
@@ -592,8 +630,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					MColumn col=null;
 					if (column!=null) {
 						col = createMColumn(superClass,column);
-						if (col.getColummnDefinition()==null) {
-							col.setColummnDefinition(dtype);
+						if (col.getColumnDefinition()==null) {
+							col.setColumnDefinition(dtype);
 						}
 						if (length!=null /*&& col.getLength()==null*/)
 							col.setLength(length);
@@ -601,7 +639,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						dcol.setColumn(col);
 					} else if (dtype!=null || length!=null) {
 						col = MColumn.newMColumn();
-						col.setColummnDefinition(dtype);
+						col.setColumnDefinition(dtype);
 						if (length!=null)
 							col.setLength(length);
 						JavaVisitor.daoMCol.persist(col);

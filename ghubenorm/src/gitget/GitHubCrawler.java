@@ -39,16 +39,15 @@ public class GitHubCrawler implements Runnable {
 	public static final long MAX_ERRORS=10;	
 	// The maximum number of files retrieved by github query API
 	public static final long MAX_RETRIEVE=1000;
-	static {
-		ConfigDAO.config(JPA_DAO.instance);		
-	}
+	
 	RubyCrawler ruby = new RubyCrawler();
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
 
 	RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
 	
-	public static void main(String[] args) {		
+	public static void main(String[] args) {	
+		ConfigDAO.config(JPA_DAO.instance);	
 		new Thread(new GitHubCrawler()).start();
 	}	
 	@Override
