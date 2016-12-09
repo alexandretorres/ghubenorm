@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	style="width:100%; height:100%;"
+	>
+<head>
+<meta charset="utf-8">
+<script src="https://d3js.org/d3.v4.js"></script>
+<script type="text/javascript" src="jsog.js"></script>
+<style>
+.svg_main {
+position:fixed;
+top:0; 
+left:0;
+
+}
+.node {
+   
+}
+.persistent {
+	fill: rgb(176,224,176);
+}
+.transient {
+	fill: rgb(249,241,178);
+}
+
+.link {
+    
+}
+
+.link_title {    
+	font: 12px sans-serif;
+    
+}
+.link_title_inv {    
+	font: 12px sans-serif;
+    
+}
+.text_property{
+}
+.text_title{
+}
+.sidenav {
+    height: 100%; /* 100% Full-height */
+    width: 0; /* 0 width - change this with JavaScript */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Stay on top */
+    top: 0;
+    left: 0;
+    background-color: #111; /* Black*/
+    overflow-x: hidden; /* Disable horizontal scroll */
+    /*padding-top: 60px;*/ /* Place content 60px from the top */
+    padding: 0px;
+    transition: 0.5s; /* 0.5 second transition effect to slide in the sidenav */
+}
+.openbtn {
+	border-style: none;
+	background-color: lightblue;
+	z-index: 1;
+	position:relative;
+}
+/* The navigation menu links */
+.sidenav a {
+    padding: 4px 4px 4px 12px;
+    text-decoration: none;
+    font-size: 18px;
+    color: #818181;
+    display: block;
+    transition: 0.3s
+}
+
+/* When you mouse over the navigation links, change their color */
+.sidenav a:hover, .offcanvas a:focus{
+    color: #f1f1f1;
+}
+
+
+/* Position and style the close button (top right corner) */
+.sidenav .closebtn {
+	border-style: none;
+	background-color: lightblue;
+	color: white;
+    position: absolute;
+    top: 0;
+    right: 5px;
+    font-size: 16px;
+    margin-left: 15px;
+}
+body {
+	margin:0px;
+}
+/* Style page content - use this if you want to push the page content to the right when you open the side navigation */
+#main {
+    transition: margin-left .5s;
+    padding: 20px;
+}
+
+/* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
+@media screen and (max-height: 450px) {
+    .sidenav {padding-top: 15px;}
+    .sidenav a {font-size: 18px;}
+}
+ul.tree, ul.tree ul {
+    list-style-type: none;
+	color:white;
+	margin: 0;
+    padding: 0;
+}
+ul.tree ul {
+	margin-left: 10px;
+}
+
+ul.tree li {
+	margin: 0;
+	padding: 0 12px;
+}
+
+ul.tree li p {
+	margin: 0;
+	color: #818181;
+}
+ul.tree li a {
+	margin: 0;
+	padding: 0 0px;	
+}
+    </style>
+</head>
+<body style="width:100%; height:100%;">
+<div id="mySidenav" class="sidenav">
+  <div style="width:100%;height:30px;"></div>
+  <!--<button class="closebtn" onclick="closeNav()">&lt;&lt;</button>  -->
+</div>
+<button class="openbtn" id="navbutton" onclick="openNav()">>></button>
+<button class="openbtn" onclick="zoomIn()">+</button>
+<button class="openbtn" onclick="zoomOut()">-</button>
+<button class="openbtn" onclick="retrieveRepo()">o</button>
+<button class="openbtn" onclick="processRepo()">...</button>
+
+<div id="main" style="padding: 0px;">
+
+</div>
+<script>
+function processRepo() {
+	var rname = prompt("Please enter repository name", "alexandretorres/ghubenorm");
+	d3.text("http://localhost:8080/enormServer/ProcessRepo?name="+rname, function (err, txt) {
+		if (err) {
+			alert("error loading "+err);
+			return;
+		}
+		cleanDiagram();
+		repo = JSOG.parse(txt);
+	 	repo.classes.sort(function(a,b) {
+			if (a.name < b.name)
+		    	return -1;
+		  	if (a.name > b.name)
+		    	return 1;
+		  	return 0;
+	 	});
+	 	startup();
+	});
+}
+function retrieveRepo() {
+	var pid = prompt("Please enter repository public id", "2668610");
+	d3.text("http://localhost:8080/enormServer/RetrieveRepo?pid="+pid, function (err, txt) {
+		if (err) {
+			alert("error loading "+err);
+			return;
+		}
+		cleanDiagram();
+		repo = JSOG.parse(txt);
+	 	repo.classes.sort(function(a,b) {
+			if (a.name < b.name)
+		    	return -1;
+		  	if (a.name > b.name)
+		    	return 1;
+		  	return 0;
+	 	});
+	 	startup();
+	});
+
+}
+function zoomIn() {
+	w=w-(w/10);
+	h=h-(h/10);
+	svg.attr("viewBox",function(d) {
+		return "0 0 "+w+" "+ h;
+		});
+}
+function zoomOut() {
+	w=w+(w/10);
+	h=h+(h/10);
+	svg.attr("viewBox",function(d) {
+		return "0 0 "+w+" "+ h;
+		});
+}
+function coalesce() {
+    var len = arguments.length;
+    for (var i=0; i<len; i++) {
+        if (arguments[i] !== null && arguments[i] !== undefined) {
+            return arguments[i];
+        }
+    }
+    return null;
+}
+function isOpenNav() {
+	return document.getElementById("mySidenav").style.width=="250px";
+}
+/* Set the width of the side navigation to 250px and the left margin of the page content to 250px */
+function openNav() {
+	if (document.getElementById("mySidenav").style.width!="250px") {
+		document.getElementById("navbutton").innerHTML="&lt;&lt;";
+		document.getElementById("mySidenav").style.width = "250px";
+		document.getElementById("main").style.marginLeft = "250px";
+	} else {/* Set the width of the side navigation to 0 and the left margin of the page content to 0 */
+		document.getElementById("navbutton").innerHTML="&gt;&gt;";
+		document.getElementById("mySidenav").style.width = "0px";
+		document.getElementById("main").style.marginLeft = "0px";
+	}
+}
+
+
+
+var repo;// = JSOG.parse(js);
+var w = 800;
+var h = 600;
+var sy=15;
+var PropHeight=15;
+var svg = d3.select("#main")
+            .append("svg")
+			.attr("class","svg_main")
+            .attr("width", "100%")
+            .attr("height", "100%")
+			.attr("viewBox","0 0 800 600");
+var defs = svg.append("defs");
+defs.append("marker")	
+	.attr("id","arrow-end")
+	.attr("viewBox", "0 0 10 10")
+    .attr("refX", 10)
+    .attr("refY", 3)
+    .attr("markerWidth", 10)
+    .attr("markerHeight", 10)
+    .attr("orient", "auto")
+	.append("path")	
+	.attr("d", "M0,6 L9,3 L0,0 ")
+	.style("stroke", "black")
+	.style("fill","none")
+	.style("stroke-width", 1);	
+defs.append("marker")	
+	.attr("id","arrow-start")
+	.attr("viewBox", "0 0 10 10")
+    .attr("refX", 0)
+    .attr("refY", 3)
+    .attr("markerWidth", 10)
+    .attr("markerHeight", 10)
+    .attr("orient", "auto")
+	.append("path")	
+	.attr("transform","translate(10), scale(-1, 1)")
+	.attr("d", "M0,6 L9,3 L0,0 ")
+	.style("stroke", "black")
+	.style("fill","none")
+	.style("stroke-width", 1);	
+defs.append("marker")	
+	.attr("id","extends")
+	.attr("viewBox", "0 0 10 10")
+    .attr("refX", 10)
+    .attr("refY", 3)
+    .attr("markerWidth", 10)
+    .attr("markerHeight", 10)
+    .attr("orient", "auto")
+	.append("path")	
+	.attr("d", "M0,0 L0,6 L9,3 z")
+	.style("stroke", "black")
+	.style("fill","white")
+	.style("stroke-width", 1);
+//d3.xml('extras.svg', "image/svg+xml", function(xml){
+d3.xml('extras.svg').mimeType("image/svg+xml").get(function(error, xml) {
+	if (error) throw error;
+		//var importedNode = document.importNode(xml.documentElement, true).getElementById("gflat_inheritance")[0];
+	var docNode = document.importNode(xml.documentElement, true);
+	var importedNode = docNode.getElementById("gflat_inheritance");
+	defs.append("marker")	
+	.attr("id","flat_inheritance")
+	.attr("viewBox", "0 0 20 20")
+    .attr("refX", 20)
+    .attr("refY", 10)
+    .attr("markerWidth", 10)
+    .attr("markerHeight", 10)	
+    .attr("orient", "auto")
+	.node().appendChild(importedNode);
+	
+	var importedVert = docNode.getElementById("gvertical_inheritance");
+	defs.append("marker")	
+	.attr("id","vert_inheritance")
+	.attr("viewBox", "0 0 20 20")
+    .attr("refX", 20)
+    .attr("refY", 10)
+    .attr("markerWidth", 10)
+    .attr("markerHeight", 10)
+	
+    .attr("orient", "auto")
+	.node().appendChild(importedVert);
+	
+	var importedHoriz = docNode.getElementById("ghorizontal_inheritance");
+	
+	defs.append("marker")	
+	.attr("id","horiz_inheritance")
+	.attr("viewBox", "0 0 20 20")
+    .attr("refX", 20)
+    .attr("refY", 10)
+    .attr("markerWidth", 10)
+    .attr("markerHeight", 10)
+	
+    .attr("orient", "auto")
+	.node().appendChild(importedHoriz);
+});
+/*var force = d3.forceSimulation()
+    .charge(-120)
+    .linkDistance(80)
+    .size([w, h]);*/
+	
+
+
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+    this.parentNode.appendChild(this);
+  });
+};
+d3.selection.prototype.moveToBack = function() { 
+    return this.each(function() { 
+        var firstChild = this.parentNode.firstChild; 
+        if (firstChild) { 
+            this.parentNode.insertBefore(this, firstChild); 
+        } 
+    }); 
+};
+
+var fdata = {nodes:[],links:[]};
+var centralClass;
+
+var classes;
+
+d3.text("data.txt", function (err, txt) {
+ repo = JSOG.parse(txt);
+ repo.classes.sort(function(a,b) {
+	if (a.name < b.name)
+    return -1;
+  if (a.name > b.name)
+    return 1;
+  return 0;
+ });
+ startup();
+});
+
+
+function startup() {
+	d3.select("#mySidenav").selectAll("ul").data([]).exit().remove();	
+	var sideMenu = d3.select("#mySidenav").append("ul").attr("class","tree").selectAll("li")
+		.data(repo.classes).enter()
+		.append("li");
+	sideMenu.filter(function(d) {return d.packageName!=null && d.packageName!=''})
+		.append("p")		
+		.style("font-size","9px")
+		.attr("title",function(d) {
+			return d.packageName;
+		})
+		.text(function(d) {
+			return d.packageName;
+		});
+	var menuLinks = sideMenu.append("a")
+		.attr("href","#")
+		.attr("font-style", function(d) {return getFontStype(d)})
+		.attr("title",function(d) {
+			return d.fullName;
+		})
+		.on("click",pickClass)		
+		.text(function(d) {
+			return d.name
+		});	
+	if (!isOpenNav())
+		openNav();
+// pick a class
+/*
+var centralClass = repo.classes[2];
+var plinks=[];
+var classes = findClasses(centralClass);
+
+drawModel(classes);*/
+}
+function cleanDiagram() {
+	svg.selectAll('.node')
+		.data([]).exit().remove(); //exit is positional to data. Difficult to keep the classes
+	svg.selectAll('.link').data([]).exit().remove();
+	svg.selectAll('.link_title').data([]).exit().remove();
+	svg.selectAll('.link_title_inv').data([]).exit().remove();
+}
+function pickClass(d,i) {	
+	centralClass = repo.classes[i];	
+	classes = findClasses(centralClass);
+	cleanDiagram();
+	drawModel(classes);
+}
+/*
+var force = d3.forceSimulation(fdata.nodes)
+    .force("charge", d3.forceManyBody().strength(-120))
+    .force("link", d3.forceLink(fdata.links).distance(80))
+    .force("x", d3.forceX())
+    .force("y", d3.forceY())
+	.force("center", d3.forceCenter(w/2,h/2))
+	.force("collide",d3.forceCollide( function(d){
+		var bla =this;
+		return 8;
+		}
+		).iterations(16) )
+    .alphaTarget(1);
+	*/
+    //.on("tick", ticked);
+	/*
+	 .charge(-120)
+    .linkDistance(80)
+    .size([w, h]);*/
+/*
+force.on("tick", function () {
+	svg.selectAll('.link')
+    .attr("x1", function (d) {
+        return d.source.x;
+    })
+        .attr("y1", function (d) {
+        return d.source.y;
+    })
+        .attr("x2", function (d) {
+        return d.target.x;
+    })
+        .attr("y2", function (d) {
+        return d.target.y;
+    });
+
+    //Changed
+    
+    d3.selectAll(".node").attr("x", function (d) {
+        return d.x;
+    })
+        .attr("y", function (d) {
+        return d.y;
+    })
+
+    
+    //End Changed
+
+});*/
+
+function findClasses(clazz) {
+	var cls = [];
+	cls.push(clazz);
+	var plinks = clazz.properties.filter(function(d) {return d.typeClass!=null && (getAssociation(d)!=null )});
+	plinks.forEach(function(d) {
+		if (d.typeClass!=null && !cls.includes(d.typeClass)) 
+			cls.push(d.typeClass)
+		});
+	
+	
+	fdata.links = plinks.map(function(d) {
+			return {type:"A",source:cls.indexOf(d.parent),target:cls.indexOf(d.typeClass),prop:d}
+		});
+	//embed
+	plinks = clazz.properties.filter(function(d) {return d.typeClass!=null && d.embedded});
+	plinks.forEach(function(d) {
+		if (!cls.includes(d.typeClass)) 
+			cls.push(d.typeClass)
+		});	
+	
+	fdata.links = fdata.links.concat(plinks.map(function(d) {
+			return {type:"E",source:cls.indexOf(d.parent),target:cls.indexOf(d.typeClass),prop:d}
+		}));
+	//extends
+	var cur = clazz;
+	while(cur.superClass!=null) {
+		if (!cls.includes(cur.superClass)) 
+			cls.push(cur.superClass)
+		
+		var gen = cur.generalization.length>0 ? cur.generalization[0] : null;
+		var exts = [{type:"G",source:cls.indexOf(cur),target:cls.indexOf(cur.superClass),prop:gen}];
+		fdata.links = fdata.links.concat(exts);
+		cur=cur.superClass;
+	}	
+	fdata.nodes = cls;
+	return cls;
+}
+function className(d) {
+	var tx = d.name;
+	if (d.persistent) {
+		tx+=" | ";	
+		if (d.persistence.source!=null) {
+			if (d.persistence.source.joined!=null) {
+				var nameLst = d.persistence.source.joined.map(function (ds) {
+					ds.name;
+				});
+				tx+=nameLst.join();
+			} else {
+				tx+=d.persistence.mainTable.name;
+			}	
+		}			
+	}
+	
+	return tx;
+}
+function getFontStype(c) {
+	if (c.abstract)
+	  return "italic"
+	return "";
+}
+function getPropDesc(p) {
+	var pname="";
+	//prefix
+	
+	if (p.pk) {
+		pname+="<PK>";
+	} else if (p.transient)
+		pname+="θ ";
+	if (p.embedded) 
+		pname+="<Embed>";
+	if (p.derived)
+		pname+="/ ";
+	if (p.generated.generated) {
+		pname+="<Gen>";
+		if (p.generated.type!=null) {
+			pname+="("+p.generated.type+")";
+		}
+	}
+	if (pname.length>0)
+		pname+=" ";
+	//-- name, cardinality
+	pname+=p.name;
+	pname+=	" 	["+p.min+".."+(p.max<0 ? "*": p.max)+"]: "+ coalesce(p.type,"<<unknown>>");
+	
+	// mapping
+	if (p.columnMapping!=null) {
+		pname+=" | ";
+		var mainTab = p.parent.persistence.mainTable;
+		pname+=printColumn(mainTab,p.columnMapping.columnDefinition);
+	}
+	return pname;
+}
+function printColumn(mainTab,col) {
+	
+	var ret = mainTab==null || col.table==null || col.table.name==mainTab.name ? "" : col.table.name+".";
+	if (col.name!=null)
+		ret+=col.name;
+	if (col.columnDefinition!=null && col.columnDefinition.length>0)
+		ret+=":"+col.columnDefinition;
+	if (col.column.length!=null)
+		ret+="("+col.lengthDef+")";
+	if (col.column.defaultValue!=null)
+		ret+="def="+col.column.defaultValue;
+	if (col.column.nullable!=null)  // make isCheckers public on MColumn.
+		ret+=col.nullableDef ? "{nullable}" : "{not null}";
+	return ret;
+}
+function getAssociation(prop) {
+	var ret = prop.association;
+	return ret==null ?  prop.toAssociation : ret;
+}
+function getInverse(prop) {
+	var a = getAssociation(prop);
+	return (a.to==prop) ? a.from : a.to;
+}
+function drawModel(cls) {
+	var grid = [[w/2,h/2],[w/2+100,h/2],[w/2,0],[0,h/2],[w/2,h/2+100],[w/2+100,h/2+100],[0,h/2+100],[w/2+100,0],[0,0]];
+	var clazzBox = svg.selectAll('.node')
+		.data(cls).enter()
+        .append("svg")		
+		.attr("x",function(d,i) { 
+			if (i<grid.length)
+				return grid[i][0];
+			else
+				return 0;
+		})
+		.attr("y",function(d,i) { 
+				if (i<grid.length)
+				return grid[i][1];
+			else
+				return 0;
+		})
+		.attr('class', 'node');		
+	
+	var titleTx = clazzBox.append("text")		
+		.text(function(d) {return className(d)})
+		.attr('class','text_title')
+		.attr("text-anchor","middle")
+		//.attr("alignment-baseline","central")
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")
+		.attr("font-weight", "bold")
+		.attr("font-style", function(d) {return getFontStype(d)})
+		.attr("fill", "black")
+		.attr("x",  0 )
+		.attr("y", function(d, i) {
+			return sy;
+		})
+		;
+	//todo: auto-rel
+	var linkProps  =fdata.links.map(function(d) {return d.prop});
+	clazzBox.selectAll(".text_property")
+		.data(function(d) 
+			{
+				var ret = d.properties.filter(function(prop) {
+					return getAssociation(prop)==null && linkProps.indexOf(prop)<0;
+				});
+				ret.sort(function(p1,p2) {
+					var ret = p1.name < p2.name ? -1 : p1.name > p2.name;					
+					if (p1.pk && p2.pk) {
+						return ret;
+					}else if (p1.pk && !p2.pk) {
+						return -1;
+					}else if (!p1.pk && p2.pk) {
+						return 1;
+					}else {
+						return ret;
+					}			
+				});
+				return ret;
+				
+			})
+		.enter()
+		.append("text")
+		.attr('class', 'text_property')
+		.text(getPropDesc)
+		.attr("x", function(d) {
+			return 5;
+		})
+		.attr("y", function(d, i) {
+			return ((i+1) *  PropHeight)+sy+2;
+		})
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")
+		.attr("fill", "black");
+		
+	//addBox(propBox);
+	//---
+	/*
+	var bbox1 = titleTx.node().getBBox();
+	var bbox2 = clazzBox.node().getBBox();
+	*/
+	clazzBox.append("line")
+		.attr("stroke-width",1)
+		.attr("stroke","black")
+		.attr('x1', 0)
+		.attr('y1', function(d) {
+			var titTx = d3.select(this.parentElement).select(".text_title");
+			return titTx.node().getBBox().height+sy/2-1;
+			})
+	//	bbox1.height+sy/2-1)
+		.attr('x2', function(d) {return this.parentElement.getBBox().width})
+		.attr('y2',function(d) {
+			var titTx = d3.select(this.parentElement).select(".text_title");
+			return titTx.node().getBBox().height+sy/2-1;
+			});
+		//.attr('y2', bbox1.height+sy/2-1).moveToBack();
+	titleTx.attr('x',function(d) {return this.parentElement.getBBox().width/2});
+	//clazzBox.selectAll().node().children()
+	
+	clazzBox.call(d3.drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+        .on("end", dragended));
+	//svg.node().forceRedraw();
+	
+	
+	addBox(clazzBox);
+	//links
+	var link = svg.selectAll(".link")
+		.data(fdata.links)
+		.enter().append("path")
+		.attr("class", "link")
+		.attr("stroke-width",1)
+		.attr("stroke","black")
+		
+		.style("stroke-width", function(d) {			
+			if (d.type=="G") 
+				return 2;
+			else
+				return 1
+			})
+		.attr("marker-end",function(d) {
+			if (d.type=="A" || d.type=="E")
+				return "url(#arrow-end)";
+			if (d.type=="G") {
+				if (d.prop==null)
+					return "url(#extends)";
+				else if (d.prop._Type=="MVertical")
+					return "url(#vert_inheritance)";	
+				else if (d.prop._Type=="MHorizontal")
+					return "url(#horiz_inheritance)";	
+				else if (d.prop._Type=="MFlat")
+					return "url(#flat_inheritance)";						
+			}
+			return null;
+		})
+		.attr("marker-start",function(d) {
+			if (d.type=="A") {				
+				if (getInverse(d.prop)!=null)
+					return "url(#arrow-start)"
+			}
+			return null;
+			});
+		
+	var linkTitles = svg.selectAll(".link_title")
+		.data(fdata.links)
+		.enter()
+		.append("text")
+		.attr("text-anchor","end") //at the end /start
+		//.attr("dominant-baseline","central")
+		.attr("class","link_title")
+		.text(function(d) {
+			if (d.type!="G")
+				return d.prop.name;
+		});
+	var reverseLinkTitles = svg.selectAll(".link_title_inv")
+		.data(function(d) {
+			return fdata.links.filter(function(d) {
+				return (d.type=="A" && getInverse(d.prop)!=null);
+			})
+		})
+		.enter()
+		.append("text")
+		.attr("text-anchor","start") //at the end /start
+		//.attr("dominant-baseline","central")
+		.attr("class","link_title_inv")
+		.text(function(d) {
+			return getInverse(d.prop).name;
+		});
+	linkTitles.append("title")
+          .text(function(d, i) { 
+			if (d.type!="G")
+				return d.prop.name;
+		  });
+	reverseLinkTitles.append("title")
+          .text(function(d, i) { 
+			if (d.type!="G")
+				return getInverse(d.prop).name;
+		  });
+		
+	/*	
+	linkTitles.append("textPath")
+		.attr("xlink:href",function(d,i) {			
+			return "#"+getLinkName(d,i);
+			})
+		.attr("startOffset","90%")	
+		.text(function(d) {
+			if (d.type!="G")
+				return d.prop.name;
+		});*/
+		
+	redrawLinks();	
+	
+		
+}
+function getCoords(d,clazzBox) {
+	var coord={x1:0,y1:0,x2:0,y2:0};
+	var src = clazzBox.nodes()[d.source], targ = clazzBox.nodes()[d.target];
+	var sx=src.x.baseVal.value,sw = src.getBBox().width;
+	var sy=src.y.baseVal.value,sh = src.getBBox().height;
+	var tx=targ.x.baseVal.value,tw = targ.getBBox().width;
+	var ty=targ.y.baseVal.value,th = targ.getBBox().height;
+	var delta = Math.abs(tx-sx) - Math.abs(ty-sy);
+	if (tx<sx && delta>0) {		
+		coord.x1 = sx;
+		coord.y1 = sy+sh/2;
+	} else if (tx>sx+sw && delta>0) {
+		coord.x1 = sx+sw;
+		coord.y1 = sy+sh/2;		
+	} else {
+		coord.x1 = sx+sw/2;
+		if (ty<sy)
+			coord.y1= sy;
+		else
+			coord.y1= sy+sh;
+	}
+	delta = Math.abs(sx-tx) - Math.abs(sy-ty);
+	if (sx<tx && delta>0) {
+		coord.x2 = tx;
+		coord.y2 = ty+th/2;
+	} else if (sx>tx+tw && delta>0) {
+		coord.x2 = tx+tw;
+		coord.y2 = ty+th/2;		
+	} else {
+		coord.x2 = tx+tw/2;
+		if (sy<ty)
+			coord.y2= ty;
+		else
+			coord.y2= ty+th;
+	}
+	for (i=0;i<fdata.links.length;i++) {
+		var lnk = fdata.links[i];
+		if (lnk.coord)
+			if (lnk.coord.x1==coord.x1 && lnk.coord.x2==coord.x2 && lnk.coord.y1==coord.y1 && lnk.coord.y2==coord.y2) {
+				if (coord.y2!=ty && coord.y2!=ty+th) { //ty+th/2					
+					coord.y2=coord.y2+(coord.y2-ty)/4;
+					i=0;
+				} else {
+					coord.x2=coord.x2+(coord.x2-tx)/4;
+					i=0;
+				}
+			}
+	}
+	d.coord = coord;
+	return coord;
+}
+function redrawLinks() {
+	var clazzBox = svg.selectAll('.node');
+	//clazzBox.select(".text_title").attr('x',function(d) {return this.parentElement.getBBox().width/2});
+	var link = svg.selectAll(".link")		
+		.attr("d", function (d) {
+			var c=getCoords(d,clazzBox); 
+			return "M "+c.x1+","+c.y1+" L "+c.x2+","+c.y2;
+		});
+		/*.attr("x1", function (d) {
+			return getCoords(d,clazzBox).x1;			
+		})
+        .attr("y1", function (d) {
+			return getCoords(d,clazzBox).y1;
+		})
+        .attr("x2", function (d) {
+			return getCoords(d,clazzBox).x2; 
+		})
+        .attr("y2", function (d) {
+			return getCoords(d,clazzBox).y2;
+		})*/
+	var texts = svg.selectAll(".link_title")
+		.attr("x",function (d) {
+			return getCoords(d,clazzBox).x2; 
+			
+		})
+		.attr("y",function (d) {
+			var c= getCoords(d,clazzBox);
+			var y= c.y2; 
+			if (c.y1>c.y2)
+				y=y+this.getBBox().height;
+			return y;
+		})
+		.attr("text-anchor",function (d) {
+			var c=getCoords(d,clazzBox); 
+			if (c.x1>c.x2)
+				return "start";
+			else
+				return "end";
+		});
+	svg.selectAll(".link_title_inv")
+		.attr("x",function (d) {
+			return getCoords(d,clazzBox).x1; 
+			
+		})
+		.attr("y",function (d) {
+			var c= getCoords(d,clazzBox);
+			var y= c.y1; 
+			if (c.y2>c.y1)
+				y=y+this.getBBox().height;
+			return y;
+		})
+		.attr("text-anchor",function (d) {
+			var c=getCoords(d,clazzBox); 
+			if (c.x1>c.x2)
+				return "end";
+			else
+				return "start";
+		});
+}
+function addBox(parent) {
+	//var bbox = parent.node().getBBox();
+	parent.append("rect")
+		//.attr("fill", "rgb(249,241,178)")
+		.attr("stroke","black")
+		.attr("stroke-width",1)
+		.attr('x', 0) //bbox.x
+		.attr('y', 0)
+	/*	.attr('width', "100%")
+		.attr('height', "100%")*/
+		
+		.attr('width', function(d) {
+			return this.parentElement.getBBox().width;
+			})
+		.attr('height', function(d) {
+			return this.parentElement.getBBox().height+sy/2;
+		})
+		.attr('class',function(d) {
+			if (d.persistent)
+				return 'persistent';
+			else
+				return 'transient';
+		})
+		.moveToBack();
+
+}
+function dragstarted(d) {
+  //d3.select(this).raise().classed("active", true);
+}
+
+function dragged(d) {
+  
+  var bbox = this.getBBox();//this.parentElement.getBBox();
+  d3.select(this).attr("x", d.x = d3.event.x-bbox.width/2).attr("y", d.y = d3.event.y-bbox.height/2);
+  redrawLinks();
+}
+
+function dragended(d) {
+  //d3.select(this).classed("active", false);
+}
+</script>
+</body>
+</html>

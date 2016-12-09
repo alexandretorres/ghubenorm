@@ -1,0 +1,7 @@
+build/
+libs/
+trash/
+.settings/
+.classpath
+oauth.properties
+
