@@ -45,9 +45,8 @@ public class ProcessRepo extends HttpServlet {
 
 	@Override
 	public void init(ServletConfig config) throws ServletException {
-		Options.WEB=true;
-		String path = config.getServletContext().getRealPath(".");
-		Options.AUTH_PATH = path+"/META-INF/";
+		WebUtil.init(config);	
+		
 		ConfigDAO.config(new MyConfigNop());		
 		super.init(config);
 	}
@@ -72,7 +71,9 @@ public class ProcessRepo extends HttpServlet {
         try {
 	       
 	        response.setContentType("text/plain"); 
-	        GitHubRepoLoader gl = new GitHubRepoLoader();
+	        String oauth = WebUtil.getCookie(req, "access_token");
+	        GitHubRepoLoader gl = new GitHubRepoLoader(oauth);       
+	        
 	        Repo repo=gl.load(name);
 	        //-----------
 			//RubyRepo rrepo = new RubyRepo(repo);

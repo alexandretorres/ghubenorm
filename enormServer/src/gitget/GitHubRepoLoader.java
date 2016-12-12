@@ -13,6 +13,12 @@ import model.Repo;
 import model.SkipReason;
 
 public class GitHubRepoLoader extends GitHubCrawler {
+	public GitHubRepoLoader(String oauth) {
+		GitHubCaller.instance.setConfig(new Config(oauth));
+	}
+	public void setAuth(String oauth) {		
+		GitHubCaller.instance.setConfig(new Config(oauth));
+	}
 	public Repo load(String name) {
 		Repo repo=null;
 		JsonObject result = gh.getRepoInfo(name);

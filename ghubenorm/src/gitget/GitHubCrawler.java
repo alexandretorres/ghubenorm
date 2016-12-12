@@ -53,7 +53,7 @@ public class GitHubCrawler implements Runnable {
 	@Override
 	public void run() {			
 		try {				
-			URL uauth = new URL("https://api.github.com/?access_token="+gh.oauth);
+			URL uauth = new URL("https://api.github.com/?access_token="+gh.getOAuth());
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
 			try (JsonReader rdr = gh.callApi(uauth,false)) {
 				JsonObject obj = rdr.readObject();
@@ -112,7 +112,7 @@ public class GitHubCrawler implements Runnable {
 	}
 	//TODO: get ALL repo info instead! there is the language
 	private Language mainLanguage_(String path) throws MalformedURLException {
-		URL url = new URL("https://api.github.com/repos/"+path+"/languages?access_token="+gh.oauth);
+		URL url = new URL("https://api.github.com/repos/"+path+"/languages?access_token="+gh.getOAuth());
 		Language lang = null;
 		int cnt=0;
 		try (JsonReader rdr = gh.callApi(url,false)) {
@@ -146,7 +146,7 @@ public class GitHubCrawler implements Runnable {
 		//long id=0;
 		do {
 			//GitHubCaller.instance.limits = gh.retrieveLimits();
-			URL url = new URL("https://api.github.com/repositories?since="+id+"&access_token="+gh.oauth);
+			URL url = new URL("https://api.github.com/repositories?since="+id+"&access_token="+gh.getOAuth());
 			LOG.info("********************************************************************************* ");
 			LOG.info("page "+p);
 			//try (InputStream is = url.openStream(); JsonReader rdr = Json.createReader(is)) {
@@ -276,7 +276,7 @@ public class GitHubCrawler implements Runnable {
 		long cnt=0,total=0,p=1;
 		do {
 			//PROBLEM: ONLY 1000 RESULTS PER SEARCH! 
-			URL url = new URL("https://api.github.com/search/repositories?page="+p+"&per_page=100&q=language:ruby&order=desc&access_token="+gh.oauth);
+			URL url = new URL("https://api.github.com/search/repositories?page="+p+"&per_page=100&q=language:ruby&order=desc&access_token="+gh.getOAuth());
 			LOG.info("********************************************************************************* ");
 			LOG.info("page "+p);
 			//try (InputStream is = url.openStream(); JsonReader rdr = Json.createReader(is)) {

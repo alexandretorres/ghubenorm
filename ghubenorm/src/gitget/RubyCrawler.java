@@ -143,7 +143,7 @@ class RubyCrawler  {
 
 	private RubyRepo readModelEntry(RubyRepo rrepo,Repo repo,String path) throws MalformedURLException {
 		URL url = new URL("https://api.github.com/repos/"+repo.getName()+"/contents/"+path
-				+ "?access_token="+gh.oauth);
+				+ "?access_token="+gh.getOAuth());
 		JsonReader rdr = gh.callApi(url,false);
 		if (rdr==null) { //File not Found
 			return null;

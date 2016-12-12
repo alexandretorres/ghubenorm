@@ -17,7 +17,7 @@ public class GitCrawlerTest extends GitHubCrawler {
 		long cnt=0,total=0,p=1;
 		do {
 			//PROBLEM: ONLY 1000 RESULTS PER SEARCH! 
-			URL url = new URL("https://api.github.com/search/repositories?page="+p+"&per_page=100&q=language:ruby&order=desc&access_token="+gh.oauth);
+			URL url = new URL("https://api.github.com/search/repositories?page="+p+"&per_page=100&q=language:ruby&order=desc&access_token="+gh.getOAuth());
 			LOG.info("********************************************************************************* ");
 			LOG.info("page "+p);
 			//try (InputStream is = url.openStream(); JsonReader rdr = Json.createReader(is)) {

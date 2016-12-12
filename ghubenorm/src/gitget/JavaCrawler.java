@@ -177,7 +177,7 @@ public class JavaCrawler {
 		int total=0;
 		do {
 			URL url = gh.newURL("api.github.com","/search/code", "page=" + p + "&per_page=100"
-					+ "&q=javax.persistence+in:file+language:java+repo:" + jrepo.getRepo().getName() + "&access_token=" + gh.oauth);
+					+ "&q=javax.persistence+in:file+language:java+repo:" + jrepo.getRepo().getName() + "&access_token=" + gh.getOAuth());
 			
 			//Max is 1000! if total >1000, the repo cannot be loaded
 			try (JsonReader rdr = gh.callApi(url,true)) {

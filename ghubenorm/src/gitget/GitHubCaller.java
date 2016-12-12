@@ -20,14 +20,25 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 
 public class GitHubCaller {
-	public static String oauth = Auth.getProperty("oauth");
+	
 	public static final int MAX_TRIES=2; 
 	private int tries=0;
 	private APILimit limits;
 	public static final GitHubCaller instance = new GitHubCaller();
+	Config config;
 	private GitHubCaller() {		
 	}	
-	
+	public Config getConfig() {
+		if (config==null)
+			config = Config.getDefault();
+		return config;
+	}
+	public void setConfig(Config config) {
+		this.config=config;
+	}
+	public String getOAuth() {
+		return getConfig().oauth;
+	}
 	public APILimit getLimits() {
 		return limits;
 	}
@@ -42,7 +53,7 @@ public class GitHubCaller {
 	}
 	protected JsonObject getRepoInfo(String path)  {
 		try {
-			URL url = newURL("api.github.com","/repos/"+path,"access_token="+oauth);		
+			URL url = newURL("api.github.com","/repos/"+path,"access_token="+getOAuth());		
 			try (JsonReader rdr = callApi(url,false)) {
 				if (rdr==null) {
 					LOG.info("could not retrieve repo info for "+path+".");
@@ -58,7 +69,7 @@ public class GitHubCaller {
 		
 	}
 	public JsonObject listFileTree(String path,String branch) throws IOException, URISyntaxException {
-		URL url =newURL("api.github.com","/repos/"+path+"/git/trees/"+branch,"recursive=1&access_token="+oauth);
+		URL url =newURL("api.github.com","/repos/"+path+"/git/trees/"+branch,"recursive=1&access_token="+getOAuth());
 		//URL url = new URL("https://api.github.com/repos/"+path+"/git/trees/"+branch+"?recursive=1&access_token="+oauth);
 		
 		try (JsonReader rdr = callApi(url,false)) {///Json.createReader(url.openStream())) {
@@ -189,7 +200,7 @@ public class GitHubCaller {
 	public APILimit retrieveLimits() {
 		APILimit ret = null;
 		try {
-			URL url = new URL("https://api.github.com/rate_limit?access_token="+oauth);
+			URL url = new URL("https://api.github.com/rate_limit?access_token="+getOAuth());
 			try (JsonReader rdr = Json.createReader(url.openStream())) {
 				ret = new APILimit(rdr);
 				//JsonObject obj = rdr.readObject();

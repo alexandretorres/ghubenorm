@@ -12,6 +12,7 @@ import javax.json.JsonReader;
 import dao.ConfigDAO;
 import dao.jpa.CascadeDeleteVisitor;
 import db.daos.RepoDAO;
+import db.jpa.JPA_DAO;
 import model.Language;
 import model.Repo;
 import sjava.Prof;
@@ -864,7 +865,7 @@ public class CrawlFromList extends GitHubCrawler {
 			6970286,
 			834327,
 			2177248,*/
-			7277311,
+		/*	7277311,
 			3875545,
 			641533,
 			671934,
@@ -1520,14 +1521,15 @@ public class CrawlFromList extends GitHubCrawler {
 			1059824,
 			1219413,
 			7285872,
-			5872891};
-	public static void main(String[] args) {		
+			5872891*/};
+	public static void main(String[] args) {	
+		ConfigDAO.config(JPA_DAO.instance);
 		new Thread(new CrawlFromList()).start();
 	}	
 	@Override
 	public void run() {			
 		try {				
-			URL uauth = new URL("https://api.github.com/?access_token="+gh.oauth);
+			URL uauth = new URL("https://api.github.com/?access_token="+gh.getOAuth());
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
 			try (JsonReader rdr = gh.callApi(uauth,false)) {
 				JsonObject obj = rdr.readObject();
