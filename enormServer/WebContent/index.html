@@ -513,18 +513,9 @@ function className(d) {
 	var tx = d.name;
 	if (d.persistent) {
 		tx+=" | ";	
-		if (d.persistence.source!=null) {
-			if (d.persistence.source.joined!=null) {
-				var nameLst = d.persistence.source.joined.map(function (ds) {
-					ds.name;
-				});
-				tx+=nameLst.join();
-			} else {
-				tx+=d.persistence.mainTable.name;
-			}	
-		}			
-	}
-	
+		if (d.persistence.source!=null) 
+			tx=tx+printDSName(d.persistence.source);	
+	}	
 	return tx;
 }
 function getFontStype(c) {
@@ -580,11 +571,13 @@ function printColumn(mainTab,col) {
 	return ret;
 }
 function printDSName(ds) {
+	if (ds==null)
+		return null;
 	if (ds.defines!=null) {
 		var ret="";
 		
-		for (var tab in ds.defines) {
-			var tname = tab.getName();
+		for (var tab of ds.defines) {
+			var tname = tab.name;
 			if (ret.length>0)
 				ret+=",";
 			ret+=tname==null ? "<Unnamed>" : tname;
@@ -594,13 +587,76 @@ function printDSName(ds) {
 		return ds.name;
 }
 function printAssociationDef(/*MAssociationDef*/ adef,/*MClass*/ cl,/*MProperty*/ p) {
+	var ret="";
 	if (adef!=null) {
 		var f=0;
 		var dsName=null;
 		if (adef.dataSource!=null && (dsName=printDSName(adef.dataSource))!=null) {
-			
+			ret+="joinTable="+dsName;
+			f=1
 		}
+		var cnt= adef.joinColumns.length;
+		for (var jc of adef.joinColumns) {
+			var colDef = jc.column;
+			var invColDef = jc.inverse;
+			if (f>0)
+				ret+=",";
+			if (f<2)
+				ret+="joinColumn"+(cnt>1 ? "s" : "")+"=";
+			if (cnt>1)
+				ret+="(";
+			f=2;
+			if (colDef!=null) {
+				if (colDef.table!=null && !colDef.table===cl.persistence.mainTable) {
+					ret+=colDef.table.name+".";
+				}
+				ret+=printJoinColumnName(p,colDef);
+			}
+			if (invColDef!=null) {
+				var tabName= invColDef.table == null ? null : invColDef.table.name;
+				ret+=", ";
+				if (invColDef.name==null) {
+					var name = printInverseJoinColumn(invColDef,p.parent,tabName); 
+					if (name==null && p.typeClass!=null) {
+						name = printInverseJoinColumn(invColDef,p.typeClass,tabName); 
+					}
+					ret+=name;
+				} else {
+					if (tabName!=null)
+						ret+=tabName+".";
+					ret+=invColDef.name;
+				}
+			}
+			if (cnt>1)
+				ret+=")";
+		}
+		if (adef.cascade!=null)
+			ret+="cascade "+adef.cascade;
+		if (adef.orphanRemoveDef)
+			ret+=" orphan remove ";
+		if (adef.fetch!=null)
+			ret+=" fetch "+adef.fetch;
 	}
+	if (ret.length>0)
+		ret="{"+ret+"}";
+	return ret;
+}
+
+function printJoinColumnName(p,c) {	
+	if (c.name!=null)
+		return c.name;
+	var id=null;
+	var type = p.typeClass;
+	if (type!=null && type.pk.length>0) {
+		id = type.pk[0].name;
+	}
+	if (id==null) {
+		id="id";
+	}	
+	return "<"+p.name+"_"+id+">";
+}
+function printInverseJoinColumn(invColDef,clazz,tabName) {
+	return "<TODO>";
 }
 function getAssociation(prop) {
 	var ret = prop.association;
@@ -752,7 +808,7 @@ function drawModel(cls) {
 		.attr("class","link_title")
 		.text(function(d) {
 			if (d.type!="G")
-				return d.prop.name;
+				return d.prop.name+printAssociationDef(d.prop.associationDef,d.prop.parent,d.prop);
 		});
 	var reverseLinkTitles = svg.selectAll(".link_title_inv")
 		.data(function(d) {
@@ -766,7 +822,8 @@ function drawModel(cls) {
 		//.attr("dominant-baseline","central")
 		.attr("class","link_title_inv")
 		.text(function(d) {
-			return getInverse(d.prop).name;
+			var inv = 	getInverse(d.prop);				
+			return inv.name+printAssociationDef(inv.associationDef,inv.parent,inv);
 		});
 	linkTitles.append("title")
           .text(function(d, i) { 
