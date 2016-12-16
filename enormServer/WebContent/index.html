@@ -32,7 +32,7 @@
 }
 
 .link {
-    
+    fill: none;
 }
 
 .link_title {    
@@ -46,6 +46,8 @@
 .text_property{
 }
 .text_title{
+}
+.title_line {
 }
 .sidenav {
     height: 100%; /* 100% Full-height */
@@ -237,7 +239,7 @@ function processRepo() {
 }
 function retrieveRepo() {
 	var pid = prompt("Please enter repository public id", "2668610");
-	d3.text("http://localhost:8080/enorm/RetrieveRepo?pid="+pid, function (err, txt) {
+	d3.text("RetrieveRepo?pid="+pid, function (err, txt) {
 		if (err) {
 			alert("error loading "+err);
 			return;
@@ -577,6 +579,29 @@ function printColumn(mainTab,col) {
 		ret+=col.nullableDef ? "{nullable}" : "{not null}";
 	return ret;
 }
+function printDSName(ds) {
+	if (ds.defines!=null) {
+		var ret="";
+		
+		for (var tab in ds.defines) {
+			var tname = tab.getName();
+			if (ret.length>0)
+				ret+=",";
+			ret+=tname==null ? "<Unnamed>" : tname;
+		}
+		return ret;
+	} else
+		return ds.name;
+}
+function printAssociationDef(/*MAssociationDef*/ adef,/*MClass*/ cl,/*MProperty*/ p) {
+	if (adef!=null) {
+		var f=0;
+		var dsName=null;
+		if (adef.dataSource!=null && (dsName=printDSName(adef.dataSource))!=null) {
+			
+		}
+	}
+}
 function getAssociation(prop) {
 	var ret = prop.association;
 	return ret==null ?  prop.toAssociation : ret;
@@ -657,6 +682,7 @@ function drawModel(cls) {
 		.attr("fill", "black");
 		
 	clazzBox.append("line")
+		.attr("class","title_line")
 		.attr("stroke-width",1)
 		.attr("stroke","black")
 		.attr('x1', 0)
@@ -753,6 +779,16 @@ function drawModel(cls) {
 				return getInverse(d.prop).name;
 		  });
 		
+	d3.selectAll(".link_title").call(d3.drag()
+	        .on("start", dragstartLink)
+	        .on("drag", draggedLink)
+	        .on("end", dragendLink));
+	
+	d3.selectAll(".link_title_inv").call(d3.drag()
+	        .on("start", dragstartLink)
+	        .on("drag", draggedLink)
+	        .on("end", dragendLink));
+
 	redrawLinks();	
 	
 		
@@ -779,6 +815,7 @@ function getCoords(d,clazzBox) {
 			coord.y1= sy+sh;
 	}
 	delta = Math.abs(sx-tx) - Math.abs(sy-ty);
+	
 	if (sx<tx && delta>0) {
 		coord.x2 = tx;
 		coord.y2 = ty+th/2;
@@ -792,29 +829,78 @@ function getCoords(d,clazzBox) {
 		else
 			coord.y2= ty+th;
 	}
+	if (d.source==d.target) {
+		coord.y2+=20;
+		coord.x2+=10;
+		coord.x1-=10;
+	}
 	for (i=0;i<fdata.links.length;i++) {
 		var lnk = fdata.links[i];
-		if (lnk.coord)
-			if (lnk.coord.x1==coord.x1 && lnk.coord.x2==coord.x2 && lnk.coord.y1==coord.y1 && lnk.coord.y2==coord.y2) {
-				if (coord.y2!=ty && coord.y2!=ty+th) { //ty+th/2					
-					coord.y2=coord.y2+(coord.y2-ty)/4;
-					i=0;
+		if (lnk!=d && lnk.target==d.target && lnk.coord)
+			if ( lnk.coord.x2==coord.x2 && lnk.coord.y2==coord.y2) {
+				if (d.source==d.target) {
+					coord.y2+=20;
+					coord.x2+=10;
+					coord.x1-=10;	
 				} else {
-					coord.x2=coord.x2+(coord.x2-tx)/4;
-					i=0;
-				}
+					var r=recalcConflict({x:coord.x2,y:coord.y2},tx,ty,tw,th)
+					coord.x2=r[0];
+					coord.y2=r[1];
+				}				
+				i=0;
+			}
+	}
+	for (i=0;i<fdata.links.length;i++) {
+		var lnk = fdata.links[i];
+		if (lnk!=d && lnk.source==d.source && lnk.coord)
+			if (lnk.coord.x1==coord.x1 &&  lnk.coord.y1==coord.y1 ) {
+				var r = recalcConflict({x:coord.x1,y:coord.y1},sx,sy,sw,sh);	
+				coord.x1=r[0];
+				coord.y1=r[1];
+				i=0;
 			}
 	}
 	d.coord = coord;
 	return coord;
 }
+function recalcConflict(coord,tx,ty,tw,th) {
+	if (coord.y!=ty && coord.y!=ty+th) { //ty+th/2					
+		if (coord.y<=(ty+th/2)) {
+			var ny = ty+th-(coord.y-ty)/2;
+			coord.y=ny;
+		} else {
+			var ny = ty+(ty+th-coord.y);
+			coord.y=ny;
+		}		
+	} else {
+		if (coord.x<=(tx+tw/2)) {
+			var nx = tx+tw-(coord.x-tx)/2;						
+			coord.x=nx;
+		} else {
+			var nx = tx+(tx+tw-coord.x);
+			coord.x=nx;
+		}	
+	}
+	return [coord.x,coord.y];
+}
 function redrawLinks() {
+	svg.selectAll(".text_title").attr('x',function(d) {return this.parentElement.getBBox().width/2});	
+	svg.selectAll(".title_line").attr('x1', 0)	
+	.attr('x2', function(d) {return this.parentElement.getBBox().width});
+	
+	
 	var clazzBox = svg.selectAll('.node');
 	//clazzBox.select(".text_title").attr('x',function(d) {return this.parentElement.getBBox().width/2});
 	var link = svg.selectAll(".link")		
 		.attr("d", function (d) {
 			var c=getCoords(d,clazzBox); 
-			return "M "+c.x1+","+c.y1+" L "+c.x2+","+c.y2;
+			if (d.source==d.target) {
+				return "M "+c.x1+","+c.y1+
+					" L "+(c.x1)+","+(c.y2)+
+					" L "+(c.x2)+","+(c.y2)+
+					" L "+(c.x2)+","+c.y1;
+			} else
+				return "M "+c.x1+","+c.y1+" L "+c.x2+","+c.y2;
 		});
 		
 	var texts = svg.selectAll(".link_title")
@@ -888,21 +974,44 @@ function selectClass(clazz) {
 	} else 
 		d3.select("#openSourceBtn").attr("class","hidden_btn");
 }
+dragPos=[0,0];
 function dragstarted(d) {
   selectClass(d);
+  
+  dragPos=[d3.event.x - this.x.baseVal.value,d3.event.y - this.y.baseVal.value];
+  //console.log(dragPos);
   d3.select(this).classed("active", true);
 }
 
 function dragged(d) {
   
   var bbox = this.getBBox();//this.parentElement.getBBox();
-  d3.select(this).attr("x", d.x = d3.event.x-bbox.width/2).attr("y", d.y = d3.event.y-bbox.height/2);
+ // d3.select(this).attr("x", d.x = d3.event.x - bbox.width/2).attr("y", d.y = d3.event.y - bbox.height/2);
+  d3.select(this).attr("x", d.x = d3.event.x-dragPos[0] ).attr("y", d.y = d3.event.y -dragPos[1]);
   redrawLinks();
 }
 
 function dragended(d) {
   d3.select(this).classed("active", false);
 }
+function dragstartLink(d) {  	
+	var m=this.attributes["text-anchor"].value=="start" ? 0 : 1;
+	
+  	dragPos=[d3.event.x - (this.getBBox().x+this.getBBox().width*m),d3.event.y - (this.getBBox().y+this.getBBox().height)];
+  	//console.log(dragPos);
+  	d3.select(this).classed("active", true);
+}
+
+function draggedLink(d) {  
+  
+  d3.select(this).attr("x", d.x = d3.event.x-dragPos[0] ).attr("y", d.y = d3.event.y -dragPos[1]);
+  
+}
+
+function dragendLink(d) {
+  d3.select(this).classed("active", false);
+}
+
 </script>
 </body>
 </html>
