@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import dao.ConfigDAO;
 import db.daos.MyConfigNop;
+import gitget.Auth;
 import gitget.GitHubRepoLoader;
 import gitget.Options;
 
@@ -50,12 +51,19 @@ public class AuthSrv extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String start = request.getParameter("start");
+		String cliId = Auth.getProperty("client_id_web");
+		String protocol = Auth.getProperty("http");
 		if (start!=null) {
 			int rnd = (int)(Math.random()*100000);
 			request.getSession().setAttribute("rnd", rnd);
+			//"http://179.219.65.204:8080/enorm/Auth
+			String url  = request.getRequestURL().toString();
+			if (protocol.equals("https"))
+				url = url.replace("http:","https:");
 			String r = response.encodeRedirectURL(
-					"https://github.com/login/oauth/authorize?client_id=a4d374fd110a31846bf0&redirect_uri="
-					+"http://179.219.65.204:8080/enorm/Auth&state="+rnd);
+					"https://github.com/login/oauth/authorize?client_id="+cliId+"&redirect_uri="
+					+url+"&state="+rnd); 
+			
 			response.sendRedirect(r);
 			return;
 			
@@ -76,7 +84,7 @@ public class AuthSrv extends HttpServlet {
 			return;
 		}
 			
-		System.out.println(code+","+state);
+		//System.out.println(code+","+state);
 		
 		HttpsURLConnection con=null;
 		try {
@@ -85,7 +93,7 @@ public class AuthSrv extends HttpServlet {
 			con.setRequestMethod("POST");			
 			con.setRequestProperty("Accept-Language", "en-US,en;q=0.5");
 			con.setRequestProperty("Accept","application/json");
-			String urlParameters = "client_id=a4d374fd110a31846bf0&client_secret="+gitget.Auth.getProperty("oauth_web")
+			String urlParameters = "client_id="+cliId+"&client_secret="+gitget.Auth.getProperty("oauth_web")
 				+"&code="+code;
 			con.setDoOutput(true);
 			DataOutputStream wr = new DataOutputStream(con.getOutputStream());
@@ -97,7 +105,7 @@ public class AuthSrv extends HttpServlet {
 			try (JsonReader rdr= Json.createReader(is)) {
 				JsonObject result = rdr.readObject();
 				String token = result.getString("access_token");
-				System.out.println(token);
+				//System.out.println(token);
 				Cookie cookie = new Cookie("access_token",token);				
 				cookie.setMaxAge(60*60*24*30); //1 month
 				response.addCookie(cookie);

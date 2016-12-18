@@ -3,10 +3,21 @@
 	style="width:100%; height:100%;"
 	>
 <head>
+<title>Enorm repository viewer</title>
 <meta charset="utf-8">
 <script src="https://d3js.org/d3.v4.js"></script>
 <script type="text/javascript" src="jsog.js"></script>
 <style>
+.footer {
+	position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 2; /* Stay on top */
+    background-color: #D2DC34;
+   	border-style:outset;
+   	border-color: whitesmoke;
+ 	opacity: 0.8;
+}
 .svg_main {
 	position:fixed;
 	top:0; 
@@ -523,7 +534,7 @@ function getFontStype(c) {
 	  return "italic"
 	return "";
 }
-function getPropDesc(p) {
+function getPropDesc(p,assoc=false) {
 	var pname="";
 	//prefix
 	
@@ -545,8 +556,14 @@ function getPropDesc(p) {
 		pname+=" ";
 	//-- name, cardinality
 	pname+=p.name;
-	pname+=	" 	["+p.min+".."+(p.max<0 ? "*": p.max)+"]: "+ coalesce(p.type,"<<unknown>>");
-	
+	if ((p.min==0 && p.max<0) || (p.min==1 && p.max==1))
+		pname+=	" ["+(p.max<0 ? "*": p.max)+"]";
+	else
+		pname+=	" ["+p.min+".."+(p.max<0 ? "*": p.max)+"]";
+	if (!assoc)
+		pname+=": "+ coalesce(p.type,"<<unknown>>");
+	else
+		pname+=" ";
 	// mapping
 	if (p.columnMapping!=null) {
 		pname+=" | ";
@@ -665,6 +682,9 @@ function getAssociation(prop) {
 function getInverse(prop) {
 	var a = getAssociation(prop);
 	return (a.to==prop) ? a.from : a.to;
+}
+function printAssocEndDesc(p) {
+	return getPropDesc(p,true)+printAssociationDef(p.associationDef,p.parent,p); 
 }
 function drawModel(cls) {
 	var grid = [[w/2,h/2],[w/2+100,h/2],[w/2,0],[0,h/2],[w/2,h/2+100],[w/2+100,h/2+100],[0,h/2+100],[w/2+100,0],[0,0]];
@@ -808,7 +828,7 @@ function drawModel(cls) {
 		.attr("class","link_title")
 		.text(function(d) {
 			if (d.type!="G")
-				return d.prop.name+printAssociationDef(d.prop.associationDef,d.prop.parent,d.prop);
+				return printAssocEndDesc(d.prop);
 		});
 	var reverseLinkTitles = svg.selectAll(".link_title_inv")
 		.data(function(d) {
@@ -823,17 +843,17 @@ function drawModel(cls) {
 		.attr("class","link_title_inv")
 		.text(function(d) {
 			var inv = 	getInverse(d.prop);				
-			return inv.name+printAssociationDef(inv.associationDef,inv.parent,inv);
+			return printAssocEndDesc(inv);
 		});
 	linkTitles.append("title")
           .text(function(d, i) { 
 			if (d.type!="G")
-				return d.prop.name;
+				return printAssocEndDesc(d.prop);
 		  });
 	reverseLinkTitles.append("title")
           .text(function(d, i) { 
 			if (d.type!="G")
-				return getInverse(d.prop).name;
+				return printAssocEndDesc(getInverse(d.prop));
 		  });
 		
 	d3.selectAll(".link_title").call(d3.drag()
@@ -962,14 +982,22 @@ function redrawLinks() {
 		
 	var texts = svg.selectAll(".link_title")
 		.attr("x",function (d) {
-			return getCoords(d,clazzBox).x2; 
+			var c = getCoords(d,clazzBox);
+			var x = c.x2; 	
+			if (c.x1>c.x2)
+				x+=4;
+			else
+				x-=4;;
+			return x; 
 			
 		})
 		.attr("y",function (d) {
 			var c= getCoords(d,clazzBox);
 			var y= c.y2; 
 			if (c.y1>c.y2)
-				y=y+this.getBBox().height;
+				y=y+this.getBBox().height+4;
+			else 
+				y=y-4;
 			return y;
 		})
 		.attr("text-anchor",function (d) {
@@ -980,15 +1008,23 @@ function redrawLinks() {
 				return "end";
 		});
 	svg.selectAll(".link_title_inv")
-		.attr("x",function (d) {
-			return getCoords(d,clazzBox).x1; 
-			
+		.attr("x",function (d) {			
+			var c = getCoords(d,clazzBox);
+			var x = c.x1; 	
+			if (c.x1>c.x2)
+				x-=4;
+			else
+				x+=4;;
+			return x; 
 		})
 		.attr("y",function (d) {
 			var c= getCoords(d,clazzBox);
 			var y= c.y1; 
 			if (c.y2>c.y1)
-				y=y+this.getBBox().height;
+				y=y+this.getBBox().height+4;
+			else 
+				y=y-4;
+			
 			return y;
 		})
 		.attr("text-anchor",function (d) {
@@ -1051,14 +1087,30 @@ function dragged(d) {
 function dragended(d) {
   d3.select(this).classed("active", false);
 }
+function selectElement(e,isInverse) {
+	if (isInverse)	
+		e = getInverse(e);
+	d3.selectAll(".footer").data([]).exit().remove();
+	d3.select("#main").select(".footer")
+		.data(function(d){ return[e]}).enter()
+		.append("div")
+		.attr("class","footer")
+		.on("click",function(e) {
+			d3.selectAll(".footer").data([]).exit().remove();
+		})		
+		.text(function(d) {
+			return printAssocEndDesc(d);
+			
+		});
+	
+}
 function dragstartLink(d) {  	
 	var m=this.attributes["text-anchor"].value=="start" ? 0 : 1;
-	
-  	dragPos=[d3.event.x - (this.getBBox().x+this.getBBox().width*m),d3.event.y - (this.getBBox().y+this.getBBox().height)];
+	dragPos=[d3.event.x - (this.getBBox().x+this.getBBox().width*m),d3.event.y - (this.getBBox().y+this.getBBox().height)];
   	//console.log(dragPos);
   	d3.select(this).classed("active", true);
-}
-
+  	selectElement(d.prop,d3.select(this).classed("link_title_inv"));
+}  			
 function draggedLink(d) {  
   
   d3.select(this).attr("x", d.x = d3.event.x-dragPos[0] ).attr("y", d.y = d3.event.y -dragPos[1]);

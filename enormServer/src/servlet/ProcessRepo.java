@@ -18,10 +18,8 @@ import com.fasterxml.jackson.datatype.hibernate5.Hibernate5Module.Feature;
 
 import dao.ConfigDAO;
 import db.daos.MyConfigNop;
-import db.daos.RepoDAO;
-import db.jpa.JPA_DAO;
 import gitget.GitHubRepoLoader;
-import gitget.Options;
+
 import model.Repo;
 
 /**
