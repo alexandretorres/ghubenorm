@@ -7,6 +7,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -55,6 +58,8 @@ public class Repo implements Visitable {
 	private Integer errorLevel;
 	@Enumerated(EnumType.ORDINAL)
 	private SkipReason skipReason;
+	@Column(name="dt_change") @Temporal(TemporalType.TIMESTAMP)	
+	private Date loadDate;
 	/**
 	 * This is the internal path to the "base" file that defines the repository. For ruby it is the schema.db file,
 	 * for java it may be the presistence.xml. It is used to differentiate what portion of the repository is 
@@ -74,6 +79,7 @@ public class Repo implements Visitable {
 	protected Repo() {}
 	public Repo(Language lang) {
 		this.language=lang;
+		this.loadDate=new Date();
 	}
 	public int getId() {
 		return id;
@@ -135,6 +141,12 @@ public class Repo implements Visitable {
 	}
 	public void setPublicId(int publicId) {
 		this.publicId = publicId;
+	}
+	public void setLoadDate(Date dt) {
+		this.loadDate = dt;
+	}
+	public Date getLoadDate() {
+		return loadDate;
 	}
 	/*	public Set<MDataSource> getTables() {
 		return sources;
