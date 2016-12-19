@@ -79,22 +79,26 @@ class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 		//getEm().createNamedStoredProcedureQuery("CleanRepo").setParameter(1, publicId).execute();
 		getEm().createNativeQuery("select count(*) from \"CleanRepo\"("+publicId+")").getResultList();	
 	}
-	void setDate(int publicId,Date dt) {		
+	void setDate(int publicId,Date dt,int lastPid) {		
 		Query q = getEm().createNativeQuery("update Repo set dt_change=? where publicId=?");	
 		q.setParameter(1, dt);
 		q.setParameter(2, publicId);
 		q.executeUpdate();
 		//
-		q = getEm().createNativeQuery("update Repo set dt_change=? where publicId<? and dt_change is null");	
-		q.setParameter(1, dt);
-		q.setParameter(2, publicId);
-		q.executeUpdate();
+		if (lastPid>=0 && publicId>lastPid) {
+			q = getEm().createNativeQuery("update Repo set dt_change=? "
+					+ "where publicId<? and publicId>? and dt_change is null");	
+			q.setParameter(1, dt);
+			q.setParameter(2, publicId);
+			q.setParameter(3, lastPid);
+			q.executeUpdate();
+		}
 	}
 	void setDate(String name,Date dt) {		
 		Query q = getEm().createNativeQuery("select publicid from Repo where name=?");		
 		q.setParameter(1, name);
 		Integer pid = (Integer) q.getSingleResult();
-		setDate(pid,dt);
+		setDate(pid,dt,-1);
 	}
 	
 }
