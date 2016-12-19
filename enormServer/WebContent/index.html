@@ -34,7 +34,9 @@
   stroke-width: 3px;
 }
 
-
+.active_link {
+  stroke-opacity: 0.4;  
+}
 .persistent {
 	fill: rgb(176,224,176);
 }
@@ -789,7 +791,9 @@ function drawModel(cls) {
 		.attr("class", "link")
 		.attr("stroke-width",1)
 		.attr("stroke","black")
-		
+		.attr("id",function(d,i) {
+			return "link_"+i;
+		})
 		.style("stroke-width", function(d) {			
 			if (d.type=="G") 
 				return 2;
@@ -1104,11 +1108,12 @@ function selectElement(e,isInverse) {
 		});
 	
 }
-function dragstartLink(d) {  	
+function dragstartLink(d) {	
 	var m=this.attributes["text-anchor"].value=="start" ? 0 : 1;
 	dragPos=[d3.event.x - (this.getBBox().x+this.getBBox().width*m),d3.event.y - (this.getBBox().y+this.getBBox().height)];
   	//console.log(dragPos);
-  	d3.select(this).classed("active", true);
+  	d3.select(this).classed("active", true); 
+  	svg.selectAll("#link_"+fdata.links.indexOf(d)).classed("active_link", true); 
   	selectElement(d.prop,d3.select(this).classed("link_title_inv"));
 }  			
 function draggedLink(d) {  
@@ -1119,6 +1124,7 @@ function draggedLink(d) {
 
 function dragendLink(d) {
   d3.select(this).classed("active", false);
+  svg.selectAll("#link_"+fdata.links.indexOf(d)).classed("active_link", false); 
 }
 
 </script>
