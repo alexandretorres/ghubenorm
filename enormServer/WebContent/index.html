@@ -95,7 +95,9 @@
 .sidenav a:hover, .offcanvas a:focus{
     color: #f1f1f1;
 }
-
+.sidenav .current_menu {
+	color: #f1f1f1;
+}
 
 /* Position and style the close button (top right corner) */
 .sidenav .closebtn {
@@ -477,6 +479,10 @@ function cleanDiagram() {
 	svg.selectAll('.link_title_inv').data([]).exit().remove();
 }
 function pickClass(d,i) {	
+	d3.select(".current_menu").classed("current_menu",false);	
+
+	d3.select(this).classed("current_menu",true);	
+
 	centralClass = repo.classes[i];	
 	selectClass(null);
 	classes = findClasses(centralClass);
@@ -728,16 +734,23 @@ function drawModel(cls) {
 		.data(function(d) 
 			{
 				var ret = d.properties.filter(function(prop) {
-					return getAssociation(prop)==null && linkProps.indexOf(prop)<0;
+					return (getAssociation(prop)==null || prop.parent!=cls) && linkProps.indexOf(prop)<0;
 				});
 				ret.sort(function(p1,p2) {
 					var ret = p1.name < p2.name ? -1 : p1.name > p2.name;					
+					var a1=getAssociation(p1),a2=getAssociation(p2);
 					if (p1.pk && p2.pk) {
 						return ret;
 					}else if (p1.pk && !p2.pk) {
 						return -1;
 					}else if (!p1.pk && p2.pk) {
 						return 1;
+					} else if (a1!=null && a2!=null) {
+						return ret;
+					} else if (a1!=null && a2==null) {
+						return 1;
+					} else if (a1==null && a2==null) {
+						return -1;	
 					}else {
 						return ret;
 					}			
@@ -748,7 +761,9 @@ function drawModel(cls) {
 		.enter()
 		.append("text")
 		.attr('class', 'text_property')
-		.text(getPropDesc)
+		.text(function(d) {
+			return getPropDesc(d);
+			})		
 		.attr("x", function(d) {
 			return 5;
 		})
