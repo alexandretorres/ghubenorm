@@ -388,7 +388,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			if (!annots.isEmpty())
 				comp.hasMethodAnnotations=true;
 			String bname = getBeanName(ctx.getName()); 
-			if (bname!=null && !(type instanceof VoidType))
+			if (bname!=null && !(type instanceof VoidType) && ctx.getParameters().isEmpty())
 				info.propInfo.add(new PropInfo(bname,ctx, annots, type, modifiers, null));
 			//if (comp.propertyAccess || !comp.hasFieldAnnotations)
 			//ONLY IF USING METHOD ANNOTATION

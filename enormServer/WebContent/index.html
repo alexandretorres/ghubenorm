@@ -8,6 +8,12 @@
 <script src="https://d3js.org/d3.v4.js"></script>
 <script type="text/javascript" src="jsog.js"></script>
 <style>
+.closeClassIcon {
+	fill:gray;	
+}
+.closeClassIcon:hover {
+	fill:red;	
+}
 .footer {
 	position: fixed;
     bottom: 0;
@@ -27,7 +33,11 @@
 .node {
    
 }
-
+.more-button {
+	text-decoration:underline;
+	cursor:pointer;
+	fill:blue;
+}
 
 .active {
   fill-opacity: 0.4;
@@ -374,6 +384,7 @@ d3.xml('extras.svg').mimeType("image/svg+xml").get(function(error, xml) {
 		//var importedNode = document.importNode(xml.documentElement, true).getElementById("gflat_inheritance")[0];
 	var docNode = document.importNode(xml.documentElement, true);
 	var importedNode = docNode.getElementById("gflat_inheritance");
+	
 	defs.append("marker")	
 	.attr("id","flat_inheritance")
 	.attr("viewBox", "0 0 20 20")
@@ -408,6 +419,11 @@ d3.xml('extras.svg').mimeType("image/svg+xml").get(function(error, xml) {
 	
     .attr("orient", "auto")
 	.node().appendChild(importedHoriz);
+	
+	var closeNode = docNode.getElementById("open-iconic-x");
+	defs.node().appendChild(closeNode);
+
+	
 });
 
 
@@ -494,13 +510,13 @@ function pickClass(d,i) {
 function findClasses(clazz) {
 	var cls = [];
 	cls.push(clazz);
-	var plinks = clazz.properties.filter(function(d) {return d.typeClass!=null && (getAssociation(d)!=null )});
+	var plinks = clazz.properties.filter(function(d) {return d.typeClass!=null && getAssociation(d)!=null && !d.embedded});
 	plinks.forEach(function(d) {
 		if (d.typeClass!=null && !cls.includes(d.typeClass)) 
 			cls.push(d.typeClass)
 		});
 	
-	
+			
 	fdata.links = plinks.map(function(d) {
 			return {type:"A",source:cls.indexOf(d.parent),target:cls.indexOf(d.typeClass),prop:d}
 		});
@@ -689,11 +705,35 @@ function getAssociation(prop) {
 }
 function getInverse(prop) {
 	var a = getAssociation(prop);
+	if (a==null)
+		return null;
 	return (a.to==prop) ? a.from : a.to;
 }
 function printAssocEndDesc(p) {
 	return getPropDesc(p,true)+printAssociationDef(p.associationDef,p.parent,p); 
 }
+function clickProperty(p) {
+	if (p.typeClass!=null) {
+		if (fdata.nodes.indexOf(p.typeClass)<0) {	
+			fdata.nodes.push(p.typeClass);	
+		}
+		if (fdata.links.filter(function(d){
+			  		return d.prop==p;
+				}
+				).length==0) {
+			var type = p.embedded ? "E" : "A";	
+		
+			fdata.links.push(
+					{type:type,source:fdata.nodes.indexOf(p.parent),target:fdata.nodes.indexOf(p.typeClass),prop:p}
+			);
+		}
+		var nclass = d3.select(this.parentNode.parentNode);
+		drawProperties(nclass);
+		drawModel(fdata.nodes);			
+		
+	}
+}
+
 function drawModel(cls) {
 	var grid = [[w/2,h/2],[w/2+100,h/2],[w/2,0],[0,h/2],[w/2,h/2+100],[w/2+100,h/2+100],[0,h/2+100],[w/2+100,0],[0,0]];
 	var clazzBox = svg.selectAll('.node')
@@ -713,8 +753,9 @@ function drawModel(cls) {
 		})
 		.attr('class', 'node');		
 	
-	var titleTx = clazzBox.append("text")		
-		.text(function(d) {return className(d)})
+	var titleTx = clazzBox.append("text")
+		.attr('xml:space', "preserve")
+		.text(function(d) {return "    "+className(d)+"    "})
 		.attr('class','text_title')
 		.attr("text-anchor","middle")
 		//.attr("alignment-baseline","central")
@@ -723,56 +764,13 @@ function drawModel(cls) {
 		.attr("font-weight", "bold")
 		.attr("font-style", function(d) {return getFontStype(d)})
 		.attr("fill", "black")
-		.attr("x",  0 )
+		.attr("x",  function(d) {return this.getBBox().width/2;} )  // very important to start in the middle! or bbox goes crazy
 		.attr("y", function(d, i) {
 			return sy;
 		})
 		;
 	//todo: auto-rel
-	var linkProps  =fdata.links.map(function(d) {return d.prop});
-	clazzBox.selectAll(".text_property")
-		.data(function(d) 
-			{
-				var ret = d.properties.filter(function(prop) {
-					return (getAssociation(prop)==null || prop.parent!=cls) && linkProps.indexOf(prop)<0;
-				});
-				ret.sort(function(p1,p2) {
-					var ret = p1.name < p2.name ? -1 : p1.name > p2.name;					
-					var a1=getAssociation(p1),a2=getAssociation(p2);
-					if (p1.pk && p2.pk) {
-						return ret;
-					}else if (p1.pk && !p2.pk) {
-						return -1;
-					}else if (!p1.pk && p2.pk) {
-						return 1;
-					} else if (a1!=null && a2!=null) {
-						return ret;
-					} else if (a1!=null && a2==null) {
-						return 1;
-					} else if (a1==null && a2==null) {
-						return -1;	
-					}else {
-						return ret;
-					}			
-				});
-				return ret;
-				
-			})
-		.enter()
-		.append("text")
-		.attr('class', 'text_property')
-		.text(function(d) {
-			return getPropDesc(d);
-			})		
-		.attr("x", function(d) {
-			return 5;
-		})
-		.attr("y", function(d, i) {
-			return ((i+1) *  PropHeight)+sy+2;
-		})
-		.attr("font-family", "sans-serif")
-		.attr("font-size", "12px")
-		.attr("fill", "black");
+	drawProperties(clazzBox);
 		
 	clazzBox.append("line")
 		.attr("class","title_line")
@@ -799,16 +797,24 @@ function drawModel(cls) {
         .on("end", dragended));
 
 	addBox(clazzBox);
+	
+	clazzBox.append("g")
+		.on("click",closeClass)
+		.append("use")
+		.attr("class","closeClassIcon")
+		.attr("y",2)
+		.attr("x", 0 )
+		.attr("width",10)
+		.attr("height",10)		
+		.attr("xlink:href","#open-iconic-x")
+		;
 	//links
 	var link = svg.selectAll(".link")
 		.data(fdata.links)
 		.enter().append("path")
 		.attr("class", "link")
 		.attr("stroke-width",1)
-		.attr("stroke","black")
-		.attr("id",function(d,i) {
-			return "link_"+i;
-		})
+		.attr("stroke","black")	
 		.style("stroke-width", function(d) {			
 			if (d.type=="G") 
 				return 2;
@@ -888,6 +894,155 @@ function drawModel(cls) {
 	redrawLinks();	
 	
 		
+}
+function drawProperties(clazzBox) {
+	var linkProps  =fdata.links.map(function(d) {return d.prop});	
+	
+	var sel = clazzBox.selectAll(".text_property")
+		.data(function(d) {
+				var props = d.properties.filter(function(prop) {
+					var hasLink =  linkProps.indexOf(prop)>=0;
+					var inv = getInverse(prop);
+					if (inv!=null && !hasLink)
+						hasLink = linkProps.indexOf(inv)>=0
+				
+					return  !hasLink;
+				});
+				props.sort(function(p1,p2) {
+					var ret = p1.name < p2.name ? -1 : p1.name > p2.name;					
+					var a1=getAssociation(p1),a2=getAssociation(p2);
+					if (p1.pk && p2.pk) {
+						return ret;
+					}else if (p1.pk && !p2.pk) {
+						return -1;
+					}else if (!p1.pk && p2.pk) {
+						return 1;
+					} else if (a1!=null && a2!=null) {
+						return ret;
+					} else if (a1!=null && a2==null) {
+						return 1;
+					} else if (a1==null && a2!=null) {
+						return -1;	
+					}else {
+						return ret;
+					}			
+				});
+				
+				return props;				
+			}
+			,function(d,i,group) 
+			{			
+				
+				var ret = d.parent.properties.indexOf(d);
+				if (ret<0)
+					return undefined;
+				else
+					return ret;
+				
+				
+				
+								
+			});
+	sel.exit().remove();	
+	var entered = sel.enter()
+		.append("text")		
+		.attr('class', 'text_property')
+		.text(function(d) {
+			return getPropDesc(d)+" ";
+			})		
+		.attr("font-family", "sans-serif")
+		.attr("font-size", "12px")
+		.attr("fill", "black");
+	
+	entered.filter(function (d) { 
+		return d.typeClass!=null;
+	})
+	.append("tspan")
+	.attr("class","more-button")
+	.on("click",clickProperty)
+	.text("[+]");
+	
+	clazzBox.selectAll(".text_property")
+	.attr("x", function(d) {
+		return 5;
+	})
+	.attr("y", function(d, i) {
+		return ((i+1) *  PropHeight)+sy+2;
+	});
+	
+	// reset sizes...
+	clazzBox.attr("width",5);
+	clazzBox.selectAll("rect")
+		.attr('width', 5)
+		.attr('height', 5);
+	clazzBox.selectAll(".text_title").attr('x',function(d) {
+			return this.getBBox().width/2;
+		})	
+	clazzBox.selectAll(".title_line").attr('x1', 0)	
+		.attr('x2', 5);
+	clazzBox.selectAll(".closeClassIcon").attr('x',0);	
+	clazzBox.attr("width",null);
+	// 
+	clazzBox.selectAll("rect")
+		.attr('width', function(d) {
+				return this.parentElement.getBBox().width;
+				})
+		.attr('height', function(d) {
+			return this.parentElement.getBBox().height+sy/2;
+		});
+}
+
+function closeClass(clazz,idx) {	
+	//this idx will not work ! it is bound on "on('click')" definition
+	idx = fdata.nodes.indexOf(clazz);
+	var refClasses=new Set();
+	//remove links
+	fdata.links = fdata.links.filter(function(d) {
+		if (d.source==idx) {
+		 	refClasses.add(fdata.nodes[d.target]);		
+			return false;	
+		} else if (d.target==idx) {
+			refClasses.add(fdata.nodes[d.source]);			
+			return false;
+		} else 
+			return true;
+		
+	});
+	refClasses.delete(clazz);
+	for (var i=0;i<fdata.links.length;i++) {
+		var l = fdata.links[i];
+		if (l.target>idx)
+			l.target=l.target-1;
+		if (l.source>idx)
+			l.source = l.source-1;
+	}
+	var elinks = svg.selectAll(".link")
+		.data(fdata.links,function(d) {
+			return fdata.links.indexOf(d);		
+			
+		})
+		.exit();
+	elinks.remove();
+	svg.selectAll(".link_title").data(fdata.links,function(d,i) {
+		return fdata.links.indexOf(d);		
+		
+	}).exit().remove();
+	svg.selectAll(".link_title_inv").data(fdata.links,function(d,i) {
+		return fdata.links.indexOf(d);		
+		
+	}).exit().remove();
+	//--
+	fdata.nodes.splice(idx,1);
+	var exit = svg.selectAll('.node')
+		.data(fdata.nodes,function(d,i) { 
+			return fdata.nodes.indexOf(d);			
+		}).exit();	
+	
+	exit.remove();
+	
+	drawProperties(svg.selectAll('.node').filter(function(d){ return refClasses.has(d);}));
+	redrawLinks();
+	
 }
 function getCoords(d,clazzBox) {
 	var coord={x1:0,y1:0,x2:0,y2:0};
@@ -980,10 +1135,16 @@ function recalcConflict(coord,tx,ty,tw,th) {
 	return [coord.x,coord.y];
 }
 function redrawLinks() {
-	svg.selectAll(".text_title").attr('x',function(d) {return this.parentElement.getBBox().width/2});	
+	svg.selectAll(".text_title").attr('x',function(d) {
+		return this.parentElement.getBBox().width/2
+		}
+	);	
 	svg.selectAll(".title_line").attr('x1', 0)	
 	.attr('x2', function(d) {return this.parentElement.getBBox().width});
 	
+	svg.selectAll(".closeClassIcon").attr('x',function(d) {
+		return this.parentElement.parentElement.getBBox().width -this.getBBox().width-2
+	});	
 	
 	var clazzBox = svg.selectAll('.node');
 	//clazzBox.select(".text_title").attr('x',function(d) {return this.parentElement.getBBox().width/2});
@@ -1128,7 +1289,8 @@ function dragstartLink(d) {
 	dragPos=[d3.event.x - (this.getBBox().x+this.getBBox().width*m),d3.event.y - (this.getBBox().y+this.getBBox().height)];
   	//console.log(dragPos);
   	d3.select(this).classed("active", true); 
-  	svg.selectAll("#link_"+fdata.links.indexOf(d)).classed("active_link", true); 
+  	svg.selectAll(".link").filter(function(dv) {return dv==d}).classed("active_link", true);
+  	//svg.selectAll("#link_"+fdata.links.indexOf(d)).classed("active_link", true); 
   	selectElement(d.prop,d3.select(this).classed("link_title_inv"));
 }  			
 function draggedLink(d) {  
@@ -1139,7 +1301,8 @@ function draggedLink(d) {
 
 function dragendLink(d) {
   d3.select(this).classed("active", false);
-  svg.selectAll("#link_"+fdata.links.indexOf(d)).classed("active_link", false); 
+  svg.selectAll(".link").filter(function(dv) {return dv==d}).classed("active_link", false);
+  //svg.selectAll("#link_"+fdata.links.indexOf(d)).classed("active_link", false); 
 }
 
 </script>
