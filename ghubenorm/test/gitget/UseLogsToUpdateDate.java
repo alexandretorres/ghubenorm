@@ -21,8 +21,15 @@ import model.Repo;
 
 public class UseLogsToUpdateDate {
 	public static String exp = "... ... \\d\\d? \\d\\d?:\\d\\d:\\d\\d BRS?T 201\\d";
-//	String path="logs/ReloadLogsMainDatabase/";
-	String[] paths= new String[] {"trash/logsRunning_part1/"};
+
+	String[] paths= new String[] {
+		"trash/logs/logsRunning_part1/",
+		"trash/logs/LogsRunning_part2_9_11/",
+		"trash/logs/LogsRunning_part3_23_11/",		
+		"trash/logs/logsRunning_part4/",
+		"trash/logs/ReloadLogsMainDatabase/",
+		"trash/logs/LogsRunning_part5/",
+	};
 	class CRepo {
 		CRepo(){}
 		CRepo(int pid,String name) {
