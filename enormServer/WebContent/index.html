@@ -544,6 +544,7 @@ function findClasses(clazz) {
 	fdata.nodes = cls;
 	return cls;
 }
+// ⇑ ⇧ ↑ 
 function className(d) {
 	var tx = d.name;
 	if (d.persistent) {
@@ -713,6 +714,8 @@ function printAssocEndDesc(p) {
 	return getPropDesc(p,true)+printAssociationDef(p.associationDef,p.parent,p); 
 }
 function clickProperty(p) {
+	d3.event.stopPropagation();	
+
 	if (p.typeClass!=null) {
 		if (fdata.nodes.indexOf(p.typeClass)<0) {	
 			fdata.nodes.push(p.typeClass);	
@@ -799,7 +802,7 @@ function drawModel(cls) {
 	addBox(clazzBox);
 	
 	clazzBox.append("g")
-		.on("click",closeClass)
+		.on("mousedown",closeClass)
 		.append("use")
 		.attr("class","closeClassIcon")
 		.attr("y",2)
@@ -895,54 +898,46 @@ function drawModel(cls) {
 	
 		
 }
-function drawProperties(clazzBox) {
-	var linkProps  =fdata.links.map(function(d) {return d.prop});	
+function listPropData(d /*class*/) {
 	
+	var linkProps  =fdata.links.map(function(d) {return d.prop});
+	var props = d.properties.filter(function(prop) {
+		var hasLink =  linkProps.indexOf(prop)>=0;
+		var inv = getInverse(prop);
+		if (inv!=null && !hasLink)
+			hasLink = linkProps.indexOf(inv)>=0
+	
+		return  !hasLink;
+	});
+	props.sort(function(p1,p2) {
+		var ret = p1.name < p2.name ? -1 : p1.name > p2.name;					
+		var a1=getAssociation(p1),a2=getAssociation(p2);
+		if (p1.pk && p2.pk) {
+			return ret;
+		}else if (p1.pk && !p2.pk) {
+			return -1;
+		}else if (!p1.pk && p2.pk) {
+			return 1;
+		} else if (a1!=null && a2!=null) {
+			return ret;
+		} else if (a1!=null && a2==null) {
+			return 1;
+		} else if (a1==null && a2!=null) {
+			return -1;	
+		}else {
+			return ret;
+		}			
+	});
+	
+	return props;	
+}
+function drawProperties(clazzBox) {
+	var myData = new D3MyData(listPropData);
+		
+	//var myData = new D3MyData(group);
 	var sel = clazzBox.selectAll(".text_property")
-		.data(function(d) {
-				var props = d.properties.filter(function(prop) {
-					var hasLink =  linkProps.indexOf(prop)>=0;
-					var inv = getInverse(prop);
-					if (inv!=null && !hasLink)
-						hasLink = linkProps.indexOf(inv)>=0
-				
-					return  !hasLink;
-				});
-				props.sort(function(p1,p2) {
-					var ret = p1.name < p2.name ? -1 : p1.name > p2.name;					
-					var a1=getAssociation(p1),a2=getAssociation(p2);
-					if (p1.pk && p2.pk) {
-						return ret;
-					}else if (p1.pk && !p2.pk) {
-						return -1;
-					}else if (!p1.pk && p2.pk) {
-						return 1;
-					} else if (a1!=null && a2!=null) {
-						return ret;
-					} else if (a1!=null && a2==null) {
-						return 1;
-					} else if (a1==null && a2!=null) {
-						return -1;	
-					}else {
-						return ret;
-					}			
-				});
-				
-				return props;				
-			}
-			,function(d,i,group) 
-			{			
-				
-				var ret = d.parent.properties.indexOf(d);
-				if (ret<0)
-					return undefined;
-				else
-					return ret;
-				
-				
-				
-								
-			});
+		.data(myData.getData(),myData.keyData());
+	
 	sel.exit().remove();	
 	var entered = sel.enter()
 		.append("text")		
@@ -959,7 +954,7 @@ function drawProperties(clazzBox) {
 	})
 	.append("tspan")
 	.attr("class","more-button")
-	.on("click",clickProperty)
+	.on("mousedown",clickProperty)
 	.text("[+]");
 	
 	clazzBox.selectAll(".text_property")
@@ -993,6 +988,7 @@ function drawProperties(clazzBox) {
 }
 
 function closeClass(clazz,idx) {	
+	d3.event.stopPropagation();	
 	//this idx will not work ! it is bound on "on('click')" definition
 	idx = fdata.nodes.indexOf(clazz);
 	var refClasses=new Set();
@@ -1246,6 +1242,10 @@ function selectClass(clazz) {
 		d3.select("#openSourceBtn").attr("class","openbtn");
 	} else 
 		d3.select("#openSourceBtn").attr("class","hidden_btn");
+	setFooter(clazz).text(function(d) {
+		return className(clazz);
+		
+	});
 }
 dragPos=[0,0];
 function dragstarted(d) {
@@ -1267,21 +1267,53 @@ function dragged(d) {
 function dragended(d) {
   d3.select(this).classed("active", false);
 }
-function selectElement(e,isInverse) {
-	if (isInverse)	
-		e = getInverse(e);
-	d3.selectAll(".footer").data([]).exit().remove();
-	d3.select("#main").select(".footer")
-		.data(function(d){ return[e]}).enter()
+function D3MyData(fdata) {
+	if ( typeof fdata==='function')
+		this.fdata=fdata;
+	else
+		this.const_data=fdata;
+}
+D3MyData.prototype.getData = function() {
+	var d3data=this;
+	return function(d,i) {
+		if (d3data.const_data) 
+			d3data.data = d3data.const_data;			
+		 else 	
+			d3data.data = d3data.fdata.call(this,d,i)
+	
+		return d3data.data ;
+	};
+}
+D3MyData.prototype.keyData = function() {
+	var d3data=this;
+	return function (d,i,group) {
+		var idx = d3data.data.indexOf(d);
+		if (idx<0)
+			return null;
+		return idx;
+	};	
+}
+function setFooter(e) {
+	var group = e==null ? [] : 	[e];
+	var myData = new D3MyData(group);
+	var foot = d3.select(".footer").data(myData.getData(),myData.keyData());
+	foot.exit().remove();
+	var ret = foot.enter()
 		.append("div")
 		.attr("class","footer")
 		.on("click",function(e) {
 			d3.selectAll(".footer").data([]).exit().remove();
 		})		
-		.text(function(d) {
-			return printAssocEndDesc(d);
-			
-		});
+		
+	return ret;
+}
+function selectElementProp(e,isInverse) {
+	if (isInverse)	
+		e = getInverse(e);
+	setFooter(e).text(function(d) {
+		return printAssocEndDesc(d);
+		
+	});
 	
 }
 function dragstartLink(d) {	
@@ -1291,7 +1323,7 @@ function dragstartLink(d) {
   	d3.select(this).classed("active", true); 
   	svg.selectAll(".link").filter(function(dv) {return dv==d}).classed("active_link", true);
   	//svg.selectAll("#link_"+fdata.links.indexOf(d)).classed("active_link", true); 
-  	selectElement(d.prop,d3.select(this).classed("link_title_inv"));
+  	selectElementProp(d.prop,d3.select(this).classed("link_title_inv"));
 }  			
 function draggedLink(d) {  
   
