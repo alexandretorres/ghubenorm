@@ -102,23 +102,41 @@ public class AuthSrv extends HttpServlet {
 			wr.close();
 			
 			InputStream is = con.getInputStream();
+			String token=null;
 			try (JsonReader rdr= Json.createReader(is)) {
 				JsonObject result = rdr.readObject();
-				String token = result.getString("access_token");
+				token = result.getString("access_token");
 				//System.out.println(token);
 				Cookie cookie = new Cookie("access_token",token);				
 				cookie.setMaxAge(60*60*24*30); //1 month
 				response.addCookie(cookie);
-				response.sendRedirect(".");
-				return;
+						
 			}
-			
-			
+			// get data...
+			if (token!=null) {
+				//https://api.github.com/user?access_token=...
+				obj = new URL("https://api.github.com/user?access_token="+token);
+				con = (HttpsURLConnection) obj.openConnection();
+				con.setRequestMethod("GET");				
+				con.setRequestProperty("Accept","application/json");				
+				is = con.getInputStream();
+				try (JsonReader rdr= Json.createReader(is)) {
+					JsonObject result = rdr.readObject();
+					String login = result.getString("login");
+					Cookie cookie = new Cookie("login",login);				
+					cookie.setMaxAge(60*60*24*30); //1 month
+					response.addCookie(cookie);
+					System.err.println(result);
+				}
+					
+			}
+			response.sendRedirect(".");	
+			return;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		
-		response.getWriter().append("Served at: ").append(request.getContextPath());
+		//response.getWriter().append("Served at: ").append(request.getContextPath());
 	}
 	private void processResponse(HttpsURLConnection con,HttpServletResponse response) throws IOException {		
 		BufferedReader in = new BufferedReader(

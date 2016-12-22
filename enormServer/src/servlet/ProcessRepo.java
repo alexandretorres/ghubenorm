@@ -70,6 +70,12 @@ public class ProcessRepo extends HttpServlet {
 	       
 	        response.setContentType("text/plain"); 
 	        String oauth = WebUtil.getCookie(req, "access_token");
+	        if (oauth==null) {
+	        	response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	            response.getWriter().write("authorize the application first at github by pressing the auth button");
+	            response.flushBuffer();
+	        	return;
+	        }
 	        GitHubRepoLoader gl = new GitHubRepoLoader(oauth);       
 	        
 	        Repo repo=gl.load(name);

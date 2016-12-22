@@ -8,11 +8,31 @@
 <script src="https://d3js.org/d3.v4.js"></script>
 <script type="text/javascript" src="jsog.js"></script>
 <style>
+.waiting-screen {
+	top:0;
+	z-index:2;
+	width:100%;
+	height:100%;
+	background:gray;
+	opacity: 0.6;
+	position:fixed;
+	font-size: 25px;
+	text-align: center;
+	line-height: 10;
+	color: darkblue;
+	font-weight: bold;
+}
 .closeClassIcon {
 	fill:gray;	
 }
 .closeClassIcon:hover {
 	fill:red;	
+}
+.footer button:disabled {
+	background: none;
+	border: none;
+	color: inherit;
+	font: inherit;
 }
 .footer {
 	position: fixed;
@@ -168,11 +188,11 @@ ul.tree li a {
   <!--<button class="closebtn" onclick="closeNav()">&lt;&lt;</button>  -->
 </div>
 <button class="openbtn" id="navbutton" onclick="openNav()">>></button>
-<button class="openbtn" onclick="zoomIn()">+</button>
-<button class="openbtn" onclick="zoomOut()">-</button>
-<button class="openbtn" onclick="retrieveRepo()">o</button>
-<button class="openbtn" onclick="processRepo()">...</button>
-<button class="openbtn" onclick="testAuth()">auth</button>
+<button class="openbtn" onclick="zoomIn()" title="zoom in">+</button>
+<button class="openbtn" onclick="zoomOut()" title="zoom out">-</button>
+<button class="openbtn" style="display:none" onclick="retrieveRepo()">o</button>
+<button class="openbtn" onclick="processRepo()" title="enter repository to crawl">...</button>
+<button class="openbtn" onclick="testAuth()" title="login at github">auth</button>
 <button id="openSourceBtn" class="hidden_btn" onclick="openSource()">src</button>
 <div id="main" style="padding: 0px;">
 
@@ -243,18 +263,36 @@ function processRepo() {
     .header("X-Requested-With", "XMLHttpRequest")
     .header("Content-Type", "application/x-www-form-urlencoded")
     .post("a=2&b=3", callback);*/
-	var srepo = getStorage("repo");
-    if (srepo!=null) {
+    d3.select("body").append("div").attr("class","waiting-screen")
+    	.text("The server is crawling... it may take a few minutes.")
+    	.append("svg")	
+    	.style("vertical-align","bottom")
+		.append("use")
+		.attr("width",40)
+		.attr("height",40)		
+		.attr("xlink:href","#loader-1");
+    var srepo = getStorage("repo");
+    if (srepo!=null && srepo.length>0) {
     	var c_repo = JSOG.parse(srepo); 
     	if (c_repo.name == rname) {
     		loadRepo(c_repo);
+    		d3.selectAll(".waiting-screen").remove();
     		return;
     	}
     		
     }
+    
 	d3.text("ProcessRepo?name="+rname, function (err, txt) {
+		d3.selectAll(".waiting-screen").remove();
+		
 		if (err) {
-			alert("error loading "+err);
+			if (err.srcElement) {
+				alert("Error: "+err.srcElement.responseText);
+			}else if (err.currentTarget) {
+				alert("Error: "+err.currentTarget.responseText);
+			} else {
+				alert("error loading "+err);
+			}
 			return;
 		}
 		setStorage("repo",txt);
@@ -392,9 +430,9 @@ d3.xml('extras.svg').mimeType("image/svg+xml").get(function(error, xml) {
     .attr("refY", 10)
     .attr("markerWidth", 10)
     .attr("markerHeight", 10)	
-    .attr("orient", "auto")
+    .attr("orient", "auto")    
 	.node().appendChild(importedNode);
-	
+		
 	var importedVert = docNode.getElementById("gvertical_inheritance");
 	defs.append("marker")	
 	.attr("id","vert_inheritance")
@@ -422,7 +460,8 @@ d3.xml('extras.svg').mimeType("image/svg+xml").get(function(error, xml) {
 	
 	var closeNode = docNode.getElementById("open-iconic-x");
 	defs.node().appendChild(closeNode);
-
+	var loading =  docNode.getElementById("loader-1");
+	defs.node().appendChild(loading);
 	
 });
 
@@ -442,6 +481,7 @@ d3.selection.prototype.moveToBack = function() {
 };
 
 var fdata = {nodes:[],links:[]};
+var footerElement;
 var centralClass;
 var currentClass;
 var classes;
@@ -485,6 +525,11 @@ function startup() {
 		});	
 	if (!isOpenNav())
 		openNav();
+	
+	var login = getCookie("login");
+	if (login) {
+		d3.select("title").text("Enorm repository viewer for "+login);
+	}
 
 }
 function cleanDiagram() {
@@ -713,6 +758,50 @@ function getInverse(prop) {
 function printAssocEndDesc(p) {
 	return getPropDesc(p,true)+printAssociationDef(p.associationDef,p.parent,p); 
 }
+function hasInvisibleGeneralizations(c) {
+	if (c!=null && c.superClass) {
+		if (!fdata.nodes.includes(c.superClass))
+			return true;
+		var pos = fdata.nodes.indexOf(c);
+		return fdata.links.filter(function(d){
+	  		return d.source==pos && d.type=="G";
+		}
+		).length==0;
+	}
+	return false;
+}
+function showSubClass(sub) {	
+	d3.event.stopPropagation();
+	var psource = fdata.nodes.indexOf(sub);
+	var ptarget = fdata.nodes.indexOf(currentClass);
+	if (psource>=0) {
+	//console.log("add sub "+sub.name+" selected "+currentClass.name);
+		var lnks = fdata.links.filter(function(d){
+	  		return d.source==psource && d.target==ptarget && d.type=="G";
+		}
+		);
+		if (lnks.length>0) {
+			return;
+		}		
+	} else {
+		fdata.nodes.push(sub);
+	}
+	var gen = sub.generalization.length>0 ? sub.generalization[0] : null;
+	var exts = [{type:"G",source:fdata.nodes.indexOf(sub),target:fdata.nodes.indexOf(currentClass),prop:gen}];
+	fdata.links = fdata.links.concat(exts);	
+	drawModel(fdata.nodes);	
+}
+function clickShowExtends(c) {
+	d3.event.stopPropagation();
+	if (!fdata.nodes.includes(c.superClass)) 
+		fdata.nodes.push(c.superClass)
+	
+	var gen = c.generalization.length>0 ? c.generalization[0] : null;
+	var exts = [{type:"G",source:fdata.nodes.indexOf(c),target:fdata.nodes.indexOf(c.superClass),prop:gen}];
+	fdata.links = fdata.links.concat(exts);	
+	drawModel(fdata.nodes);	
+	d3.select(this).attr("disabled","disabled");
+}
 function clickProperty(p) {
 	d3.event.stopPropagation();	
 
@@ -838,7 +927,7 @@ function drawModel(cls) {
 					return "url(#flat_inheritance)";						
 			}
 			return null;
-		})
+		})		
 		.attr("marker-start",function(d) {
 			if (d.type=="A") {				
 				if (getInverse(d.prop)!=null)
@@ -846,6 +935,25 @@ function drawModel(cls) {
 			}
 			return null;
 			});
+	link.append("title").text(function (d) {
+		if (d.type=="A") 
+			return "association";
+		else if (d.type=="E")
+			return "an embedded/dependent association";
+		else if (d.type=="G") {
+			if (d.prop==null)
+				return "extends";
+			else if (d.prop._Type=="MVertical")
+				return "extends using Vertical mapping (joined tables)";	
+			else if (d.prop._Type=="MHorizontal")
+				return "extends using Horizontal mapping (one table per persistent class)";	
+			else if (d.prop._Type=="MFlat")
+				return "extends using Flat mapping (a single table with a discriminator column)";						
+		}
+		return "?";
+		});
+	
+		
 		
 	var linkTitles = svg.selectAll(".link_title")
 		.data(fdata.links)
@@ -1038,6 +1146,9 @@ function closeClass(clazz,idx) {
 	
 	drawProperties(svg.selectAll('.node').filter(function(d){ return refClasses.has(d);}));
 	redrawLinks();
+	if (currentClass==clazz) {
+		selectClass(null);
+	}
 	
 }
 function getCoords(d,clazzBox) {
@@ -1236,16 +1347,50 @@ function addBox(parent) {
 		.moveToBack();
 
 }
+
 function selectClass(clazz) {
+	var closeFooter = footerElement==currentClass && currentClass!=null;
 	currentClass = clazz;
 	if (currentClass!=null) {
 		d3.select("#openSourceBtn").attr("class","openbtn");
 	} else 
 		d3.select("#openSourceBtn").attr("class","hidden_btn");
-	setFooter(clazz).text(function(d) {
-		return className(clazz);
-		
-	});
+	
+	if (clazz!=null || closeFooter) {
+		var footer = setFooter(clazz).text(function(d) {
+			var pak = clazz.packageName!=null ? clazz.packageName+" " : "";
+			return pak+className(clazz);
+			
+		});
+		if (clazz!=null && clazz.superClass) {	
+			footer.append("button").attr("disabled","disabled").text("extends");
+			if (hasInvisibleGeneralizations(clazz)) {
+				footer.select("button").attr("disabled",null).text("extends").on("click",clickShowExtends);
+			}
+			footer.append("span").text(" "+clazz.superClass.name);
+		}
+		if (clazz!=null) {
+			var myData = new D3MyData(clazz.specializations);
+			var specs = footer.append("span").attr("id","footer-specializations").style("display","block");
+			if (clazz.specializations.length>0)
+				specs.text(" known specializations: ");
+			var foot = d3.select("#footer-specializations").selectAll("span").
+				data(myData.getData(),myData.keyData())
+				.enter().append("span")			
+				.text(function (d,i) {				
+					if (i>0)
+						return ", ";
+					return "";
+				})
+				.append("span")
+				.on("mousedown",showSubClass)			
+				.text(function (d) {
+					return d.name;
+				})
+			
+				;	
+		}
+	}
 }
 dragPos=[0,0];
 function dragstarted(d) {
@@ -1293,7 +1438,9 @@ D3MyData.prototype.keyData = function() {
 		return idx;
 	};	
 }
+
 function setFooter(e) {
+	footerElement = e;
 	var group = e==null ? [] : 	[e];
 	var myData = new D3MyData(group);
 	var foot = d3.select(".footer").data(myData.getData(),myData.keyData());
@@ -1302,7 +1449,8 @@ function setFooter(e) {
 		.append("div")
 		.attr("class","footer")
 		.on("click",function(e) {
-			d3.selectAll(".footer").data([]).exit().remove();
+			if (d3.event.target==this)		
+				d3.selectAll(".footer").data([]).exit().remove();
 		})		
 		
 	return ret;
