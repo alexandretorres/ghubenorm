@@ -7,6 +7,7 @@
 <meta charset="utf-8">
 <script src="https://d3js.org/d3.v4.js"></script>
 <script type="text/javascript" src="jsog.js"></script>
+<script type="text/javascript" src="enorm.js"></script>
 <style>
 .waiting-screen {
 	top:0;
@@ -191,47 +192,30 @@ ul.tree li a {
 <button class="openbtn" onclick="zoomIn()" title="zoom in">+</button>
 <button class="openbtn" onclick="zoomOut()" title="zoom out">-</button>
 <button class="openbtn" style="display:none" onclick="retrieveRepo()">o</button>
+<button class="openbtn" onclick="loadDefaultRepo()" title="reload example">☉</button>
 <button class="openbtn" onclick="processRepo()" title="enter repository to crawl">...</button>
 <button class="openbtn" onclick="testAuth()" title="login at github">auth</button>
-<button id="openSourceBtn" class="hidden_btn" onclick="openSource()">src</button>
+<button class="openbtn" onclick="saveModel()" title="save diagrams on cache">✍</button>
+<button class="openbtn" onclick="refreshSVG()" title="resize elements">↭</button>
+
+
+
+
 <div id="main" style="padding: 0px;">
 
 </div>
 <script>
+function saveModel() {
+	var txt = JSOG.stringify(model);
+	setStorage("model",txt);
+}
 function testAuth() {
-	window.open("Auth?start=1","_self");
-	
-	/*
-	window.open("https://github.com/login/oauth/authorize?client_id=a4d374fd110a31846bf0&redirect_uri="
-			+"http://179.219.65.204:8080/enorm/Auth&state=12345");*/
-	/*)
-		d3.request("https://github.com/login/oauth/authorize?client_id=a4d374fd110a31846bf0&redirect_uri="
-			+"http://179.219.65.204:8080/enorm/Auth&state=12345")
-    .get(function(err) {
-    	if (err) {
-			alert("error loading "+err);
-			return;
-		}
-    	// do nothing I guess....
-    });*/
-	
+	window.open("Auth?start=1","_self");	
 }
-function getCookie(name) {
-	  var value = "; " + document.cookie;
-	  var parts = value.split("; " + name + "=");
-	  if (parts.length == 2) return parts.pop().split(";").shift();
-	}
-function createCookie(name,value,days) {
-    if (days) {
-        var date = new Date();
-        date.setTime(date.getTime()+(days*24*60*60*1000));
-        var expires = "; expires="+date.toGMTString();
-    }
-    else var expires = "";
-    document.cookie = name+"="+value+expires+"; path=/";
-}
+
 function loadRepo(new_repo) {
-	repo = new_repo;	
+	repo = new_repo;
+	model = new Model(repo);
 	cleanDiagram();	
  	repo.classes.sort(function(a,b) {
 		if (a.name < b.name)
@@ -242,27 +226,13 @@ function loadRepo(new_repo) {
  	});
  	startup();
 }
-function getStorage(name) {
-	if (typeof(Storage) !== "undefined") {
-		return localStorage.getItem(name);
-	} else
-		return null;
-}
-function setStorage(name,value) {
-	if (typeof(Storage) !== "undefined") {
-		localStorage.setItem(name, value);
-	}
-}
+
 function processRepo() {
 	var rname = prompt("Please enter repository name", "alexandretorres/ghubenorm");
-	//Accept-Encoding:"gzip, deflate"
-	//Connection:"keep-alive"
-	//Accept:"text/plain,*/*"
-	/*
-	d3.request("/path/to/resource")
-    .header("X-Requested-With", "XMLHttpRequest")
-    .header("Content-Type", "application/x-www-form-urlencoded")
-    .post("a=2&b=3", callback);*/
+	if (!rname) {		
+		return;
+	}
+	
     d3.select("body").append("div").attr("class","waiting-screen")
     	.text("The server is crawling... it may take a few minutes.")
     	.append("svg")	
@@ -271,17 +241,20 @@ function processRepo() {
 		.attr("width",40)
 		.attr("height",40)		
 		.attr("xlink:href","#loader-1");
-    var srepo = getStorage("repo");
-    if (srepo!=null && srepo.length>0) {
-    	var c_repo = JSOG.parse(srepo); 
-    	if (c_repo.name == rname) {
-    		loadRepo(c_repo);
+    var smodel = getStorage("model");
+    
+    if (smodel!=null && smodel.length>0) {
+    	var c_model = JSOG.parse(smodel);
+    	var c_repo=c_model.repo;
+    	if (c_repo.name == rname) {    		
+    		cleanDiagram();	
+    		repo=c_repo;
+    		model=c_model;
+    		startup();
     		d3.selectAll(".waiting-screen").remove();
     		return;
-    	}
-    		
-    }
-    
+    	}    		
+    }    
 	d3.text("ProcessRepo?name="+rname, function (err, txt) {
 		d3.selectAll(".waiting-screen").remove();
 		
@@ -295,9 +268,10 @@ function processRepo() {
 			}
 			return;
 		}
-		setStorage("repo",txt);
+		//setStorage("repo",txt);
 		n_repo = JSOG.parse(txt);		
 		loadRepo(n_repo);
+		setStorage("model",model);
 	});
 }
 function retrieveRepo() {
@@ -316,6 +290,7 @@ function retrieveRepo() {
 		    	return 1;
 		  	return 0;
 	 	});
+	 	model = new Model(repo);
 	 	startup();
 	});
 
@@ -334,15 +309,7 @@ function zoomOut() {
 		return "0 0 "+w+" "+ h;
 		});
 }
-function coalesce() {
-    var len = arguments.length;
-    for (var i=0; i<len; i++) {
-        if (arguments[i] !== null && arguments[i] !== undefined) {
-            return arguments[i];
-        }
-    }
-    return null;
-}
+
 function isOpenNav() {
 	return document.getElementById("mySidenav").style.width=="250px";
 }
@@ -361,7 +328,7 @@ function openNav() {
 
 function openSource() {
 	if (currentClass!=null)
-		window.open(currentClass.filePath.replace("/raw/","/blob/"));
+		window.open(currentClass.clazz.filePath.replace("/raw/","/blob/"));
 }
 
 var repo;// = JSOG.parse(js);
@@ -480,25 +447,42 @@ d3.selection.prototype.moveToBack = function() {
     }); 
 };
 
-var fdata = {nodes:[],links:[]};
+//var fdata = {nodes:[],links:[],ndata:[],ldata:[]};
+var model;
 var footerElement;
 var centralClass;
 var currentClass;
 var classes;
 
-d3.text("data.txt", function (err, txt) {
- repo = JSOG.parse(txt);
- repo.classes.sort(function(a,b) {
-	if (a.name < b.name)
-    return -1;
-  if (a.name > b.name)
-    return 1;
-  return 0;
- });
- startup();
-});
+{
+	var txt = getStorage("model");
+	if (txt!=null && txt.length>0)
+		try {
+			model = JSOG.parse(txt);
+			repo = model.repo;
+			startup();
+		} catch (e) {
+			alert("model could not be retrieved from cache");
+		}
+}
 
-
+if (!model) {
+	loadDefaultRepo();
+}
+function loadDefaultRepo() {
+	d3.text("data.txt", function (err, txt) {
+		 repo = JSOG.parse(txt);
+		 repo.classes.sort(function(a,b) {
+			if (a.name < b.name)
+		    return -1;
+		  if (a.name > b.name)
+		    return 1;
+		  return 0;
+		 });
+		 model = new Model(repo);
+		 startup();
+		});
+}
 function startup() {
 	d3.select("#mySidenav").selectAll("ul").data([]).exit().remove();	
 	var sideMenu = d3.select("#mySidenav").append("ul").attr("class","tree").selectAll("li")
@@ -515,7 +499,7 @@ function startup() {
 		});
 	var menuLinks = sideMenu.append("a")
 		.attr("href","#")
-		.attr("font-style", function(d) {return getFontStype(d)})
+	//	.attr("font-style", function(d) {return d.getFontStype()})
 		.attr("title",function(d) {
 			return d.fullName;
 		})
@@ -546,49 +530,13 @@ function pickClass(d,i) {
 
 	centralClass = repo.classes[i];	
 	selectClass(null);
-	classes = findClasses(centralClass);
+	model.showDiag(centralClass);
+	//findClasses(centralClass);
 	cleanDiagram();
-	drawModel(classes);
+	drawModel();
 }
 
 
-function findClasses(clazz) {
-	var cls = [];
-	cls.push(clazz);
-	var plinks = clazz.properties.filter(function(d) {return d.typeClass!=null && getAssociation(d)!=null && !d.embedded});
-	plinks.forEach(function(d) {
-		if (d.typeClass!=null && !cls.includes(d.typeClass)) 
-			cls.push(d.typeClass)
-		});
-	
-			
-	fdata.links = plinks.map(function(d) {
-			return {type:"A",source:cls.indexOf(d.parent),target:cls.indexOf(d.typeClass),prop:d}
-		});
-	//embed
-	plinks = clazz.properties.filter(function(d) {return d.typeClass!=null && d.embedded});
-	plinks.forEach(function(d) {
-		if (!cls.includes(d.typeClass)) 
-			cls.push(d.typeClass)
-		});	
-	
-	fdata.links = fdata.links.concat(plinks.map(function(d) {
-			return {type:"E",source:cls.indexOf(d.parent),target:cls.indexOf(d.typeClass),prop:d}
-		}));
-	//extends
-	var cur = clazz;
-	while(cur.superClass!=null) {
-		if (!cls.includes(cur.superClass)) 
-			cls.push(cur.superClass)
-		
-		var gen = cur.generalization.length>0 ? cur.generalization[0] : null;
-		var exts = [{type:"G",source:cls.indexOf(cur),target:cls.indexOf(cur.superClass),prop:gen}];
-		fdata.links = fdata.links.concat(exts);
-		cur=cur.superClass;
-	}	
-	fdata.nodes = cls;
-	return cls;
-}
 // ⇑ ⇧ ↑ 
 function className(d) {
 	var tx = d.name;
@@ -599,11 +547,7 @@ function className(d) {
 	}	
 	return tx;
 }
-function getFontStype(c) {
-	if (c.abstract)
-	  return "italic"
-	return "";
-}
+
 function getPropDesc(p,assoc=false) {
 	var pname="";
 	//prefix
@@ -759,10 +703,12 @@ function printAssocEndDesc(p) {
 	return getPropDesc(p,true)+printAssociationDef(p.associationDef,p.parent,p); 
 }
 function hasInvisibleGeneralizations(c) {
+	var fdata = model.diagram;	
+
 	if (c!=null && c.superClass) {
-		if (!fdata.nodes.includes(c.superClass))
+		if (fdata.indexOfClass(c.superClass)<0)
 			return true;
-		var pos = fdata.nodes.indexOf(c);
+		var pos = fdata.indexOfClass(c);
 		return fdata.links.filter(function(d){
 	  		return d.source==pos && d.type=="G";
 		}
@@ -770,11 +716,16 @@ function hasInvisibleGeneralizations(c) {
 	}
 	return false;
 }
-function showSubClass(sub) {	
+function showSubClass(sub) {
+	var fdata = model.diagram;	
+
 	d3.event.stopPropagation();
-	var psource = fdata.nodes.indexOf(sub);
+	var psource = fdata.indexOfClass(sub);
+	var subNode;
 	var ptarget = fdata.nodes.indexOf(currentClass);
 	if (psource>=0) {
+		subNode = fdata.nodes[psource]	;
+	
 	//console.log("add sub "+sub.name+" selected "+currentClass.name);
 		var lnks = fdata.links.filter(function(d){
 	  		return d.source==psource && d.target==ptarget && d.type=="G";
@@ -784,30 +735,42 @@ function showSubClass(sub) {
 			return;
 		}		
 	} else {
-		fdata.nodes.push(sub);
+		subNode = new Node(sub);	
+		fdata.nodes.push(subNode);
 	}
+	
 	var gen = sub.generalization.length>0 ? sub.generalization[0] : null;
-	var exts = [{type:"G",source:fdata.nodes.indexOf(sub),target:fdata.nodes.indexOf(currentClass),prop:gen}];
+	var exts = [{type:"G",source:fdata.nodes.indexOf(subNode),target:fdata.nodes.indexOf(currentClass),prop:gen}];
 	fdata.links = fdata.links.concat(exts);	
-	drawModel(fdata.nodes);	
+	drawModel();	
 }
 function clickShowExtends(c) {
 	d3.event.stopPropagation();
-	if (!fdata.nodes.includes(c.superClass)) 
-		fdata.nodes.push(c.superClass)
-	
-	var gen = c.generalization.length>0 ? c.generalization[0] : null;
-	var exts = [{type:"G",source:fdata.nodes.indexOf(c),target:fdata.nodes.indexOf(c.superClass),prop:gen}];
+	var fdata = model.diagram;
+	var supNode;
+	var idx = fdata.indexOfClass(c.clazz.superClass);
+	if (idx<0) {
+		supNode=new Node(c.clazz.superClass);
+		fdata.nodes.push(supNode);
+	} else
+		supNode = fdata.nodes[idx];
+	var gen = c.clazz.generalization.length>0 ? c.clazz.generalization[0] : null;
+	var exts = [{type:"G",source:fdata.nodes.indexOf(c),target:fdata.nodes.indexOf(supNode),prop:gen}];
 	fdata.links = fdata.links.concat(exts);	
-	drawModel(fdata.nodes);	
+	drawModel();	
 	d3.select(this).attr("disabled","disabled");
 }
 function clickProperty(p) {
 	d3.event.stopPropagation();	
-
+	var fdata = model.diagram;
 	if (p.typeClass!=null) {
-		if (fdata.nodes.indexOf(p.typeClass)<0) {	
-			fdata.nodes.push(p.typeClass);	
+		var n;	
+		var idx = fdata.indexOfClass(p.typeClass);
+		if (idx<0) {
+			n = new Node(p.typeClass);
+			idx = fdata.nodes.push(n)-1;	
+		} else {
+			n = fdata.nodes[idx];
 		}
 		if (fdata.links.filter(function(d){
 			  		return d.prop==p;
@@ -816,45 +779,54 @@ function clickProperty(p) {
 			var type = p.embedded ? "E" : "A";	
 		
 			fdata.links.push(
-					{type:type,source:fdata.nodes.indexOf(p.parent),target:fdata.nodes.indexOf(p.typeClass),prop:p}
+					{type:type,source:fdata.indexOfClass(p.parent),target:idx,prop:p}
 			);
 		}
 		var nclass = d3.select(this.parentNode.parentNode);
 		drawProperties(nclass);
-		drawModel(fdata.nodes);			
+		drawModel();			
 		
 	}
 }
 
-function drawModel(cls) {
+function drawModel() {
+	var cls = model.diagram.nodes;
+	var fdata = model.diagram;
 	var grid = [[w/2,h/2],[w/2+100,h/2],[w/2,0],[0,h/2],[w/2,h/2+100],[w/2+100,h/2+100],[0,h/2+100],[w/2+100,0],[0,0]];
 	var clazzBox = svg.selectAll('.node')
-		.data(cls).enter()
-        .append("svg")		
+		.data(cls).enter();
+	clazzBox= clazzBox
+		.append("svg")		
 		.attr("x",function(d,i) { 
-			if (i<grid.length)
-				return grid[i][0];
-			else
-				return 0;
+			if (fdata.reposition || d.x==null) {				
+				if (i<grid.length)
+					d.x= grid[i][0];
+				else
+					d.x = 0;
+			} 
+			return d.x;
 		})
 		.attr("y",function(d,i) { 
+			if (fdata.reposition  || d.y==null) {		
 				if (i<grid.length)
-				return grid[i][1];
-			else
-				return 0;
+					d.y= grid[i][1];
+				else
+					d.y = 0;
+			}
+			return d.y;
 		})
 		.attr('class', 'node');		
 	
 	var titleTx = clazzBox.append("text")
 		.attr('xml:space', "preserve")
-		.text(function(d) {return "    "+className(d)+"    "})
+		.text(function(d) {return "    "+className(d.clazz)+"    "})
 		.attr('class','text_title')
 		.attr("text-anchor","middle")
 		//.attr("alignment-baseline","central")
 		.attr("font-family", "sans-serif")
 		.attr("font-size", "12px")
 		.attr("font-weight", "bold")
-		.attr("font-style", function(d) {return getFontStype(d)})
+		.attr("font-style", function(d) {return d.getFontStype()})
 		.attr("fill", "black")
 		.attr("x",  function(d) {return this.getBBox().width/2;} )  // very important to start in the middle! or bbox goes crazy
 		.attr("y", function(d, i) {
@@ -1003,11 +975,12 @@ function drawModel(cls) {
 	        .on("end", dragendLink));
 
 	redrawLinks();	
-	
+	fdata.reposition=false;
 		
 }
-function listPropData(d /*class*/) {
-	
+function listPropData(node /*Node*/) {
+	var d=node.clazz;
+	var fdata = model.diagram;
 	var linkProps  =fdata.links.map(function(d) {return d.prop});
 	var props = d.properties.filter(function(prop) {
 		var hasLink =  linkProps.indexOf(prop)>=0;
@@ -1038,6 +1011,30 @@ function listPropData(d /*class*/) {
 	});
 	
 	return props;	
+}
+function refreshSVG() {
+	var clazzBox = d3.selectAll(".node");
+	// reset sizes...
+	clazzBox.attr("width",5);
+	clazzBox.selectAll("rect")
+		.attr('width', 5)
+		.attr('height', 5);
+	clazzBox.selectAll(".text_title").attr('x',function(d) {
+			return this.getBBox().width/2;
+		})	
+	clazzBox.selectAll(".title_line").attr('x1', 0)	
+		.attr('x2', 5);
+	clazzBox.selectAll(".closeClassIcon").attr('x',0);	
+	clazzBox.attr("width",null);
+	// 
+	clazzBox.selectAll("rect")
+		.attr('width', function(d) {
+				return this.parentElement.getBBox().width;
+				})
+		.attr('height', function(d) {
+			return this.parentElement.getBBox().height+sy/2;
+		});
+	redrawLinks();
 }
 function drawProperties(clazzBox) {
 	var myData = new D3MyData(listPropData);
@@ -1095,7 +1092,8 @@ function drawProperties(clazzBox) {
 		});
 }
 
-function closeClass(clazz,idx) {	
+function closeClass(clazz,idx) {
+	var fdata = model.diagram;
 	d3.event.stopPropagation();	
 	//this idx will not work ! it is bound on "on('click')" definition
 	idx = fdata.nodes.indexOf(clazz);
@@ -1151,8 +1149,9 @@ function closeClass(clazz,idx) {
 	}
 	
 }
-function getCoords(d,clazzBox) {
-	var coord={x1:0,y1:0,x2:0,y2:0};
+function getCoords(d/*link*/,clazzBox/*selection of .nodes*/) {
+	var coords={x1:0,y1:0,x2:0,y2:0};
+	var fdata = model.diagram;
 	var src = clazzBox.nodes()[d.source], targ = clazzBox.nodes()[d.target];
 	var sx=src.x.baseVal.value,sw = src.getBBox().width;
 	var sy=src.y.baseVal.value,sh = src.getBBox().height;
@@ -1160,86 +1159,86 @@ function getCoords(d,clazzBox) {
 	var ty=targ.y.baseVal.value,th = targ.getBBox().height;
 	var delta = Math.abs(tx-sx) - Math.abs(ty-sy);
 	if (tx<sx && delta>0) {		
-		coord.x1 = sx;
-		coord.y1 = sy+sh/2;
+		coords.x1 = sx;
+		coords.y1 = sy+sh/2;
 	} else if (tx>sx+sw && delta>0) {
-		coord.x1 = sx+sw;
-		coord.y1 = sy+sh/2;		
+		coords.x1 = sx+sw;
+		coords.y1 = sy+sh/2;		
 	} else {
-		coord.x1 = sx+sw/2;
+		coords.x1 = sx+sw/2;
 		if (ty<sy)
-			coord.y1= sy;
+			coords.y1= sy;
 		else
-			coord.y1= sy+sh;
+			coords.y1= sy+sh;
 	}
 	delta = Math.abs(sx-tx) - Math.abs(sy-ty);
 	
 	if (sx<tx && delta>0) {
-		coord.x2 = tx;
-		coord.y2 = ty+th/2;
+		coords.x2 = tx;
+		coords.y2 = ty+th/2;
 	} else if (sx>tx+tw && delta>0) {
-		coord.x2 = tx+tw;
-		coord.y2 = ty+th/2;		
+		coords.x2 = tx+tw;
+		coords.y2 = ty+th/2;		
 	} else {
-		coord.x2 = tx+tw/2;
+		coords.x2 = tx+tw/2;
 		if (sy<ty)
-			coord.y2= ty;
+			coords.y2= ty;
 		else
-			coord.y2= ty+th;
+			coords.y2= ty+th;
 	}
 	if (d.source==d.target) {
-		coord.y2+=20;
-		coord.x2+=10;
-		coord.x1-=10;
+		coords.y2+=20;
+		coords.x2+=10;
+		coords.x1-=10;
 	}
 	for (i=0;i<fdata.links.length;i++) {
 		var lnk = fdata.links[i];
-		if (lnk!=d && lnk.target==d.target && lnk.coord)
-			if ( lnk.coord.x2==coord.x2 && lnk.coord.y2==coord.y2) {
+		if (lnk!=d && lnk.target==d.target && lnk.coords)
+			if ( lnk.coords.x2==coords.x2 && lnk.coords.y2==coords.y2) {
 				if (d.source==d.target) {
-					coord.y2+=20;
-					coord.x2+=10;
-					coord.x1-=10;	
+					coords.y2+=20;
+					coords.x2+=10;
+					coords.x1-=10;	
 				} else {
-					var r=recalcConflict({x:coord.x2,y:coord.y2},tx,ty,tw,th)
-					coord.x2=r[0];
-					coord.y2=r[1];
+					var r=recalcConflict({x:coords.x2,y:coords.y2},tx,ty,tw,th)
+					coords.x2=r[0];
+					coords.y2=r[1];
 				}				
 				i=0;
 			}
 	}
 	for (i=0;i<fdata.links.length;i++) {
 		var lnk = fdata.links[i];
-		if (lnk!=d && lnk.source==d.source && lnk.coord)
-			if (lnk.coord.x1==coord.x1 &&  lnk.coord.y1==coord.y1 ) {
-				var r = recalcConflict({x:coord.x1,y:coord.y1},sx,sy,sw,sh);	
-				coord.x1=r[0];
-				coord.y1=r[1];
+		if (lnk!=d && lnk.source==d.source && lnk.coords)
+			if (lnk.coords.x1==coords.x1 &&  lnk.coords.y1==coords.y1 ) {
+				var r = recalcConflict({x:coords.x1,y:coords.y1},sx,sy,sw,sh);	
+				coords.x1=r[0];
+				coords.y1=r[1];
 				i=0;
 			}
 	}
-	d.coord = coord;
-	return coord;
+	d.coords = coords;
+	return coords;
 }
-function recalcConflict(coord,tx,ty,tw,th) {
-	if (coord.y!=ty && coord.y!=ty+th) { //ty+th/2					
-		if (coord.y<=(ty+th/2)) {
-			var ny = ty+th-(coord.y-ty)/2;
-			coord.y=ny;
+function recalcConflict(coords,tx,ty,tw,th) {
+	if (coords.y!=ty && coords.y!=ty+th) { //ty+th/2					
+		if (coords.y<=(ty+th/2)) {
+			var ny = ty+th-(coords.y-ty)/2;
+			coords.y=ny;
 		} else {
-			var ny = ty+(ty+th-coord.y);
-			coord.y=ny;
+			var ny = ty+(ty+th-coords.y);
+			coords.y=ny;
 		}		
 	} else {
-		if (coord.x<=(tx+tw/2)) {
-			var nx = tx+tw-(coord.x-tx)/2;						
-			coord.x=nx;
+		if (coords.x<=(tx+tw/2)) {
+			var nx = tx+tw-(coords.x-tx)/2;						
+			coords.x=nx;
 		} else {
-			var nx = tx+(tx+tw-coord.x);
-			coord.x=nx;
+			var nx = tx+(tx+tw-coords.x);
+			coords.x=nx;
 		}	
 	}
-	return [coord.x,coord.y];
+	return [coords.x,coords.y];
 }
 function redrawLinks() {
 	svg.selectAll(".text_title").attr('x',function(d) {
@@ -1339,7 +1338,7 @@ function addBox(parent) {
 			return this.parentElement.getBBox().height+sy/2;
 		})
 		.attr('class',function(d) {
-			if (d.persistent)
+			if (d.clazz.persistent)
 				return 'persistent';
 			else
 				return 'transient';
@@ -1348,31 +1347,33 @@ function addBox(parent) {
 
 }
 
-function selectClass(clazz) {
+function selectClass(node) {
 	var closeFooter = footerElement==currentClass && currentClass!=null;
-	currentClass = clazz;
+	currentClass = node;
 	if (currentClass!=null) {
 		d3.select("#openSourceBtn").attr("class","openbtn");
 	} else 
 		d3.select("#openSourceBtn").attr("class","hidden_btn");
 	
-	if (clazz!=null || closeFooter) {
-		var footer = setFooter(clazz).text(function(d) {
-			var pak = clazz.packageName!=null ? clazz.packageName+" " : "";
-			return pak+className(clazz);
+	if (node!=null || closeFooter) {
+		var footer = setFooter(node).text(function(d) {
+			var pak = node.clazz.packageName!=null ? node.clazz.packageName+" " : "";
+			return pak+className(node.clazz);
 			
 		});
-		if (clazz!=null && clazz.superClass) {	
+		if (node!=null && node.clazz.superClass) {	
 			footer.append("button").attr("disabled","disabled").text("extends");
-			if (hasInvisibleGeneralizations(clazz)) {
+			if (hasInvisibleGeneralizations(node.clazz)) {
 				footer.select("button").attr("disabled",null).text("extends").on("click",clickShowExtends);
 			}
-			footer.append("span").text(" "+clazz.superClass.name);
+			footer.append("span").text(" "+node.clazz.superClass.name);
 		}
-		if (clazz!=null) {
-			var myData = new D3MyData(clazz.specializations);
+		if (node!=null) {
+			footer.append("button").text("source").on("click",openSource);	
+		
+			var myData = new D3MyData(node.clazz.specializations);
 			var specs = footer.append("span").attr("id","footer-specializations").style("display","block");
-			if (clazz.specializations.length>0)
+			if (node.clazz.specializations.length>0)
 				specs.text(" known specializations: ");
 			var foot = d3.select("#footer-specializations").selectAll("span").
 				data(myData.getData(),myData.keyData())
@@ -1412,32 +1413,7 @@ function dragged(d) {
 function dragended(d) {
   d3.select(this).classed("active", false);
 }
-function D3MyData(fdata) {
-	if ( typeof fdata==='function')
-		this.fdata=fdata;
-	else
-		this.const_data=fdata;
-}
-D3MyData.prototype.getData = function() {
-	var d3data=this;
-	return function(d,i) {
-		if (d3data.const_data) 
-			d3data.data = d3data.const_data;			
-		 else 	
-			d3data.data = d3data.fdata.call(this,d,i)
-	
-		return d3data.data ;
-	};
-}
-D3MyData.prototype.keyData = function() {
-	var d3data=this;
-	return function (d,i,group) {
-		var idx = d3data.data.indexOf(d);
-		if (idx<0)
-			return null;
-		return idx;
-	};	
-}
+
 
 function setFooter(e) {
 	footerElement = e;
@@ -1461,8 +1437,7 @@ function selectElementProp(e,isInverse) {
 	setFooter(e).text(function(d) {
 		return printAssocEndDesc(d);
 		
-	});
-	
+	});	
 }
 function dragstartLink(d) {	
 	var m=this.attributes["text-anchor"].value=="start" ? 0 : 1;

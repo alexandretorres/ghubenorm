@@ -16,6 +16,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.voodoodyne.jackson.jsog.JSOGGenerator;
 
 import common.ReflectiveVisitor;
@@ -24,6 +25,7 @@ import common.Visitable;
 
 @Entity
 @JsonIdentityInfo(generator=JSOGGenerator.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@class")
 public class MProperty implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;

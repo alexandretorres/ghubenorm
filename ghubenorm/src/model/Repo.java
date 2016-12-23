@@ -33,6 +33,7 @@ import javax.persistence.TemporalType;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.voodoodyne.jackson.jsog.JSOGGenerator;
 
 import common.ReflectiveVisitor;
@@ -42,6 +43,7 @@ import common.Visitable;
 
 @Entity
 @JsonIdentityInfo(generator=JSOGGenerator.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@class")
 public class Repo implements Visitable {
 	
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)	

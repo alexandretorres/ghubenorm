@@ -14,10 +14,12 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OrderColumn;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.voodoodyne.jackson.jsog.JSOGGenerator;
 @Entity
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @JsonIdentityInfo(generator=JSOGGenerator.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@class")
 public abstract class MOverride {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;

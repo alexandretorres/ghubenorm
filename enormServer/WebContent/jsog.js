@@ -16,13 +16,16 @@
 
   JSOG_OBJECT_ID = '__jsogObjectId';
 
-  JSOG.encode = function(original, idProperty, refProperty) {
+  JSOG.encode = function(original, idProperty, refProperty,clazzProperty) {
     var doEncode, idOf, sofar;
     if (idProperty == null) {
       idProperty = '@id';
     }
     if (refProperty == null) {
       refProperty = '@ref';
+    }
+    if (clazzProperty == null) {
+    	clazzProperty = '@class';
     }
     sofar = {};
     idOf = function(obj) {
@@ -54,6 +57,8 @@
             result[key] = doEncode(value);
           }
         }
+        if (original.constructor && original.constructor.name!="Object")
+        	result[clazzProperty] = original.constructor.name;
         return result;
       };
       encodeArray = function(original) {
@@ -83,13 +88,16 @@
     return doEncode(original);
   };
 
-  JSOG.decode = function(encoded, idProperty, refProperty) {
+  JSOG.decode = function(encoded, idProperty, refProperty, clazzProperty) {
     var doDecode, found;
     if (idProperty == null) {
       idProperty = '@id';
     }
     if (refProperty == null) {
       refProperty = '@ref';
+    }
+    if (clazzProperty == null) {
+    	clazzProperty = '@class';
     }
     found = {};
     doDecode = function(encoded) {
@@ -103,7 +111,12 @@
         if (ref != null) {
           return found[ref];
         }
-        result = {};
+        var clazz = encoded[clazzProperty];
+        if (clazz && window[clazz] && window[clazz].prototype) {
+        	result = Object.create(window[clazz].prototype);
+        } else {
+        	result = {};
+        }
         id = encoded[idProperty];
         if (id != null) {
           id = id.toString();
@@ -113,7 +126,7 @@
         }
         for (key in encoded) {
           value = encoded[key];
-          if (key !== idProperty) {
+          if (key !== idProperty && key!=clazzProperty) {
             result[key] = doDecode(value);
           }
         }

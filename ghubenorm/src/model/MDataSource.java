@@ -10,6 +10,7 @@ import javax.persistence.ManyToOne;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.voodoodyne.jackson.jsog.JSOGGenerator;
 
 import common.Visitable;
@@ -17,6 +18,7 @@ import common.Visitable;
 @Entity
 @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
 @JsonIdentityInfo(generator=JSOGGenerator.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@class")
 public abstract class MDataSource implements Visitable {
 	@Id @GeneratedValue(strategy=GenerationType.IDENTITY)
 	private int id;

@@ -6,12 +6,14 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.voodoodyne.jackson.jsog.JSOGGenerator;
 
 import common.Util;
 
 @Entity
 @JsonIdentityInfo(generator=JSOGGenerator.class)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@class")
 public class MColumn extends MColumnDefinition{
 	//TODO: Use nullable types for length, precision and so forth. 
 	@Transient public static final int DEFAULT_LENGTH = 255;	
