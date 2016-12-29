@@ -13,14 +13,15 @@ public class JavaCrawlerOneTest {
 
 	@Before
 	public void setUp() throws Exception {
-		//ConfigDAO.config(new MyConfigNop()); 
-		ConfigDAO.config(JPA_DAO.instance);
+		ConfigDAO.config(new MyConfigNop()); 
+		//ConfigDAO.config(JPA_DAO.instance);
 	}
 
 	@Test
 	public void test() {	
 		String repos[]= new String[] {
-				"hibernate/hibernate-ogm"
+			"jaxio/generated-projects"
+				//	"hibernate/hibernate-ogm"
 				//	"liferay/liferay-portal"
 		//	"identityxx/velo1"
 				//	"daveangulo/ivolunteer_ori"

@@ -202,6 +202,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		}
 		
 	}
+	//TODO: ApplicationRecord is the new "ActiveRecord::Base"
 	@Override
 	public Object visitClassNode(ClassNode n) {
 		MClass ret=null;

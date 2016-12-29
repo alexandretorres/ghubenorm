@@ -59,6 +59,47 @@ ALTER TABLE mcolumn RENAME colummndefinition  TO columndefinition;
 -- look at http://stackoverflow.com/questions/5090858/how-do-you-change-the-character-encoding-of-a-postgres-database 
 -- set LC_CTYPE
 --====
+
+--repositories per language
+create or replace view language_repo as 
+select (
+case language 
+	when 0 then 'JAVA' 
+	when 1 then 'RUBY'
+	when 2 then 'PYTHON'
+	when 3 then 'OTHER'
+	when 4 then 'UNKNOWN'
+end) as language,count(*) as total,language as lid from repo 
+group by language
+order by language;
+
+ALTER TABLE language_repo
+  OWNER TO pdoc;
+
+create or replace view repo_skip as
+select 
+(case skipreason 
+	when 1 then 'Fork' 
+	when 2 then 'HAS_PARENT'
+	when 3 then 'PRIVATE'
+	when 4 then 'Outro Erro'
+	when 5 then 'UNKNOWN'					
+	when 6 then 'Linguagem não definida'				
+	when 7 then 'Outra linguagem'				
+	when 8 then 'Nenhum arquivo no branch principal'			
+	when 9 then 'Informações nulas retornadas'					
+	when 10 then 'Eliminado na seleção'		
+	when 11 then 'Número de arquivos muito grande'
+end) as reason,
+count(*),skipreason
+from repo
+where skipreason is not null
+and skipreason>0
+group by skipreason
+order by skipreason;
+
+ALTER TABLE repo_skip
+  OWNER TO pdoc;
 --Repositorios selecionados que possuem classes: (relevant repositories)
 
 select language,count(*) from repo r
@@ -162,6 +203,13 @@ group by language, repo_id
 ) tab
 group by tab.language
 
+--Classes embutidas problematicas (persistentes, por erro de ligação com classes com mesmo nome em pacote diferente)
+SELECT r.language, c.id, c.filepath, c.isabstract,  c.name, 
+    c.packagename, c.persistent, c.superclassname, c.repo_id, c.superclass_id,c2.name as refClass,c2.filepath as refPath,p.name as propname
+   FROM mclass c, repo r,mproperty p,mclass c2
+  WHERE c.persistent IS true AND r.id = c.repo_id 
+  AND p.embedded IS TRUE AND p.typeclass_id = c.id
+  and p.parent_id=c2.id;
 --Propriedades que embutem classes desconhecidas (erro, QUANDO n�o s�o tipos b�sicos): 
 
 select language,count(*) from mproperty p ,mclass c,repo r
@@ -435,3 +483,160 @@ and g.id=mg.generalization_id
 and mg.mclass_id=c.id
 and c.repo_id = r.id
 group by r.publicid
+
+-- embedded properties with unsolved recorded type
+select r.id,p.type ,count(*)
+from mproperty p join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id
+where p.embedded is true
+and p.typeclass_id is null
+and type is not null
+and type not in (
+'String',
+'List<String>',
+'Set<String>',
+'Collection<String>',
+'SortedSet<String>',
+'Date',
+'List<Date>',
+'Set<Date>',
+'Collection<Date>',
+'Integer','int'
+'Set<Integer>',
+'List<Integer>',
+'Set<Integer>',
+'Collection<Integer>',
+'List',
+'Long','long',
+'Set<Long>',
+'List<Long>',
+'Collection<Long>',
+'Set<Double>',
+'List<Double>',
+'Collection<Double>',
+'List<BigDecimal>',
+'Collection<BigDecimal>',
+'List<Boolean>',
+'Collection<Boolean>',
+'List<byte[]>',
+'List<Byte>',
+'Collection<Byte>',
+'Set<Byte>',
+'List<Character>',
+'Collection<Character>',
+'Set<Character>',
+'List<Float>',
+'Collection<Float>',
+'Set<Float>',
+'List<Object>',
+'Collection<Object>',
+'Set<Object>',
+'SortedMap<String, String>',
+'Map<Integer, Date>',
+'Map<Integer, Integer>',
+'Map<Integer, Long>',
+'Map<Integer, String>',
+'Map<Long, String>',
+'Map<String, String>',
+'Map<String, Float>',
+'Map<String, Integer>',
+'Map<Date, String>',
+'Map<String, Object>'
+)
+group by p.type,r.id
+order by r.id,p.type;
+
+-- count non identified embedded classes
+select sum(n) from (
+select count(*) as n from (
+select r.id as id,p.type ,count(*)
+from mproperty p join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id
+where p.embedded is true
+and p.typeclass_id is null
+and type is not null
+and type not in (
+'String',
+'List<String>',
+'Set<String>',
+'Collection<String>',
+'SortedSet<String>',
+'Date',
+'List<Date>',
+'Set<Date>',
+'Collection<Date>',
+'Integer','int'
+'Set<Integer>',
+'List<Integer>',
+'Set<Integer>',
+'Collection<Integer>',
+'List',
+'Long','long',
+'Set<Long>',
+'List<Long>',
+'Collection<Long>',
+'Set<Double>',
+'List<Double>',
+'Collection<Double>',
+'List<BigDecimal>',
+'Collection<BigDecimal>',
+'List<Boolean>',
+'Collection<Boolean>',
+'List<byte[]>',
+'List<Byte>',
+'Collection<Byte>',
+'Set<Byte>',
+'List<Character>',
+'Collection<Character>',
+'Set<Character>',
+'List<Float>',
+'Collection<Float>',
+'Set<Float>',
+'List<Object>',
+'Collection<Object>',
+'Set<Object>',
+'SortedMap<String, String>',
+'Map<Integer, Date>',
+'Map<Integer, Integer>',
+'Map<Integer, Long>',
+'Map<Integer, String>',
+'Map<Long, String>',
+'Map<String, String>',
+'Map<String, Float>',
+'Map<String, Integer>',
+'Map<Date, String>',
+'Map<String, Object>'
+
+)
+group by p.type,r.id
+order by r.id,p.type) as T
+group by T.id) as T2
+-- propriedades de classes embutidas em ruby com tipo não identificado (nulo). Poderia registrar o nome do tipo?
+select r.id as id,p.type 
+from mproperty p join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id
+where p.embedded is true
+and p.typeclass_id is null
+and language=1
+-- composite PKs on Ruby
+select r.id,p.parent_id,count(*) cnt,c.name,c.filepath
+from mproperty p join mclass c on p.parent_id=c.id join repo r on c.repo_id=r.id
+where pk is true
+and r.language=1
+group by p.parent_id,r.id,c.name,c.filepath
+having count(*)>1
+-- composite PKs on ruby analysis
+select sum(cnt),avg(cnt),stddev_samp(cnt),var_samp(cnt),max(cnt) from (
+select r.id,count(*) as cnt
+from (
+select r.id,p.parent_id,count(*) cnt,c.name,c.filepath
+from mproperty p join mclass c on p.parent_id=c.id join repo r on c.repo_id=r.id
+where pk is true
+and r.language=1
+group by p.parent_id,r.id,c.name,c.filepath
+having count(*)>1) as R
+group by r.id) as R2
+where cnt<22
+-- composite PKs using EmbeddedId (?) on Java
+select r.id,p.parent_id,count(*) cnt,c.name,c.filepath,t.name,t.filepath
+from mproperty p join mclass c on p.parent_id=c.id and p.pk is true join repo r on c.repo_id=r.id 
+	join mclass t on t.id=p.typeclass_id and t.persistent is false join mproperty p2 on p2.parent_id=t.id
+where r.language=0
+group by p.parent_id,r.id,c.name,c.filepath,t.id,t.name,t.filepath

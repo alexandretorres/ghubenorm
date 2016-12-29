@@ -291,6 +291,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		boolean isStatic=false;
 		isStatic = ModifierSet.isStatic(modifiers);
 		
+		Annotation transAnot = annots.stream().filter(a->sjava.JPATags.Transient.isType(a,comp)).findFirst().orElse(null);
+		trans = trans || transAnot!=null;
 		Annotation elementCol = annots.stream().filter(a->ElementCollection.isType(a,comp)).findFirst().orElse(null);
 		
 		Annotation assoc = annots.stream().
