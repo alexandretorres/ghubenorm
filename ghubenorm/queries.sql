@@ -633,10 +633,184 @@ and r.language=1
 group by p.parent_id,r.id,c.name,c.filepath
 having count(*)>1) as R
 group by r.id) as R2
-where cnt<22
+where cnt<22 -- outlier removido
 -- composite PKs using EmbeddedId (?) on Java
 select r.id,p.parent_id,count(*) cnt,c.name,c.filepath,t.name,t.filepath
 from mproperty p join mclass c on p.parent_id=c.id and p.pk is true join repo r on c.repo_id=r.id 
 	join mclass t on t.id=p.typeclass_id and t.persistent is false join mproperty p2 on p2.parent_id=t.id
 where r.language=0
 group by p.parent_id,r.id,c.name,c.filepath,t.id,t.name,t.filepath
+-- IDclass style. Notice that we removed the non persistent clases but kept the FK keys. EmbeddedIds have count=1
+select r.id,p.parent_id,count(*) cnt,c.name,c.filepath
+from mproperty p join mclass c on p.parent_id=c.id join repo r on c.repo_id=r.id
+where pk is true
+and r.language=0
+and c.persistent is true
+group by p.parent_id,r.id,c.name,c.filepath
+having count(*)>1
+--analise Java composite
+select sum(cnt),avg(cnt),stddev_samp(cnt),var_samp(cnt),max(cnt) from (
+select t1.id,count(*) as cnt from
+(select 'idclass' as type ,r.id,p.parent_id
+from mproperty p join mclass c on p.parent_id=c.id join repo r on c.repo_id=r.id
+where pk is true
+and r.language=0
+and c.persistent is true
+group by p.parent_id,r.id
+having count(*)>1
+union
+select 'embedded' as type,r.id,p.parent_id
+from mproperty p join mclass c on p.parent_id=c.id and p.pk is true join repo r on c.repo_id=r.id 
+	join mclass t on t.id=p.typeclass_id and t.persistent is false join mproperty p2 on p2.parent_id=t.id
+where r.language=0
+group by p.parent_id,r.id
+having count(*)>1) T1
+group by t1.id) as R2
+--where cnt<102  --outlier
+-- PKs related with size of repo
+select r.id,count(*) as cnt
+from (
+select r.id,p.parent_id,count(*) cnt,c.name,c.filepath
+from mproperty p join mclass c on p.parent_id=c.id join repo r on c.repo_id=r.id 
+	join repo_cl rcl on rcl.id=r.id and rcl.n_classes>50
+where pk is true
+and r.language=1
+group by p.parent_id,r.id,c.name,c.filepath
+having count(*)>1) as R
+group by r.id
+-- tipos das propriedades (basicas)
+select r.language,p.type, count(*) from mproperty p join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id join repo_cl rcl on rcl.id=r.id
+where p.typeclass_id is null
+and type is not null
+group by p.type,r.language
+having count(*)>100
+order by r.language,count
+-- propriedades que tem column definida em Java
+select 'M',count(*) from mproperty p join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id join repo_cl rcl on rcl.id=r.id
+where p.typeclass_id is null
+and type is not null
+and c.persistent is true
+and p.columndefinition_id is not null
+and r.language=0
+group by r.language
+union
+select 'T',count(*) from mproperty p join mclass c on c.id=p.parent_id join repo r on r.id=c.repo_id join repo_cl rcl on rcl.id=r.id
+where p.typeclass_id is null
+and type is not null
+and c.persistent is true
+and r.language=0
+group by r.language
+--associações bidirecionais x unidirecionais
+select 'Bidirectional' as type,language,count(a.*) 
+from mproperty p 
+join massociation a on association_id=a.id
+join mclass c on p.parent_id=c.id
+join repo r on r.id=c.repo_id
+where c.persistent is true
+and navigablefrom is true
+and navigableto is true
+and to_id is not null 
+group by language
+union
+select 'Unidirectional' as type,language,count(a.*) 
+from mproperty p 
+join massociation a on association_id=a.id
+join mclass c on p.parent_id=c.id
+join repo r on r.id=c.repo_id
+where c.persistent is true
+and to_id is null 
+group by language
+order by language,type
+-- inheritance persitence/transient combinations
+select '1S' as type,language,count(*)
+from mclass c join repo r on r.id=c.repo_id
+where superclass_id is not null
+and persistent is true
+group by language
+union
+select '4SS' as type,language,count(*)
+from mclass c join repo r on r.id=c.repo_id join mclass sc on sc.id=c.superclass_id
+where c.persistent is true
+and sc.persistent is true
+and sc.isabstract is false
+group by language
+union
+select '2G' as type,language,count(*)
+from mclass c join repo r on r.id=c.repo_id join mclass sc on sc.id=c.superclass_id
+where sc.persistent is true
+and sc.isabstract is false
+group by language
+union
+select '3MS' as type,language,count(*)
+from mclass c join repo r on r.id=c.repo_id join mclass sc on sc.id=c.superclass_id and c.persistent is true
+where sc.persistent is false
+or sc.isabstract is true
+group by language
+order by language,type
+--inheritance strategies
+select dtype,count(*)
+from mgeneralization g join mclass_mgeneralization cg on cg.generalization_id=g.id join mclass c on cg.mclass_id = c.id join repo r on r.id=c.repo_id
+where dtype in ('MFlat','MVertical')
+ and language=0
+group by dtype
+union
+select dtype,count(*)
+from mgeneralization g join mclass_mgeneralization cg on cg.generalization_id=g.id
+  join mclass c on cg.mclass_id = c.id join mclass sc on sc.id=c.superclass_id join repo r on r.id=c.repo_id
+where dtype in ('MHorizontal')
+ and language=0
+ and sc.persistent=true
+group by dtype
+union
+select 'N MappedSuperClass',count(*)
+from mgeneralization g join mclass_mgeneralization cg on cg.generalization_id=g.id
+  join mclass c on cg.mclass_id = c.id join mclass sc on sc.id=c.superclass_id join repo r on r.id=c.repo_id
+where dtype in ('MHorizontal')
+ and language=0
+ and sc.persistent=false
+group by dtype
+union
+select 'Unespecified Peristent', count(*)
+from mclass c join mclass sc on sc.id=c.superclass_id join repo r on r.id=c.repo_id
+where sc.persistent is true
+and language=0
+and not exists (select 1 from mclass_mgeneralization cg where cg.mclass_id = c.id)
+union
+select 'Unespecified Transient', count(*)
+from mclass c join mclass sc on sc.id=c.superclass_id join repo r on r.id=c.repo_id
+where sc.persistent is false
+and language=0
+and not exists (select 1 from mclass_mgeneralization cg where cg.mclass_id = c.id)
+order by dtype
+-- repositories where most (>=80%) persistent classes specilizes a MappedSuperClass
+select mr.id, mr.cnt_ms,count(*) as total,count(*)-cnt_ms as indep
+from mclass c join
+(select r.id,count(*) as cnt_ms
+from mgeneralization g join mclass_mgeneralization cg on cg.generalization_id=g.id
+  join mclass c on cg.mclass_id = c.id join mclass sc on sc.id=c.superclass_id join repo r on r.id=c.repo_id
+where  language=0
+ and sc.persistent=false
+ and c.persistent=true
+group by r.id
+having count(*)>10) mr on c.repo_id=mr.id
+where c.persistent is true
+group by mr.id,mr.cnt_ms
+having count(*)-cnt_ms<=count(*)/5
+order by count(*)-cnt_ms 
+--
+
+select mr.id, mr.cnt_ms,count(*) as total,count(*)-cnt_ms as indep
+from mclass c join
+(select r.id,count(*) as cnt_ms
+from mgeneralization g join mclass_mgeneralization cg on cg.generalization_id=g.id
+  join mclass c on cg.mclass_id = c.id join mclass sc on sc.id=c.superclass_id join repo r on r.id=c.repo_id
+where  language=0
+ and sc.persistent=false
+ and c.persistent=true
+group by r.id
+) mr on c.repo_id=mr.id
+where c.persistent is true
+group by mr.id,mr.cnt_ms
+having count(*)-cnt_ms>count(*)/5 and count(*)-cnt_ms<=count(*)/2
+order by count(*)-cnt_ms 
+
