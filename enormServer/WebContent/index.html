@@ -620,47 +620,14 @@ function printDSName(ds) {
 function printAssociationDef(/*MAssociationDef*/ adef,/*MClass*/ cl,/*MProperty*/ p) {
 	var ret="";
 	if (adef!=null) {
-		var f=0;
 		var dsName=null;
 		if (adef.dataSource!=null && (dsName=printDSName(adef.dataSource))!=null) {
-			ret+="joinTable="+dsName;
-			f=1
-		}
-		var cnt= adef.joinColumns.length;
-		for (var jc of adef.joinColumns) {
-			var colDef = jc.column;
-			var invColDef = jc.inverse;
-			if (f>0)
-				ret+=",";
-			if (f<2)
-				ret+="joinColumn"+(cnt>1 ? "s" : "")+"=";
-			if (cnt>1)
-				ret+="(";
-			f=2;
-			if (colDef!=null) {
-				if (colDef.table!=null && !colDef.table===cl.persistence.mainTable) {
-					ret+=colDef.table.name+".";
-				}
-				ret+=printJoinColumnName(p,colDef);
-			}
-			if (invColDef!=null) {
-				var tabName= invColDef.table == null ? null : invColDef.table.name;
-				ret+=", ";
-				if (invColDef.name==null) {
-					var name = printInverseJoinColumn(invColDef,p.parent,tabName); 
-					if (name==null && p.typeClass!=null) {
-						name = printInverseJoinColumn(invColDef,p.typeClass,tabName); 
-					}
-					ret+=name;
-				} else {
-					if (tabName!=null)
-						ret+=tabName+".";
-					ret+=invColDef.name;
-				}
-			}
-			if (cnt>1)
-				ret+=")";
-		}
+			ret+="joinTable="+dsName;			
+		}		
+		var txJcs = printJoinColumns(adef.joinColumns,cl,p.typeClass,p);
+		if (ret!="" && txJcs!=null)
+			ret+=",";
+		ret+=txJcs;
 		if (adef.cascade!=null)
 			ret+="cascade "+adef.cascade;
 		if (adef.orphanRemoveDef)
@@ -673,22 +640,20 @@ function printAssociationDef(/*MAssociationDef*/ adef,/*MClass*/ cl,/*MProperty*
 	return ret;
 }
 
-function printJoinColumnName(p,c) {	
+function printJoinColumnName(type,c,p) {	
 	if (c.name!=null)
 		return c.name;
-	var id=null;
-	var type = p.typeClass;
+	var id=null;	
 	if (type!=null && type.pk.length>0) {
 		id = type.pk[0].name;
 	}
 	if (id==null) {
 		id="id";
-	}	
-	return "<"+p.name+"_"+id+">";
+	}
+    var sufix = p ? "<"+p.name+"_" : "<";
+	return sufix+id+">";
 }
-function printInverseJoinColumn(invColDef,clazz,tabName) {
-	return "<TODO>";
-}
+
 function getAssociation(prop) {
 	var ret = prop.association;
 	return ret==null ?  prop.toAssociation : ret;
@@ -935,13 +900,17 @@ function drawModel() {
 		//.attr("dominant-baseline","central")
 		.attr("class","link_title")
 		.text(function(d) {
-			if (d.type!="G")
+			if (d.type=="G") {
+				var targ = fdata.nodes[d.target].clazz;
+				
+				return targ.printDiscriminator();
+			} else
 				return printAssocEndDesc(d.prop);
 		});
 	var reverseLinkTitles = svg.selectAll(".link_title_inv")
 		.data(function(d) {
 			return fdata.links.filter(function(d) {
-				return (d.type=="A" && getInverse(d.prop)!=null);
+				return (d.type=="G") || (d.type=="A" && getInverse(d.prop)!=null);
 			})
 		})
 		.enter()
@@ -950,8 +919,13 @@ function drawModel() {
 		//.attr("dominant-baseline","central")
 		.attr("class","link_title_inv")
 		.text(function(d) {
-			var inv = 	getInverse(d.prop);				
-			return printAssocEndDesc(inv);
+			if (d.type=="G") {
+				if (d.prop)			
+					return d.prop.printDescription(fdata.nodes[d.source].clazz,fdata.nodes[d.target].clazz);
+			} else {		
+				var inv = 	getInverse(d.prop);				
+				return printAssocEndDesc(inv);
+			}
 		});
 	linkTitles.append("title")
           .text(function(d, i) { 
@@ -1363,18 +1337,24 @@ function selectClass(node) {
 		});
 		if (node!=null && node.clazz.superClass) {	
 			footer.append("button").attr("disabled","disabled").text("extends");
+			
 			if (hasInvisibleGeneralizations(node.clazz)) {
 				footer.select("button").attr("disabled",null).text("extends").on("click",clickShowExtends);
 			}
+			
 			footer.append("span").text(" "+node.clazz.superClass.name);
 		}
 		if (node!=null) {
+			var tx=node.clazz.printDiscriminator();
+			if (tx)
+				tx="Discriminator: {"+tx+"} "	
+		
 			footer.append("button").text("source").on("click",openSource);	
 		
 			var myData = new D3MyData(node.clazz.specializations);
 			var specs = footer.append("span").attr("id","footer-specializations").style("display","block");
 			if (node.clazz.specializations.length>0)
-				specs.text(" known specializations: ");
+				specs.text(tx+" known specializations: ");
 			var foot = d3.select("#footer-specializations").selectAll("span").
 				data(myData.getData(),myData.keyData())
 				.enter().append("span")			
@@ -1435,6 +1415,9 @@ function selectElementProp(e,isInverse) {
 	if (isInverse)	
 		e = getInverse(e);
 	setFooter(e).text(function(d) {
+		if (d instanceof MGeneralization)
+			return "";
+	
 		return printAssocEndDesc(d);
 		
 	});	

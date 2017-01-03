@@ -2,6 +2,8 @@ package model;
 
 import javax.persistence.Entity;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 @Entity
 public abstract class MDiscrminableGeneralization extends MGeneralization {
 	private String discriminatorValue;

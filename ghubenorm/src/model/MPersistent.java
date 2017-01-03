@@ -3,7 +3,10 @@ package model;
 import javax.persistence.Embeddable;
 import javax.persistence.OneToOne;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 @Embeddable
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@class")
 public class MPersistent {	
 	private boolean persistent=false;
 	@OneToOne(optional=true)

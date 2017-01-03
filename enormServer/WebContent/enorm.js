@@ -1,4 +1,12 @@
 //--- basic functions
+function pprint(v1,v2,sep) {
+	if (sep==undefined)
+		sep=" ";
+	if (v1==null || v1=="" || v1==undefined)
+		return v2
+	return v1+sep+v2;
+	
+}
 String.prototype.hashCode = function() {
   var hash = 0, i, chr, len;
   if (this.length === 0) return hash;
@@ -115,12 +123,79 @@ function MClass() {
 MClass.prototype.getKey = function() {
 	return this.fullName+this.filepath;
 }
+MClass.prototype.findPK = function() {
+	var ret = this.pk.slice();
+	if (ret.length==0 && this.superClass!=null)
+		return this.superClass.findPK();
+	else
+		return ret;
+}
+MClass.prototype.printDiscriminator = function() {
+	var ret="";
+	if (this.discriminatorColumn) {
+		if (this.discriminatorColumn.column) {
+			ret = printColumn(this.persistence.mainTable,this.discriminatorColumn.column);
+		}
+		if (this.discriminatorColumn.value) {
+			ret=pprint(ret,this.discriminatorColumn.value,"=");
+		}
+	}
+	return ret;
+}
 function MProperty() {
 	
 }
 MProperty.prototype.getKey = function() {
 	return this.parent.getKey()+"."+this.name;
 }
+function MGeneralization() {}
+MGeneralization.prototype.printDescription = function(source,target) {	
+	if (this.discriminatorValue) {
+		return this.discriminatorValue;
+	}
+	return "";
+}
+
+function MVertical() {}
+MVertical.prototype.printDescription = function(source,target) {	
+	var ret="";
+	if (this.discriminatorValue) {
+		ret+= this.discriminatorValue;
+	}
+	if (this.joinCols.length>0) {
+		ret=pprint(ret,"{"+printJoinColumns(this.joinCols,source,target)+"}");
+	}
+	return ret;
+}
+function MHorizontal() {}
+function MFlat() {}
+extend(MGeneralization,MVertical);
+extend(MGeneralization,MHorizontal);
+extend(MGeneralization,MFlat);
+
+function MPersistent() {}
+MPersistent.prototype.hasTableSource=function(tab) {
+	if (tab==null)
+		return false;
+	if (source instanceof MJoinedSource) {
+		for (var jtab of source.defines) {
+			if (tab==jtab)
+				return true;
+		}
+		return false;
+	} else if (source instanceof MTable) {
+		return tab==source	;	
+		
+	}
+	return false;
+}
+function MOverride() {}
+function MAttributeOverride() {}
+function MAssociationOverride() {}
+extend(MOverride,MAttributeOverride);
+extend(MOverride,MAssociationOverride);
+
+
 //-- visaulization classes
 function Model(repo) {
 	this.repo=repo;
@@ -218,4 +293,105 @@ function Link(source,target,type,prop) {
 	this.prop=prop;
 	this.coords = {x1:0,y1:0,x2:0,y2:0};
 	//{type:"A",source:cls.indexOf(d.parent),target:cls.indexOf(d.typeClass),prop:d}
+}
+// functions to be moved
+function printJoinColumns(jcs,cl,typeClass,p) {
+	var ret="";
+	var cnt= jcs.length;
+	var f=0;
+	for (var jc of jcs) {
+		var colDef = jc.column;
+		var invColDef = jc.inverse;		
+		if (f==0)
+			ret+="joinColumn"+(cnt>1 ? "s" : "")+"=";
+		if (cnt>1)
+			ret+="(";
+		f=2;
+		if (colDef!=null) {
+			if (colDef.table!=null && !colDef.table===cl.persistence.mainTable) {
+				ret+=colDef.table.name+".";
+			}
+			ret+=printJoinColumnName(typeClass,colDef,p);
+		}
+		if (invColDef!=null) {
+			var tabName= invColDef.table == null ? null : invColDef.table.name;
+			ret+=", ";
+			if (invColDef.name==null) {
+				var name = printInverseJoinColumn(invColDef,cl,tabName); 
+				if (name==null && typeClass!=null) {
+					name = printInverseJoinColumn(invColDef,typeClass,tabName); 
+				}
+				ret+=name;
+			} else {
+				if (tabName!=null)
+					ret+=tabName+".";
+				ret+=invColDef.name;
+			}
+		}
+		if (cnt>1)
+			ret+=")";
+	}
+	return ret;
+}
+function printInverseJoinColumn(invColDef,clazz,tabName) {
+	//incomplete
+	var name = null;
+	if (tabName==null && clazz.persistence.hasTableSource(invColDef.table)) {
+		return "<"+clazz.name+">.<id>";
+	}
+	for (var pk of clazz.pk) {
+		if (invColDef==pk.columnDef) {
+			if (tabName==null)
+				tabName = "<"+clazz.name+">";
+			name = pk.name;
+			break;
+		}
+	}
+	if (name==null) {
+		for (gen of clazz.generalization) {
+			if (gen instanceof MVertical) {
+				for (gjc of gen.joinCols) {
+					if (invColDef==gjc.column) {
+						var idName = "<id>";
+						for (pk of clazz.findPK()) {
+							if (pk.columnDef!=null)
+								idName = pk.columnDef.name;
+							if (idName=="<id>")
+								idName = pk.name;
+							break;
+						}
+						if (tabName==null) {
+							tabName = "<"+clazz.name+">";
+						}
+						name = idName;
+						break;
+					}
+				}				
+			}
+		}
+	}
+	if (name==null) {
+		for (over of clazz.overrides) {
+			if (over instanceof MAttributeOverride) {
+				if (invColDef==over.column) {
+					var idName = "<id>";
+					for (pk of clazz.findPK()) {
+						if (pk.columnDef!=null && pk.columnDef.name!=null)
+							idName = pk.columnDef.name;
+						if (idName=="<id>") {
+							idName = pk.name;
+						}
+						break;
+					}
+					if (tabName==null)
+						tabName = "<"+clazz.name+">";
+					name = idName;
+					break;
+				}
+			}
+		}
+	}
+	if (name!=null)
+		name = (tabName==null ? "" : tabName+".")+name;
+	return name;
 }

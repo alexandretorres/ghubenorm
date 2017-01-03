@@ -507,7 +507,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 								}
 							}														
 						} else if (cp.getColumnMapping()!=null 
-								&& cp.getColumnMapping().getColumnDefinition().getName().equals(refCol)) {
+								&& cp.getColumnMapping().getColumnDefinition().getName().equals(refColName)) {
 							refCol = cp.getColumnMapping().getColumnDefinition().getColumn();
 							break;
 						}
@@ -517,14 +517,14 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					for (MProperty cp:superClass.getProperties()) { //TODO: get "ALL" properties	
 						if (cp.isEmbedded() && cp.getTypeClass()!=null) { 							
 							for (MProperty embp:cp.getTypeClass().getProperties()) {
-								if (embp.getName().equals(refCol)) {
+								if (embp.getName().equals(refColName)) {
 									refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
 									//TODO: Add an AttributeOverride?
 									//TODO: Could this recurse by using "."?								
 									break;
 								}
 							}
-						} else if (cp.getName().equals(refCol)) {
+						} else if (cp.getName().equals(refColName)) {
 							refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
 							cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
 							break;							
@@ -617,36 +617,41 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					
 			}	
 			Annotation discrCol = DiscriminatorColumn.findAnnotation(sannots, sunit);
-			if (discrCol!=null) {
+			Annotation sdiscrVal = DiscriminatorValue.findAnnotation(sannots, sunit);
+			if (discrCol!=null || sdiscrVal!=null) {
 				MDiscriminator dcol = superClass.getDiscriminatorColumn();
 				if (dcol==null) {
 					dcol = new MDiscriminator();
 					superClass.setDiscriminatorColumn(dcol);
 				}
-				if (dcol.getValue()==null)
-					dcol.setValue(discrCol.getValueAsString("name"));
-				if (dcol.getColumn()==null) {					
+				if (sdiscrVal!=null)
+					dcol.setValue(sdiscrVal.getSingleValue(""));
+				if (discrCol!=null && dcol.getColumn()==null) {					
 					String dtype = ExprEval.getConstant(discrCol.getValue("discriminatorType",null));
-					Integer length = discrCol.getValue("length",null,Integer.class);
-					Annotation column = discrCol.getValue("columnDefinition",null,Annotation.class);
+					//Integer length = discrCol.getValue("length",null,Integer.class);
+					//Annotation column = discrCol.getValue("columnDefinition",null,Annotation.class);
 					MColumn col=null;
-					if (column!=null) {
-						col = createMColumn(superClass,column);
-						if (col.getColumnDefinition()==null) {
+					
+					col = createMColumn(superClass,discrCol);
+					if (col.getColumnDefinition()==null) {					
+						String coldef = discrCol.getValue("columnDefinition",null);
+						if (coldef==null)
 							col.setColumnDefinition(dtype);
-						}
-						if (length!=null /*&& col.getLength()==null*/)
-							col.setLength(length);
-						JavaVisitor.daoMCol.persist(col);
-						dcol.setColumn(col);
-					} else if (dtype!=null || length!=null) {
+						else
+							col.setColumnDefinition(coldef);
+							
+					}
+					
+					JavaVisitor.daoMCol.persist(col);
+					dcol.setColumn(col);
+					/*} else if (dtype!=null || length!=null) {
 						col = MColumn.newMColumn();
 						col.setColumnDefinition(dtype);
 						if (length!=null)
 							col.setLength(length);
 						JavaVisitor.daoMCol.persist(col);
 						dcol.setColumn(col);
-					}
+					}*/
 				}
 			}
 			if (gen instanceof MDiscrminableGeneralization) {
