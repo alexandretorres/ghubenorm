@@ -59,8 +59,8 @@ public class JavaLoaderTest {
 			//File baseFile = new File("repos/MSD_File_Sharing-e1d5650d8cf477355ebe69b52f507c85c12b2ba6/WHAM project war/WHAM/src");
 			//File baseFile = new File("repos/cosmo-master");
 			File baseFile = new File(
-					"C:\\java\\eclipselink\\eclipselink_test_src"
-					//"C:\\dev\\eclipselink_test_src"
+					//"C:\\java\\eclipselink\\eclipselink_test_src"
+					"C:\\dev\\eclipselink_test_src"
 					//"C:\\repos\\PDFFilter-master" 
 					//"C:\\Users\\torres\\Downloads\\javarepos\\PDFFilter-master\\PDFFilter-master"
 					//"src/"

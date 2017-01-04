@@ -17,6 +17,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
@@ -59,6 +60,8 @@ public class MClass implements Visitable {
 	@Basic(optional=false)
 	@Column(length=2048)
 	private String filePath;
+	@Transient
+	private List<MMethod> methods = new ArrayList<>();
 	public static MClass newMClass(String path,Repo repo) {
 		return new MClass(path,repo);
 	}
@@ -343,6 +346,12 @@ public class MClass implements Visitable {
 		visitor.callAccept(overrides);		
 		
 		visitor.visit(this);
+	}
+	public List<MMethod> getMethods() {
+		return methods;
+	}
+	protected void setMethods(List<MMethod> methods) {
+		this.methods = methods;
 	}
 	
 }

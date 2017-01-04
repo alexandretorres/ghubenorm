@@ -23,6 +23,9 @@
 	color: darkblue;
 	font-weight: bold;
 }
+.footer-method {
+	display:block;
+}
 .closeClassIcon {
 	fill:gray;	
 }
@@ -347,8 +350,9 @@ function openNav() {
 }
 
 function openSource() {
-	if (currentClass!=null)
-		window.open(currentClass.clazz.filePath.replace("/raw/","/blob/"));
+	if (currentClass!=null) {		
+		window.open(currentClass.clazz.filePath.replace("/raw/","/blob/").replace("file:/","[file:]"));
+	}
 }
 
 var repo;// = JSOG.parse(js);
@@ -1430,6 +1434,75 @@ function selectClass(node) {
 				})
 			
 				;	
+			var tr = footer.append("table").append("tr");
+			var mets = tr.append("td").append("span").attr("id","footer-methods").style("display","block");
+			myData = new D3MyData(node.clazz.methods);
+			if (node.clazz.methods.length>0)
+				mets.text("Methods:");
+			foot = d3.select("#footer-methods").selectAll("span")
+				.data(myData.getData(),myData.keyData())
+				.enter().append("span")
+				.attr("class","footer-method")
+				.style("color",function(d) {
+					switch(d.visibility) {
+						case "PUBLIC":
+							return "green";
+							break;
+						case "PROTECTED":
+							return "blue";
+							break;
+						case "PRIVATE":
+							return "red";
+							break;
+						case "PACKAGE":
+							return "black";
+							break;
+						default:
+							return "black";
+					
+					}
+				})				
+				.text(function (d,i) {				
+					var ret =  d.name+"(";
+					switch(d.visibility) {
+						case "PUBLIC":
+							ret="+"+ret;
+							break;
+						case "PROTECTED":
+							ret="#"+ret;
+							break;
+						case "PRIVATE":
+							ret="-"+ret;
+							break;
+						case "PACKAGE":
+							ret="~"+ret;
+							break;
+						
+					}
+					d.params.forEach(function (p,i) {
+						if (i>0)
+							ret+=", "
+						ret+=p;						
+					});
+					
+					ret+=")";
+					if (d.type)
+						ret+=": "+d.type;
+					return ret;
+				});
+			//--- overrides
+			var overs = tr.append("td").append("span").attr("id","footer-overrides").style("display","block");
+			myData = new D3MyData(node.clazz.overrides);
+			if (node.clazz.overrides.length>0)
+				overs.text("Overrides:");
+			foot = d3.select("#footer-overrides").selectAll("span")
+				.data(myData.getData(),myData.keyData())
+				.enter().append("span")
+				.attr("class","footer-method")
+				.text(function (d,i) {	
+					return "an override";
+				});
+			
 		}
 	}
 }

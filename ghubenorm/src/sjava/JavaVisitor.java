@@ -30,6 +30,7 @@ import static sjava.JPATags.SecondaryTable;
 import static sjava.JPATags.SecondaryTables;
 import static sjava.JPATags.Table;
 
+import java.beans.Beans;
 import java.beans.Introspector;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.ModifierSet;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
@@ -73,10 +75,12 @@ import model.MGeneratorType;
 import model.MHorizontal;
 import model.MJoinColumn;
 import model.MJoinedSource;
+import model.MMethod;
 import model.MOverride;
 import model.MProperty;
 import model.MTable;
 import model.MVertical;
+import model.Visibility;
 
 
 public class JavaVisitor extends VoidVisitorAdapter<Object>  {
@@ -208,6 +212,20 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			for (PropInfo pinf:info.propInfo) {
 				if (!pinf.skip)
 					procFieldOrMethod(c,pinf,pinf.ctx,pinf.annots, pinf.type, pinf.modifiers);
+			}
+			for (Iterator<MMethod> it=c.getMethods().iterator();it.hasNext();) {
+				MMethod met=it.next();		
+				String name = met.getName();
+				if (name.length()>3 && name.startsWith("set")) {
+					String sufix = met.getName().substring(3);
+					for (MProperty p:c.getProperties()) {
+						if (p.getName().equalsIgnoreCase(sufix)) {
+							it.remove();						
+							break;
+						}
+					}					
+				}
+				
 			}
 		
 			//pending refs
@@ -378,6 +396,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		}
 		return null;
 	}
+	
 	@Override
 	public void visit(MethodDeclaration ctx, Object arg1) {
 		if (!classStack.isEmpty()) {			
@@ -392,6 +411,29 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			String bname = getBeanName(ctx.getName()); 
 			if (bname!=null && !(type instanceof VoidType) && ctx.getParameters().isEmpty())
 				info.propInfo.add(new PropInfo(bname,ctx, annots, type, modifiers, null));
+			else {				
+				String typeName="";
+				if (type instanceof PrimitiveType) {
+					typeName = ((PrimitiveType)type).toString();
+				} else if (type instanceof ReferenceType) {
+					ReferenceType utype = (ReferenceType) type;
+					typeName = utype.getType().toString();
+				}	else if (type instanceof VoidType) {
+					typeName="";
+				}
+				
+				MMethod met = MMethod.newMethod(clazz, ctx.getName()).setType(typeName)
+						.setAbstract(ModifierSet.isAbstract(ctx.getModifiers()))
+						.setVisibility(Visibility.findVisibility(
+								ModifierSet.isPublic(ctx.getModifiers()),
+								ModifierSet.isProtected(ctx.getModifiers()), 
+								ModifierSet.isPrivate(ctx.getModifiers())));
+				for (Parameter p:ctx.getParameters()){
+					met.getParams().add(p.getName());
+				}
+				//add method
+			}
+				
 			//if (comp.propertyAccess || !comp.hasFieldAnnotations)
 			//ONLY IF USING METHOD ANNOTATION
 			//visitFieldOrMethod(ctx, type, modifiers, null, arg1);
