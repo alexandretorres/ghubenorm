@@ -7,6 +7,23 @@ function pprint(v1,v2,sep) {
 	return v1+sep+v2;
 	
 }
+function getCSSRule(selectorText)
+{
+    var theRules = new Array();
+    if (document.styleSheets[0].cssRules) {
+        theRules = document.styleSheets[0].cssRules;
+    } 
+    else if (document.styleSheets[0].rules) {
+        theRules = document.styleSheets[0].rules;
+    }
+    for (n in theRules)
+    {
+        if (theRules[n].selectorText == selectorText)   {
+            return theRules[n];
+        }
+    }
+}
+
 String.prototype.hashCode = function() {
   var hash = 0, i, chr, len;
   if (this.length === 0) return hash;

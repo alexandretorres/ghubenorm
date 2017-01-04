@@ -26,6 +26,14 @@
 .closeClassIcon {
 	fill:gray;	
 }
+.main-desc {
+}
+.mapping-desc {
+
+}
+.more-desc {
+	display:none;
+}
 .closeClassIcon:hover {
 	fill:red;	
 }
@@ -197,6 +205,7 @@ ul.tree li a {
 <button class="openbtn" onclick="testAuth()" title="login at github">auth</button>
 <button class="openbtn" onclick="saveModel()" title="save diagrams on cache">✍</button>
 <button class="openbtn" onclick="refreshSVG()" title="resize elements">↭</button>
+<button class="openbtn" onclick="showMappings()" title="show/hide mappings">M</button>
 
 
 
@@ -310,6 +319,17 @@ function zoomOut() {
 		});
 }
 
+function showMappings() {
+	if (model.hideMappings) {
+		model.hideMappings=false;
+		getCSSRule(".mapping-desc").style.display="inherit";
+		getCSSRule(".more-desc").style.display="none";
+	} else {
+		model.hideMappings=true;
+		getCSSRule(".mapping-desc").style.display="none";
+		getCSSRule(".more-desc").style.display="inherit";
+	}
+}
 function isOpenNav() {
 	return document.getElementById("mySidenav").style.width=="250px";
 }
@@ -667,6 +687,23 @@ function getInverse(prop) {
 function printAssocEndDesc(p) {
 	return getPropDesc(p,true)+printAssociationDef(p.associationDef,p.parent,p); 
 }
+function drawAssocEndDesc(p,ctx) {
+	var parent=d3.select(ctx);
+	var tx = getPropDesc(p,true);
+	parent.append("tspan")
+		.attr("class","main-desc")
+		.text(tx);
+		//.text(function (p) {return getPropDesc(p,true)});//.mapping-desc .more-desc
+	tx=printAssociationDef(p.associationDef,p.parent,p);
+	if (tx) {
+		parent.append("tspan")
+		.attr("class","mapping-desc")
+		.text(tx);
+		parent.append("tspan")
+		.attr("class","more-desc")
+		.text("...");
+	}
+}
 function hasInvisibleGeneralizations(c) {
 	var fdata = model.diagram;	
 
@@ -899,14 +936,25 @@ function drawModel() {
 		.attr("text-anchor","end") //at the end /start
 		//.attr("dominant-baseline","central")
 		.attr("class","link_title")
-		.text(function(d) {
+	/*	.text(function(d) {
 			if (d.type=="G") {
 				var targ = fdata.nodes[d.target].clazz;
 				
 				return targ.printDiscriminator();
-			} else
+			} else				
 				return printAssocEndDesc(d.prop);
-		});
+		})*/;
+	linkTitles.each(function (d) { 
+		if (d.type=="G") {
+			var targ = fdata.nodes[d.target].clazz;
+			d3.select(this).append("tspan").text(targ.printDiscriminator());
+		} else				
+			drawAssocEndDesc(d.prop,this);
+	
+	
+	})
+	
+	
 	var reverseLinkTitles = svg.selectAll(".link_title_inv")
 		.data(function(d) {
 			return fdata.links.filter(function(d) {
@@ -918,15 +966,27 @@ function drawModel() {
 		.attr("text-anchor","start") //at the end /start
 		//.attr("dominant-baseline","central")
 		.attr("class","link_title_inv")
-		.text(function(d) {
+	/*	.text(function(d) {
 			if (d.type=="G") {
 				if (d.prop)			
 					return d.prop.printDescription(fdata.nodes[d.source].clazz,fdata.nodes[d.target].clazz);
 			} else {		
-				var inv = 	getInverse(d.prop);				
+				var inv = getInverse(d.prop);				
 				return printAssocEndDesc(inv);
 			}
-		});
+		})*/;
+	reverseLinkTitles.each(function (d) {
+		if (d.type=="G") {
+			if (d.prop)	{
+				var tx=d.prop.printDescription(fdata.nodes[d.source].clazz,fdata.nodes[d.target].clazz);
+				d3.select(this).append("tspan").text(tx);
+			}		
+		} else {
+			var inv = getInverse(d.prop);		
+			drawAssocEndDesc(inv,this)
+		}
+	});
+	
 	linkTitles.append("title")
           .text(function(d, i) { 
 			if (d.type!="G")
