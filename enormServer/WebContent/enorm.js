@@ -211,9 +211,66 @@ function MAttributeOverride() {}
 function MAssociationOverride() {}
 extend(MOverride,MAttributeOverride);
 extend(MOverride,MAssociationOverride);
+MOverride.prototype.printPath=function(clazz) {
+	return this.properties.map(function(p) {return p.name}).join('.');
+}
+MAttributeOverride.prototype.printOverride=function(clazz) {
+	if (!this.column.column.dummy) {
+		var pname = this.printPath();
+		return pname +" || "+printColumn(clazz.persistence.mainTable,this.column);
+	}
 
-
+}
+MAssociationOverride.prototype.printOverride=function(clazz) {
+	var tx = this.printPath();
+	if (this.def!=null && this.properties.length>0) {
+		tx+=" || "+printAssociationDef(this.def,clazz,this.properties[0]);
+	}
+	return tx;
+}
 //-- visaulization classes
+var options = [
+		new CSSOption("mapping-desc","Mapping Details",true),
+		new CSSOption("prop-mapping-desc","Prop. Mapping Details",true),		
+		new MenuOption("package","Group by package",false)
+		/*new Option("blabla1","Mapping Details 2",false),
+		new Option("mapping-desc3","Mapping D",false),
+		new Option("mapping-desc4","Mapping Details4",true)*/
+];
+function CSSOption(name,desc,active) {
+	this.name=name;
+	this.desc=desc;
+	this.active=active;
+}
+CSSOption.prototype.toggle = function(value) {
+	if (this.active) {
+		this.active=false;
+		getCSSRule("."+this.name).style.display="none";
+		getCSSRule("."+this.name+"-more").style.display="inherit";
+	} else {
+		this.active=true;
+		getCSSRule("."+this.name).style.display="inherit";
+		getCSSRule("."+this.name+"-more").style.display="none";		
+	}
+}
+function MenuOption(name,desc,active) {
+	this.name=name;
+	this.desc=desc;
+	this.active=active;
+}
+
+MenuOption.prototype.toggle = function(value) {
+	if (this.active) {
+		model.sortClasses=0;
+		this.active=false;
+		reDrawMenu();
+	} else {
+		model.sortClasses=1;
+		this.active=true;
+		reDrawMenu();
+	}
+}
+extend(CSSOption,MenuOption);
 function Model(repo) {
 	this.repo=repo;
 	this.diags=new MyMap();
@@ -228,6 +285,46 @@ Model.prototype.showDiag = function(clazz) {
 	}
 	this.diagram=diag;
 		
+};
+Model.prototype.sortByName = function(a,b) {
+	if (a.name < b.name)
+    	return -1;
+  	if (a.name > b.name)
+    	return 1;
+  	return 0;
+}
+Model.prototype.sortByPackage = function(a,b) {
+	if (a.packageName && b.packageName) {
+		if (a.packageName==b.packageName) {
+			if (a.name < b.name)
+		    	return -1;
+		  	if (a.name > b.name)
+		    	return 1;
+		  	return 0;
+		} else if (a.packageName < b.packageName) {
+			return -1;
+		} else if (a.packageName > b.packageName)
+	    	return 1;
+	  	return 0;
+	} else if (a.packageName) {
+		return 1;
+	} else if (b.packageName) {
+		return -1;
+	} else {
+		if (a.name < b.name)
+	    	return -1;
+	  	if (a.name > b.name)
+	    	return 1;
+	  	return 0;
+	}
+}
+Model.prototype.getSortFunction = function() {
+	if (model.sortClasses==1) {
+		return Model.prototype.sortByPackage;
+	} else {
+		return Model.prototype.sortByName;
+	}
+ 	
 };
 
 function Diagram(baseClazz) {

@@ -390,7 +390,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		if (str==null || str.length()==0)
 			return null;
 		for (MGeneratorType v:MGeneratorType.values()) {
-			if (str.toUpperCase().endsWith(str)) {
+			if (str.toUpperCase().endsWith(v.name())) {
 				return v;
 			}
 		}

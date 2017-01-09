@@ -37,7 +37,7 @@
 		<link>
 			<name>eclipseLinkSrc</name>
 			<type>2</type>
-			<location>C:/dev/eclipselink_test_src</location>
+			<location>C:/java/eclipselink/eclipselink_test_src</location>
 		</link>
 		<link>
 			<name>jpasrc</name>
