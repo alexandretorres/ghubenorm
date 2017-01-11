@@ -25,6 +25,7 @@ import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
 import com.github.javaparser.ast.expr.MemberValuePair;
 import com.github.javaparser.ast.expr.NormalAnnotationExpr;
 import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import common.Util;
@@ -101,6 +102,12 @@ public class JCompilationUnit {
 		for (MClass c:classes) {
 			ret+=c.toString()+"\n";
 		}
+		return ret;
+	}
+	public String getFullName(ClassOrInterfaceType type) {
+		String ret = type.getName();
+		if (type.getScope()!=null)
+			ret=getFullName(type.getScope())+"."+ret;
 		return ret;
 	}
 	public String getPackageName() {

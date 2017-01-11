@@ -16,6 +16,14 @@ update mclass
 set superClass_id=null,source_id=null
 where repo_id=r_id ;
 
+delete from mmethod
+where clazz_id in
+(select id from mclass where repo_id=r_id); 
+
+delete from mimplement
+where fromclass_id in
+(select id from mclass where repo_id=r_id); 
+
 delete from mdefinition_mcolumn
 where columns_id in (
 select c.id from mcolumn c join mdatasource ds on c.table_id=ds.id where ds.repo_id=r_id

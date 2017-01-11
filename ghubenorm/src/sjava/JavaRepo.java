@@ -123,6 +123,8 @@ public class JavaRepo {
 		}
 	}
 	public void addPendingRef(String name,MClass clazz,JCompilationUnit comp) {
+		if (name.indexOf(".")>0)
+			name = name.substring(name.lastIndexOf(".")+1);
 		List<JCompilationUnit> list = pendingRefs.get(name);
 		if (list==null) {
 			list = new ArrayList<>();

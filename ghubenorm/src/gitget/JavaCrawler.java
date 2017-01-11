@@ -143,7 +143,7 @@ public class JavaCrawler {
 				Prof.close("findBasePaths");
 				*/
 				Prof.open("findJavaPersistenceRefs");				
-				SkipReason procResult = findJavaPersistenceRefs(jrepo);
+				SkipReason procResult = findJavaPersistenceRefs(array,jrepo);
 				jrepo.getRepo().setSkipReason(procResult);				
 				Prof.close("findJavaPersistenceRefs");
 				//readAllJavaFiles(jrepo); or...		
@@ -172,7 +172,18 @@ public class JavaCrawler {
 			}
 		}
 	}
-	protected SkipReason findJavaPersistenceRefs(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
+	protected SkipReason loadAll(List<JsonObject> fileList,JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
+		for (JsonObject result : fileList) {
+			String path = result.getString("path");
+			if (path.toLowerCase().endsWith(".java")) {
+				URL furl = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null);			
+				loader.load(furl);
+			}			
+		}
+		jrepo.solveRefs();
+		return SkipReason.NONE;
+	}
+	protected SkipReason findJavaPersistenceRefs(List<JsonObject> fileList,JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		int p=1;
 		int total=0;
 		do {
@@ -184,8 +195,12 @@ public class JavaCrawler {
 				JsonObject obj = rdr.readObject();
 				if (total==0) {
 					total = obj.getInt("total_count");
-					if (total>1000)
-						return SkipReason.TOO_MANY_FILES;
+					if (total>1000) {
+						if (gh.forceTooManyFiles)
+							return loadAll(fileList,jrepo);
+						else
+							return SkipReason.TOO_MANY_FILES;
+					}
 				}
 				JsonArray results = obj.getJsonArray("items");
 	

@@ -18,7 +18,9 @@ import model.Repo;
 import sjava.Prof;
 
 public class CrawlFromList extends GitHubCrawler {
-	int[] publicIds = {/*2668610,
+	int[] publicIds = {
+			7426434
+			/*2668610,
 			5506899,
 			6577642,
 			6764581,*/
@@ -1527,7 +1529,8 @@ public class CrawlFromList extends GitHubCrawler {
 		new Thread(new CrawlFromList()).start();
 	}	
 	@Override
-	public void run() {			
+	public void run() {	
+		//this.gh.forceTooManyFiles=true;
 		try {				
 			URL uauth = new URL("https://api.github.com/?access_token="+gh.getOAuth());
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
@@ -1557,6 +1560,7 @@ public class CrawlFromList extends GitHubCrawler {
 		}		
 	}
 	public void reloadFromList(RepoDAO dao) {		
+		
 		for (int pid:this.publicIds) {
 			/*
 			dao.beginTransaction();		

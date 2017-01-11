@@ -1,0 +1,13 @@
+->org.eclipse.persistence.testing.models.jpa.advanced.Buyer
+* mapeamento de mapas 
+* neste exemplo tem um erro do eclipselink: as propriedades isFemale e isMale deveriam ser explicitamente declaradas como transient.
+->Dealer
+* multiplos cascades types
+->Employee
+* no eclipse link se nao tem setter não eh prop. Mas isso não ta na spec do JPA, na verdade seria um erro.
+* getNormalHours: o visitador deveria entender uma array como 0..*
+* formerEmployment: será que ao adicionar um assocoverride não está removendo os attroverrides? Notar que 2 deles são do tipo q so funciona no eclipselink
+  testei omitir o caminho no hibernate e da pau
+--old historic checks
+TODO: generate correct generalization o ruby
+TODO: PrimaryJoinColumn is incomplete 

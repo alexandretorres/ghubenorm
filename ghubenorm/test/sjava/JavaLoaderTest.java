@@ -12,6 +12,7 @@ import dao.ConfigDAO;
 import dao.DAOInterface;
 import dao.nop.ConfigNop;
 import db.daos.MyConfigNop;
+import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
 import gitget.RepoToJSON;
 import model.Language;
@@ -19,6 +20,8 @@ import model.Repo;
 
 
 public class JavaLoaderTest {
+	static int REPO_ID=0;//3182599;
+	
 	static {
 		//ConfigDAO.config(JPA_DAO.instance);	
 		ConfigDAO.config(new MyConfigNop());	
@@ -48,18 +51,31 @@ public class JavaLoaderTest {
 	public void testLoad() {
 		try {
 			
-			DAOInterface<Repo> daoRepo = ConfigDAO.getDAO(Repo.class);			
+			RepoDAO daoRepo = ConfigDAO.getDAO(Repo.class);	
 			jrepo.getRepo().setName("TEST");
+			if (REPO_ID>0) {
+				try {
+				daoRepo.beginTransaction();				
+				Repo repo = daoRepo.find(REPO_ID);
+				daoRepo.commitAndCloseTransaction();
+				jrepo.setRepo(repo);
+				} catch (Exception ex) {
+					System.err.println("could not load the repo number "+REPO_ID+", continuing loading...");
+					ex.printStackTrace();
+				}
 			
+			}
 			daoRepo.beginTransaction();
-			daoRepo.persist(jrepo.getRepo());
+			jrepo.setRepo(daoRepo.reattachOrSave(jrepo.getRepo()));
+			//daoRepo.persist(jrepo.getRepo());
 			//--
 			loader.setJrepo(jrepo);
 			//File baseFile = new File("trash/SmallTest.java");
 			//File baseFile = new File("repos/MSD_File_Sharing-e1d5650d8cf477355ebe69b52f507c85c12b2ba6/WHAM project war/WHAM/src");
 			//File baseFile = new File("repos/cosmo-master");
 			File baseFile = new File(
-					"C:\\java\\eclipselink\\eclipselink_test_src"
+					"C:\\eclipse\\eclipse_mars2_64\\workspace\\eclipselink.jpa.test\\src"
+					//"C:\\java\\eclipselink\\eclipselink_test_src"
 					//"C:\\dev\\eclipselink_test_src"
 					//"C:\\repos\\PDFFilter-master" 
 					//"C:\\Users\\torres\\Downloads\\javarepos\\PDFFilter-master\\PDFFilter-master"

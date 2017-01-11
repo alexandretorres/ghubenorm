@@ -91,6 +91,8 @@ margin-left:8px;
 .footer tr td {
 	padding: 5px;
 }
+.footer-interface {
+}
 .svg_main {
 	position:fixed;
 	top:0; 
@@ -120,6 +122,9 @@ margin-left:8px;
 }
 .transient {
 	fill: rgb(249,241,178);
+}
+.node-interface {
+	fill: rgb(255,255,255);
 }
 
 .link {
@@ -753,8 +758,11 @@ function printAssociationDef(/*MAssociationDef*/ adef,/*MClass*/ cl,/*MProperty*
 		ret+=txJcs;
 		if (adef.cascade!=null)
 			ret+="cascade "+adef.cascade;
-		if (adef.orphanRemoveDef)
-			ret+=" orphan remove ";
+		if (adef.orphanRemoval!=null)
+			if (adef.orphanRemoval)
+				ret+=" orphan remove ";
+			else
+				ret+=" keep orphans  ";
 		if (adef.fetch!=null)
 			ret+=" fetch "+adef.fetch;
 	}
@@ -1503,6 +1511,8 @@ function addBox(parent) {
 		.attr('class',function(d) {
 			if (d.clazz.persistent)
 				return 'persistent';
+			else if (d.clazz.type=="InterfaceType")
+				return "node-interface";
 			else
 				return 'transient';
 		})
@@ -1520,8 +1530,9 @@ function selectClass(node) {
 	
 	if (node!=null || closeFooter) {
 		var footer = setFooter(node).text(function(d) {
+			var inter = node.clazz.type=="InterfaceType" ? "Interface " : "";
 			var pak = node.clazz.packageName!=null ? node.clazz.packageName+" " : "";
-			return pak+className(node.clazz);
+			return inter+pak+className(node.clazz);
 			
 		});
 		if (node!=null && node.clazz.superClass) {	
@@ -1533,6 +1544,23 @@ function selectClass(node) {
 			
 			footer.append("span").text(" "+node.clazz.superClass.name);
 		}
+		if (node!=null && node.clazz.implementInterfaces.length>0) {
+			footer.append("span").text(" implements ");	
+		
+			footer.selectAll(".footer-interface")
+				.data(node.clazz.implementInterfaces).enter()
+				.append("span")
+				.attr("class","footer-interface")
+				.text(function(d,i) {
+					var ret = d.name;					
+					if (d.toInterface)
+						ret = d.toInterface.name;
+					if (i>0)
+						ret=", "+ret;
+					return ret;
+				})
+		}
+			
 		if (node!=null) {
 			var tx=node.clazz.printDiscriminator();
 			if (tx)

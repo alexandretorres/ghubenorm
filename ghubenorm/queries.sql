@@ -13,6 +13,8 @@ CREATE OR REPLACE VIEW Embeddable AS
 
 ALTER TABLE Embeddable
   OWNER TO pdoc;
+-- class type
+update mclass set type=0 where type is null;
 -- casacade delete
 ALTER TABLE mcolumn
   DROP CONSTRAINT fk1fnp2gnjrvlhk2q231y20hdxq;
@@ -100,6 +102,8 @@ order by skipreason;
 
 ALTER TABLE repo_skip
   OWNER TO pdoc;
+  
+
 --Repositorios selecionados que possuem classes: (relevant repositories)
 
 select language,count(*) from repo r

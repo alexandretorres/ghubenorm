@@ -63,6 +63,7 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import common.LateVisitor;
 import dao.ConfigDAO;
 import dao.DAOInterface;
+import model.ClassifierType;
 import model.MAttributeOverride;
 import model.MClass;
 import model.MColumn;
@@ -123,32 +124,45 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	@Override
 	public void visit(EnumDeclaration cd, Object arg1) {
 		MClass c = comp.createClass(cd.getName());
+		c.setType(ClassifierType.EnumType);
 		//super.visit(arg0, arg1);
 	}
 	@Override
 	public void visit(ClassOrInterfaceDeclaration cd, Object arg1) {
 		MClass c =null;
 		ClassInfo info=null;
-		if (!cd.isInterface()) {
+	/*	if (cd.isInterface()) {
+			MClass ci = comp.createClass(cd.getName());
+			ci.setType(ClassifierType.InterfaceType);
+		} else  {	*/
 			c = comp.createClass(cd.getName());
+			if (cd.isInterface()) {
+				c.setType(ClassifierType.InterfaceType);
+			}
 			classStack.push(c);
+			if (cd.getImplements()!=null && !cd.getImplements().isEmpty())				
+				comp.jrepo.visitors.add(new VisitImplements(c, cd.getImplements(),comp));	
+				
 			info = new ClassInfo();
 			classInfo.put(c, info);
 			List<Annotation> annots = new ArrayList<Annotation>();
-			c.setAbstract(ModifierSet.isAbstract(cd.getModifiers()));		
-			for (ClassOrInterfaceType scls:cd.getExtends()) {
-				String superName = scls.getName();				
-				comp.jrepo.visitors.add(new VisitInheritance(c, comp));	
-				
-				comp.jrepo.addLateSubclass(superName, c,comp);
-				/*
-				MClass superClass = comp.getClazz(superName);
-				if (superClass!=null) {
-					c.setSuperClass(superClass);					
-				} else {
+			c.setAbstract(ModifierSet.isAbstract(cd.getModifiers()));	
+			if (c.getType()==ClassifierType.InterfaceType && !cd.getExtends().isEmpty())
+				comp.jrepo.visitors.add(new VisitImplements(c, cd.getExtends(),comp));
+			else
+				for (ClassOrInterfaceType scls:cd.getExtends()) {
+					String superName = comp.getFullName(scls);				
+					comp.jrepo.visitors.add(new VisitInheritance(c, comp));	
+					
 					comp.jrepo.addLateSubclass(superName, c,comp);
-				}*/
-			}
+					/*
+					MClass superClass = comp.getClazz(superName);
+					if (superClass!=null) {
+						c.setSuperClass(superClass);					
+					} else {
+						comp.jrepo.addLateSubclass(superName, c,comp);
+					}*/
+				}
 			Annotation entity=null;
 		
 			
@@ -204,7 +218,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 					comp.toTable(c, atab);
 				}			
 			}	
-		}		
+		//}		
 		super.visit(cd, arg1);
 		if (c!=null) {
 			//process properties
@@ -350,9 +364,10 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		if (!isStatic) {			
 			MProperty prop = daoMProp.persist(clazz.newProperty().setName(pinf.name).setType(typeName));					
 			prop.setTransient(trans);
-			if (pinf.var!=null && pinf.var.getId().getArrayCount()>0) {
+			if ( (pinf.var!=null && pinf.var.getId().getArrayCount()>0) ||
+				 (pinf.type instanceof ReferenceType && ((ReferenceType)pinf.type).getArrayCount()>0)	) {
 				prop.setMax(-1);
-				prop.setTransient(true);
+				//prop.setTransient(true);
 			} else if (assoc!=null) {
 				comp.jrepo.visitors.add(new VisitAssociation(prop, comp, assoc, annots));		
 			} else if (elementCol!=null) {
@@ -409,7 +424,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			if (!annots.isEmpty())
 				comp.hasMethodAnnotations=true;
 			String bname = getBeanName(ctx.getName()); 
-			if (bname!=null && !(type instanceof VoidType) && ctx.getParameters().isEmpty())
+			if (bname!=null && !(type instanceof VoidType) && ctx.getParameters().isEmpty() && clazz.getType()==ClassifierType.ClassType)
 				info.propInfo.add(new PropInfo(bname,ctx, annots, type, modifiers, null));
 			else {				
 				String typeName="";
@@ -429,7 +444,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 								ModifierSet.isProtected(ctx.getModifiers()), 
 								ModifierSet.isPrivate(ctx.getModifiers())));
 				for (Parameter p:ctx.getParameters()){
-					met.getParams().add(p.getName());
+					met.addParam(p.getName());
 				}
 				//add method
 			}
@@ -487,6 +502,25 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 		//set table... late!?
 	}
 	
+	class VisitImplements implements LateVisitor {
+		MClass subClass;
+		JCompilationUnit unit;
+		List<ClassOrInterfaceType> impl;
+		public VisitImplements(MClass subClass,List<ClassOrInterfaceType> impl,JCompilationUnit unit) {
+			this.subClass = subClass;
+			this.unit = unit;
+			this.impl=impl;
+		}
+		@Override
+		public boolean exec() {
+			for (ClassOrInterfaceType ci:impl) {
+				String name = unit.getFullName(ci);				
+				MClass sup = unit.getClazz(name);
+				subClass.addImplements(name,sup);
+			}
+			return true;
+		}
+	}
 	
 	class VisitInheritance implements LateVisitor {
 		MClass subClass;

@@ -11,6 +11,8 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -60,14 +62,20 @@ public class MClass implements Visitable {
 	@Basic(optional=false)
 	@Column(length=2048)
 	private String filePath;
-	@Transient
+	@Enumerated(EnumType.ORDINAL)
+	private ClassifierType type;
+	@OneToMany(mappedBy="clazz",cascade=CascadeType.ALL,orphanRemoval=true)
 	private List<MMethod> methods = new ArrayList<>();
+	@OneToMany(mappedBy="toInterface",cascade=CascadeType.ALL,orphanRemoval=true)
+	@OrderBy
+	private List<MImplement> implementInterfaces;
 	public static MClass newMClass(String path,Repo repo) {
 		return new MClass(path,repo);
 	}
 	protected MClass(String path,Repo repo) {
 		this.filePath=Util.capSize(path,2048);
 		this.repo=repo;
+		this.type=ClassifierType.ClassType;
 	}	
 	protected MClass() {
 	}
@@ -352,6 +360,29 @@ public class MClass implements Visitable {
 	}
 	protected void setMethods(List<MMethod> methods) {
 		this.methods = methods;
+	}
+	public ClassifierType getType() {
+		return type;
+	}
+	public MClass setType(ClassifierType type) {
+		this.type = type;
+		return this;
+	}
+	public List<MImplement> getImplementInterfaces() {
+		if (implementInterfaces==null)
+			implementInterfaces = new ArrayList<>();
+		return implementInterfaces;
+	}
+	protected void setImplementInterfaces(List<MImplement> implementInterfaces) {
+		this.implementInterfaces = implementInterfaces;
+	}
+	public MClass addImplements(String interfaceName,MClass toInterface) {
+		MImplement imp = new MImplement();
+		imp.setToInterface(toInterface);
+		imp.setFromClass(this);
+		imp.setName(interfaceName);
+		getImplementInterfaces().add(imp);
+		return this;
 	}
 	
 }

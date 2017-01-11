@@ -20,7 +20,7 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 
 public class GitHubCaller {
-	
+	public boolean forceTooManyFiles=false;
 	public static final int MAX_TRIES=2; 
 	private int tries=0;
 	private APILimit limits;

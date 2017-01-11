@@ -395,7 +395,7 @@ function Node(clazz) {
 	this.y=null;
 }
 Node.prototype.getFontStype = function () {
-	if (this.clazz.abstract)
+	if (this.clazz.abstract ||this.clazz.type=="InterfaceType")
 		  return "italic"
 		return "";
 	
