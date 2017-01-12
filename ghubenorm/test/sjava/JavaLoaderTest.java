@@ -20,11 +20,11 @@ import model.Repo;
 
 
 public class JavaLoaderTest {
-	static int REPO_ID=0;//3182599;
+	static int REPO_ID=3182599;
 	
 	static {
-		//ConfigDAO.config(JPA_DAO.instance);	
-		ConfigDAO.config(new MyConfigNop());	
+		ConfigDAO.config(JPA_DAO.instance);	
+	//	ConfigDAO.config(new MyConfigNop());	
 	}
 	private JavaLoader loader = new JavaLoader();
 	JavaRepo jrepo=new JavaRepo(new Repo(Language.JAVA));

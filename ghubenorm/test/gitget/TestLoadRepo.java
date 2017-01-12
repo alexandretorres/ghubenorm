@@ -12,7 +12,7 @@ import db.jpa.JPA_DAO;
 import model.Repo;
 
 public class TestLoadRepo {
-	final int LOAD_ID=21;//1278;
+	final int LOAD_ID=3182599;//21;//1278;
 	@Test	
 	public void testOne() {
 		try {
@@ -21,8 +21,9 @@ public class TestLoadRepo {
 			RepoDAO dao = ConfigDAO.getDAO(Repo.class);
 			dao.beginTransaction();
 			Repo repo = dao.find(LOAD_ID);
-			//RubyRepo rrepo = new RubyRepo(repo);
+			
 			repo.print();
+			RepoToJSON.toJson(repo,"code.txt");
 			dao.rollbackAndCloseTransaction();
 			ConfigDAO.finish();
 		} catch (Exception ex) {

@@ -46,6 +46,7 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.AnnotableNode;
 import com.github.javaparser.ast.body.BodyDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumConstantDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -122,9 +123,20 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	}
 	
 	@Override
+	public void visit(EnumConstantDeclaration ed, Object arg1) {
+		if (!classStack.isEmpty()) {		
+			MClass clazz = classStack.peek();
+			daoMProp.persist(clazz.newProperty().setName(ed.getName()).setType(""));
+		}
+		super.visit(ed, arg1);
+	}
+	@Override
 	public void visit(EnumDeclaration cd, Object arg1) {
 		MClass c = comp.createClass(cd.getName());
 		c.setType(ClassifierType.EnumType);
+		classStack.push(c);
+		super.visit(cd, arg1);
+		classStack.pop();
 		//super.visit(arg0, arg1);
 	}
 	@Override
@@ -459,6 +471,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 	public void visit(FieldDeclaration ctx, Object arg1) {
 		if (!classStack.isEmpty()) {			
 			MClass clazz = classStack.peek();	
+			if (clazz.getType()==ClassifierType.EnumType)
+				return;
 			ClassInfo info = classInfo.get(clazz);
 			
 			int modifiers = ctx.getModifiers();

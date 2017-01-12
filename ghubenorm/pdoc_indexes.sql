@@ -46,5 +46,72 @@ CREATE INDEX mproperty_parent_id_idx ON mproperty USING btree (parent_id);
 
 CREATE INDEX mproperty_typeclass_id_idx ON mproperty USING btree (typeclass_id);
 
+-- Index: mdefinition_mcolumn_columns_id_idx
+
+-- DROP INDEX mdefinition_mcolumn_columns_id_idx;
+
+CREATE INDEX mdefinition_mcolumn_columns_id_idx
+  ON mdefinition_mcolumn
+  USING btree
+  (columns_id);
+-- Index: moverride_mproperty_properties_id_idx
+
+-- DROP INDEX moverride_mproperty_properties_id_idx;
+
+CREATE INDEX moverride_mproperty_properties_id_idx
+  ON moverride_mproperty
+  USING btree
+  (properties_id);
+  
+-- Index: mjoincolumn_generalization_id_idx
+
+-- DROP INDEX mjoincolumn_generalization_id_idx;
+
+CREATE INDEX mjoincolumn_generalization_id_idx
+  ON mjoincolumn
+  USING btree
+  (generalization_id);
+  
+-- Index: mjoincolumn_associationdef_id_idx
+
+-- DROP INDEX mjoincolumn_associationdef_id_idx;
+
+CREATE INDEX mjoincolumn_associationdef_id_idx
+  ON mjoincolumn
+  USING btree
+  (associationdef_id);
+-- Index: moverride_clazz_id_idx
+
+-- DROP INDEX moverride_clazz_id_idx;
+
+CREATE INDEX moverride_clazz_id_idx
+  ON moverride
+  USING btree
+  (clazz_id);
+-- Index: mdefinition_table_id_idx
+
+-- DROP INDEX mdefinition_table_id_idx;
+
+CREATE INDEX mdefinition_table_id_idx
+  ON mdefinition
+  USING btree
+  (table_id);
+-- Index: mmethod_clazz_id_idx
+
+-- DROP INDEX mmethod_clazz_id_idx;
+
+CREATE INDEX mmethod_clazz_id_idx
+  ON mmethod
+  USING btree
+  (clazz_id);
+  
+-- Index: mimplement_fromclass_id_idx
+
+-- DROP INDEX mimplement_fromclass_id_idx;
+
+CREATE INDEX mimplement_fromclass_id_idx
+  ON mimplement
+  USING btree
+  (fromclass_id);
 
 
