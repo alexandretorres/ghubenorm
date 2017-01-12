@@ -64,7 +64,7 @@ class RubyCrawler  {
 					int size = res.getInt("size");
 					if (size==0)
 						continue;			
-					root.register(path);
+					root.register(path).setSha( result.getString("sha")); // must be the TREE sha! not the file SHA
 				} else 
 					continue;
 				if (path.equals("db/schema.rb")) {
@@ -128,8 +128,12 @@ class RubyCrawler  {
 			if (loader.visitSchema(urlSchema)==null)
 				return rrepo;	
 			List<Dir> all = modelDir.toLeafList();
-			for (Dir sourceDir:all) {			
-				URL furl = gh.newURL("github.com","/"+repo.getName()+ "/raw/"+repo.getBranchGit()+"/"+sourceDir.getPath(),null);						
+			for (Dir sourceDir:all) {
+				String sha = sourceDir.getSha();
+				if (sha==null)
+					sha = repo.getBranchGit();
+				
+				URL furl = gh.newURL("github.com","/"+repo.getName()+ "/raw/"+sha+"/"+sourceDir.getPath(),null);						
 				loader.visitFile(furl);
 			}
 			

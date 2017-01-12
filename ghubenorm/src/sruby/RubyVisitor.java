@@ -289,7 +289,11 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 					//if (propName.substring(propName.lastIndexOf("/")).indexOf(".")<0 ) {
 						propName = propName+".rb";
 					}
-					URI uri = new URL(this.currentURL).toURI().resolve(propName);
+					String path = this.currentURL;
+					
+					//path = path.substring(0,path.indexOf("raw/")+4)+repo.getRepo().getBranch()+
+					//		path.substring(path.indexOf("/", path.indexOf("raw/")+4));
+					URI uri = new URL(path).toURI().resolve(propName);
 					//LOG.info(uri.toURL().toString());
 					RubyRepoLoader loader = RubyRepoLoader.getInstance();
 					loader.pushVisitor();

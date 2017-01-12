@@ -46,7 +46,15 @@ public class GitHubCaller {
 	private void setLimits(APILimit limits) {
 		this.limits = limits;
 	}
-
+	public static String getSha(JsonObject result,String branch) {
+		String sha = branch;
+		if (result.containsKey("url")) {
+			sha = result.getString("url");
+			sha = sha.substring(sha.lastIndexOf("?ref=")+5);
+			//sha = result.getString("sha");
+		}
+		return sha;
+	}
 	public URL newURL(String host,String path,String query) throws MalformedURLException, URISyntaxException {
 		return (new URI("https",host,path,query,null)).normalize().toURL();			
 		

@@ -163,20 +163,13 @@ public class JavaCrawler {
 		}
 		return skip;
 	}
-	protected void readAllJavaFiles(JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
-		for (Dir f:jrepo.getRoot().toLeafList()) {
-			if (f.children==null || f.children.isEmpty()) {
-				URL url = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+f.getPath(),null);			
-				loader.load(url);
-				LOG.info("loaded "+f.getPath());
-			}
-		}
-	}
+	
 	protected SkipReason loadAll(List<JsonObject> fileList,JavaRepo jrepo) throws MalformedURLException, URISyntaxException {
 		for (JsonObject result : fileList) {
 			String path = result.getString("path");
 			if (path.toLowerCase().endsWith(".java")) {
-				URL furl = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null);			
+				String sha = GitHubCaller.getSha(result, jrepo.getRepo().getBranchGit()) ;
+				URL furl = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+sha+"/"+path,null);			
 				loader.load(furl);
 			}			
 		}
@@ -206,7 +199,10 @@ public class JavaCrawler {
 	
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
 					String path = result.getString("path");
-					URL furl = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+jrepo.getRepo().getBranchGit()+"/"+path,null);			
+					
+					String sha = GitHubCaller.getSha(result, jrepo.getRepo().getBranchGit()) ;
+					
+					URL furl = gh.newURL("github.com","/"+jrepo.getRepo().getName()+ "/raw/"+sha+"/"+path,null);			
 					loader.load(furl);
 					//TODO: load on demand (?) BUT is it needed? all classes import javax.persistence
 					/**

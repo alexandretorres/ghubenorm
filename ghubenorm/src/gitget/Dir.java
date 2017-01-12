@@ -13,6 +13,7 @@ public class Dir {
 	String name;
 	Dir parent;
 	List<Dir> children;
+	String sha;
 	public static Dir newRoot() {
 		return new Dir("");
 	}
@@ -216,6 +217,13 @@ public class Dir {
 		for (Dir child:children) {
 			child.addToList(list,leafOnly);
 		}
+	}
+	protected String getSha() {
+		return sha;
+	}
+	protected Dir setSha(String sha) {
+		this.sha = sha;
+		return this;
 	}
 	
 }

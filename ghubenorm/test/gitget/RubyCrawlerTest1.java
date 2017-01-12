@@ -27,12 +27,12 @@ public class RubyCrawlerTest1 extends RubyCrawler {
 	@Test
 	public void test() {
 		String repos[] = {		
-				"matthewtodd/wezesha"
-				//"drhenner/ror_ecommerce"
-				//"alexeymuranov/raclette"
-				//"deiga/ilmo2"
+				//"matthewtodd/wezesha"
+				//"drhenner/ror_ecommerce",
+				////"alexeymuranov/raclette",
+				//"deiga/ilmo2",
 				//"kgbu/boothmgr"
-				//"opinsys/puavo-users"
+				"opinsys/puavo-users"
 				//"mikeymckay/formtastic.us"
 				//"alexs/salva-old"
 				//"scharfie/gabby"
