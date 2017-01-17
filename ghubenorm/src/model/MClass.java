@@ -258,7 +258,7 @@ public class MClass implements Visitable {
 			}
 			if (cp.getAssociationDef()!=null) {
 				for ( MJoinColumn jc:cp.getAssociationDef().getJoinColumns()) {
-					if (jc.getColumn()!=null && jc.getColumn().getName().equals(colName)) {
+					if (jc.getColumn()!=null && jc.getColumn().getName()!=null && jc.getColumn().getName().equals(colName)) {
 						return jc.getColumn().getColumn();//does it depends? inverse sometimes is in the source
 					}
 					
