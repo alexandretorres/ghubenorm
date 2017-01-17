@@ -608,14 +608,15 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 						if (cp.isEmbedded() && cp.getTypeClass()!=null) { 							
 							for (MProperty embp:cp.getTypeClass().getProperties()) {
 								if (embp.getName().equals(refColName)) {
-									refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
+									refCol = daoMCol.persist(MColumn.newMColumn().setName(refColName).setTable(mainTab));
 									//TODO: Add an AttributeOverride?
 									//TODO: Could this recurse by using "."?								
 									break;
 								}
 							}
 						} else if (cp.getName().equals(refColName)) {
-							refCol = MColumn.newMColumn().setName(refColName).setTable(mainTab);;
+							refCol = daoMCol.persist(MColumn.newMColumn().setName(refColName).setTable(mainTab));
+							
 							cp.setColumnMapping(MColumnMapping.newMColumnMapping(refCol));
 							break;							
 						}
