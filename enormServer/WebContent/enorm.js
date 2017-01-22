@@ -1,4 +1,9 @@
 //--- basic functions
+var CONST = new function() {
+	this.polymorphic="<?>";//"䷰"
+	this.persistent="||";
+	this.transient="θ";
+}
 function pprint(v1,v2,sep) {
 	if (sep==undefined)
 		sep=" ";
@@ -133,6 +138,7 @@ D3MyData.prototype.keyData = function() {
 		return idx;
 	};	
 }
+
 //-- entities
 function MClass() {
 	
@@ -217,14 +223,14 @@ MOverride.prototype.printPath=function(clazz) {
 MAttributeOverride.prototype.printOverride=function(clazz) {
 	if (!this.column.column.dummy) {
 		var pname = this.printPath();
-		return pname +" || "+printColumn(clazz.persistence.mainTable,this.column);
+		return pname +" "+CONST.persistent+" "+printColumn(clazz.persistence.mainTable,this.column);
 	}
 
 }
 MAssociationOverride.prototype.printOverride=function(clazz) {
 	var tx = this.printPath();
 	if (this.def!=null && this.properties.length>0) {
-		tx+=" || "+printAssociationDef(this.def,clazz,this.properties[0]);
+		tx+=" "+CONST.persistent+" "+printAssociationDef(this.def,clazz,this.properties[0]);
 	}
 	return tx;
 }

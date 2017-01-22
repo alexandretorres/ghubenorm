@@ -644,7 +644,7 @@ function pickClass(d,i) {
 function className(d) {
 	var tx = d.name;
 	if (d.persistent) {
-		tx+=" || ";	
+		tx+=" "+CONST.persistent+" ";	
 		if (d.persistence.source!=null) 
 			tx=tx+printDSName(d.persistence.source);	
 	}	
@@ -657,7 +657,7 @@ function printPropDesc(p,assoc=false) {
 	if (p.pk) {
 		pname+="<PK>";
 	} else if (p.transient)
-		pname+="θ ";
+		pname+=CONST.transient+" ";
 	if (p.embedded) 
 		pname+="<Embed>";
 	if (p.derived)
@@ -676,9 +676,15 @@ function printPropDesc(p,assoc=false) {
 		pname+=	" ["+(p.max<0 ? "*": p.max)+"]";
 	else
 		pname+=	" ["+p.min+".."+(p.max<0 ? "*": p.max)+"]";
-	if (!assoc)
-		pname+=": "+ coalesce(p.type,"<<unknown>>");
-	else
+	if (!assoc) {
+		if (p.type && p.type.startsWith("<polymorphic>")) {
+			pname+=": "+ CONST.polymorphic;
+			var poly = p.type.replace("<polymorphic>","");
+			if (poly)
+				pname+=" discr:"+poly;
+		} else
+			pname+=": "+ coalesce(p.type,"<<unknown>>");
+	} else
 		pname+=" ";
 	return pname;
 }
@@ -686,7 +692,7 @@ function getPropDesc(p,assoc=false) {
 	var pname = printPropDesc(p,assoc);
 	// mapping
 	if (p.columnMapping!=null) {
-		pname+=" || ";
+		pname+=" "+CONST.persistent+" ";
 		var mainTab = p.parent.persistence.mainTable;
 		pname+=printColumn(mainTab,p.columnMapping.columnDefinition);
 	}
@@ -765,6 +771,12 @@ function printAssociationDef(/*MAssociationDef*/ adef,/*MClass*/ cl,/*MProperty*
 				ret+=" keep orphans  ";
 		if (adef.fetch!=null)
 			ret+=" fetch "+adef.fetch;
+	}
+	var assoc = getAssociation(p);
+	if (assoc!=null) {
+		if (assoc.polymorphicAs) {
+			ret+=" as "+assoc.polymorphicAs;
+		}
 	}
 	if (ret.length>0)
 		ret="{"+ret+"}";
@@ -1207,7 +1219,7 @@ function drawProperties(clazzBox) {
 		// mapping
 		if (p.columnMapping!=null) {		
 			var mainTab = p.parent.persistence.mainTable;
-			colMap = " || "+printColumn(mainTab,p.columnMapping.columnDefinition);
+			colMap = " "+CONST.persistent+" "+printColumn(mainTab,p.columnMapping.columnDefinition);
 			colExtras = printColumnExtra(mainTab,p.columnMapping.columnDefinition);
 			
 		}
