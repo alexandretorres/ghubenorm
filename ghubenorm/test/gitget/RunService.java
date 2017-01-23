@@ -5,6 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Date;
 
+import dao.ConfigDAO;
+import db.jpa.JPA_DAO;
+
 
 /**
  * run using NSSM https://nssm.cc/usage
@@ -22,7 +25,7 @@ import java.util.Date;
  */
 //SC CREATE GitCrawler Displayname= "GitCrawler" binpath= "srvstart.exe GitCrawler -c C:\eclipse\eclipse_mars2_64\workspace\git\ghubenorm\svstart.ini" start= auto
 public class RunService {
-	public static final String PATH="C:\\Users\\torres\\Dropbox\\ufrgs\\";
+	public static final String PATH="C:\\Users\\user\\Dropbox\\ufrgs\\GitCrawlerService\\";
 	static Thread gitHubCrawler;
 	static Thread copyStuff;
 	static Thread readCommand;
@@ -86,24 +89,39 @@ public class RunService {
 	}
 
 	public static void startCrawler() {
-		//gitHubCrawler=new Thread(new GitHubCrawler());
-		gitHubCrawler=new Thread(new TestRun());
+		ConfigDAO.config(JPA_DAO.instance);	
+		gitHubCrawler=new Thread(new GitHubCrawler());
+		//gitHubCrawler=new Thread(new TestRun());
 		gitHubCrawler.start();
 		
 	}
 		 
 }
 class CopyStuff implements Runnable {
+	public static long TICK_TIME = 60*60*1000;
 	public static boolean running=false;
+	public long start;
+	public long lastDbBack;
 	@Override
 	public void run() {
 		running = true;
 		try {
+			start = System.currentTimeMillis();
+			lastDbBack=start;
 			while (running){			
-				Runtime.getRuntime().exec("copy.bat \""+RunService.PATH+"\"");
+				Runtime.getRuntime().exec("copyLog.bat \""+RunService.PATH+"\"");
 				RunService.writeStatus();
-				Thread.sleep(6000);
+				long time = System.currentTimeMillis();
+				if (time-lastDbBack >= (24*60*60*1000)) {
+					System.out.println("Backing up database "+new Date());
+					lastDbBack=time;
+					Runtime.getRuntime().exec("backSchema.bat");
+				}
+				Thread.sleep(TICK_TIME);
+				
 			}
+		} catch (InterruptedException ie) {
+			System.out.println("CopyStuff interrupted");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -123,12 +141,24 @@ class ReadCommand implements Runnable {
 					}
 					f.delete();
 				}
+				f = new File(RunService.PATH+"stop.cmd");
+				if (f.exists()) {
+					if (RunService.gitHubCrawler!=null && RunService.gitHubCrawler.isAlive()) {
+						try {
+							GitHubCrawler.stop=true;
+							RunService.gitHubCrawler.interrupt();
+							Log.LOG.warning("**** GitCrawler asked to stop by request ***");
+						} catch (Exception ex) {
+							ex.printStackTrace();
+						}
+					}
+					f.delete();
+				}
 				Thread.sleep(30000);
 			}
 			
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (InterruptedException ie) {
+			System.out.println("ReadCommand interrupted");
 		}
 	}
 }
@@ -139,7 +169,7 @@ class TestRun implements Runnable {
 			System.out.println("END of test run "+new Date()); 
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("TestRun interrupted");
 		}
 	}
 }
