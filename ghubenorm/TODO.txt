@@ -1,3 +1,7 @@
+ruby
+* classe SubSpecialComment não usa tabela sub_special_comments porque ela especializa classe persistente (em segunda geração)
+* classe StiPost tem relação special_comment com comment. Essa relação é na verdade oposta a post?
+-----
 ->org.eclipse.persistence.testing.models.jpa.advanced.Buyer
 * mapeamento de mapas 
 * neste exemplo tem um erro do eclipselink: as propriedades isFemale e isMale deveriam ser explicitamente declaradas como transient.
