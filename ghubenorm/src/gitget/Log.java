@@ -76,6 +76,16 @@ public class Log {
 			h.setFormatter(formatter);
 		}
 	}
+	/**
+	 *  set the level for all parent handlers 
+	 * 
+	 * @param level
+	 */
+	public static void setOutputLevel(Level level) {		
+		for (Handler h:LOG.getParent().getHandlers()) {
+			h.setLevel(level);
+		}
+	}
 	public static void log(Repo repo,Level level, String msg, Throwable thrown) {
 		if (repo!=null)
 			repo.setErrorLevel(level.intValue());		

@@ -39,7 +39,7 @@ public class GitHubCrawler implements Runnable {
 	public static final long MAX_ERRORS=10;	
 	// The maximum number of files retrieved by github query API
 	public static final long MAX_RETRIEVE=1000;
-	
+	public static boolean stop=false;
 	RubyCrawler ruby = new RubyCrawler();
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
@@ -51,7 +51,8 @@ public class GitHubCrawler implements Runnable {
 		new Thread(new GitHubCrawler()).start();
 	}	
 	@Override
-	public void run() {			
+	public void run() {
+		stop=false;
 		try {				
 			URL uauth = new URL("https://api.github.com/?access_token="+gh.getOAuth());
 			//try (InputStream is = uauth.openStream(); JsonReader rdr = Json.createReader(is)) {
@@ -159,6 +160,10 @@ public class GitHubCrawler implements Runnable {
 				String fullName=null;
 				for (JsonObject result : results.getValuesAs(JsonObject.class)) {
 					try {
+						if (stop) {
+							Log.LOG.warning("GitHubCrawler stopping by request.");
+							return;
+						}
 						String html_url = result.getString("html_url");
 						fullName = result.getString("full_name");					
 						boolean fork = result.containsKey("fork") ?  result.getBoolean("fork") : false;					
