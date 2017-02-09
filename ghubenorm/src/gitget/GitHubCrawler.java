@@ -39,11 +39,15 @@ public class GitHubCrawler implements Runnable {
 	public static final long MAX_ERRORS=10;	
 	// The maximum number of files retrieved by github query API
 	public static final long MAX_RETRIEVE=1000;
-	public volatile static boolean stop=false;
+	
 	RubyCrawler ruby = new RubyCrawler();
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;
-
+	public volatile boolean stop=false;
+	
+	public static final ThreadLocal<GitHubCrawler> instance =
+	         new ThreadLocal<GitHubCrawler>();
+	
 	RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
 	
 	public static void main(String[] args) {	
@@ -51,7 +55,8 @@ public class GitHubCrawler implements Runnable {
 		new Thread(new GitHubCrawler()).start();
 	}	
 	@Override
-	public void run() {
+	public void run() {		
+		instance.set(this);
 		stop=false;
 		try {				
 			URL uauth = new URL("https://api.github.com/?access_token="+gh.getOAuth());
@@ -235,15 +240,20 @@ public class GitHubCrawler implements Runnable {
 						}
 						fullName=null;
 					} catch (Exception ex) {
-						skipRepo(SkipReason.ERROR, Language.UNKNOWN, fullName, null, id, null);
-						errorCount++;
-						LOG.severe("Exception reading repo list ("+errorCount+"), repo '"+fullName+"'");
-						LOG.log(Level.SEVERE,ex.getMessage(),ex);
-						LOG.info(result.toString());						
-						if (errorCount>MAX_ERRORS) {
-							LOG.severe("Error count exceeded MAX. Exiting");
+						if (stop) {
+							Log.LOG.warning("GitHubCrawler stopping by request.");
 							return;
-						}
+						} else {
+							skipRepo(SkipReason.ERROR, Language.UNKNOWN, fullName, null, id, null);
+							errorCount++;
+							LOG.severe("Exception reading repo list ("+errorCount+"), repo '"+fullName+"'");
+							LOG.log(Level.SEVERE,ex.getMessage(),ex);
+							LOG.info(result.toString());						
+							if (errorCount>MAX_ERRORS) {
+								LOG.severe("Error count exceeded MAX. Exiting");
+								return;
+							}
+						} 
 					}
 				}
 			}

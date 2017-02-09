@@ -102,7 +102,7 @@ public class JavaCrawler {
 				LOG.warning("truncated tree file for repository "+fullName);
 			List<JsonObject> array = result.getJsonArray("tree").getValuesAs(JsonObject.class);
 			for (JsonObject res: array) {
-				if (GitHubCrawler.stop)
+				if (GitHubCrawler.instance.get().stop)
 					throw new RuntimeException("Asked to stop");
 				String path  =res.getString("path");
 				if (path.endsWith("persistence.xml"))  {
@@ -213,7 +213,7 @@ public class JavaCrawler {
 					 */
 					//System.out.println(result);
 					total--;
-					if (GitHubCrawler.stop)
+					if (GitHubCrawler.instance.get().stop)
 						throw new RuntimeException("Asked to stop");
 				}
 				p++;

@@ -27,6 +27,7 @@ class RubyCrawler  {
 	private static RubyRepoLoader loader = RubyRepoLoader.getInstance();
 	private static GitHubCaller gh = GitHubCaller.instance;
 	private RepoDAO daoRepo;
+	
 	public Repo createRepo(JsonObject repoJson,String fullName) {
 		Repo repo = new Repo(Language.RUBY);		
 		repo.setPublicId(repoJson.getInt("id"));
@@ -75,7 +76,7 @@ class RubyCrawler  {
 							&& repo.getConfigPath().contains("/test/") && !path.contains("/test/")) {
 					repo.setConfigPath(path);
 				}
-				if (GitHubCrawler.stop)
+				if (GitHubCrawler.instance.get().stop)
 					throw new RuntimeException("Asked to stop");
 			}			
 			daoRepo.beginTransaction();	
@@ -136,7 +137,7 @@ class RubyCrawler  {
 				
 				URL furl = gh.newURL("github.com","/"+repo.getName()+ "/raw/"+sha+"/"+sourceDir.getPath(),null);						
 				loader.visitFile(furl);
-				if (GitHubCrawler.stop)
+				if (GitHubCrawler.instance.get().stop)
 					throw new RuntimeException("Asked to stop");
 			}
 			

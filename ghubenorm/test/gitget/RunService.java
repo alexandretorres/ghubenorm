@@ -27,6 +27,7 @@ import db.jpa.JPA_DAO;
 //SC CREATE GitCrawler Displayname= "GitCrawler" binpath= "srvstart.exe GitCrawler -c C:\eclipse\eclipse_mars2_64\workspace\git\ghubenorm\svstart.ini" start= auto
 public class RunService {
 	public static final String PATH="C:\\Users\\user\\Dropbox\\ufrgs\\GitCrawlerService\\";
+	static GitHubCrawler ghCrawler;
 	static Thread gitHubCrawler;
 	static Thread copyStuff;
 	static Thread readCommand;
@@ -92,11 +93,12 @@ public class RunService {
 	}
 
 	public static void startCrawler() {
-		
-		gitHubCrawler=new Thread(new GitHubCrawler());
-		//gitHubCrawler=new Thread(new TestRun());
-		gitHubCrawler.start();
-		
+		RunService.ghCrawler = new GitHubCrawler();
+		synchronized (RunService.ghCrawler) {
+			gitHubCrawler=new Thread(RunService.ghCrawler);
+			//gitHubCrawler=new Thread(new TestRun());
+			gitHubCrawler.start();
+		}		
 	}
 		 
 }
@@ -159,8 +161,7 @@ class ReadCommand implements Runnable {
 			while (TickTack.running) {
 				File f = new File(RunService.PATH+"start.cmd");
 				if (f.exists()) {
-					if (RunService.gitHubCrawler!=null && !RunService.gitHubCrawler.isAlive()) {
-						GitHubCrawler.stop=false;
+					if (RunService.gitHubCrawler!=null && !RunService.gitHubCrawler.isAlive()) {						
 						RunService.startCrawler();
 						RunService.writeStatus();
 					}
@@ -170,7 +171,7 @@ class ReadCommand implements Runnable {
 				if (f.exists()) {
 					if (RunService.gitHubCrawler!=null && RunService.gitHubCrawler.isAlive()) {
 						try {
-							GitHubCrawler.stop=true;
+							RunService.ghCrawler.stop=true;
 							RunService.gitHubCrawler.interrupt();
 							Log.LOG.warning("**** GitCrawler asked to stop by request ***");
 						} catch (Exception ex) {
@@ -183,12 +184,11 @@ class ReadCommand implements Runnable {
 				if (f.exists()) {
 					if (RunService.gitHubCrawler!=null && RunService.gitHubCrawler.isAlive()) {
 						try {
-							GitHubCrawler.stop=true;
+							RunService.ghCrawler.stop=true;
 							RunService.gitHubCrawler.interrupt();
 							Log.LOG.warning("**** GitCrawler asked to force restart by request ***");
 						
-							Thread.sleep(1000);
-							GitHubCrawler.stop=false;
+							Thread.sleep(1000);						
 							RunService.startCrawler();
 							RunService.writeStatus();
 						} catch (Exception ex) {
