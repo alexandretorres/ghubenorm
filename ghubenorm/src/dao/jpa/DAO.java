@@ -21,12 +21,18 @@ public class DAO<C> implements DAOInterface<C>{
 	private Class<C> clazz;
 	
 	static {
-		Map<String,String> props = new HashMap<String,String>();
-		props.put("hibernate.connection.password", Auth.getProperty("hibernate.connection.password"));
-		props.put("hibernate.show_sql", "false");
-		emf = Persistence.createEntityManagerFactory("gitenorm",props);
+		getEMF();
 	}
 	
+	private static EntityManagerFactory getEMF() {
+		if (emf ==null || !emf.isOpen()) {
+			Map<String,String> props = new HashMap<String,String>();
+			props.put("hibernate.connection.password", Auth.getProperty("hibernate.connection.password"));
+			props.put("hibernate.show_sql", "false");
+			emf = Persistence.createEntityManagerFactory("gitenorm",props);
+		}
+		return emf;
+	}
 	protected DAO(Class<C> cl) {
 		clazz = cl;
 		((ConfigJPA)ConfigJPA.getConfig()).addDAO(cl,this);
@@ -48,7 +54,7 @@ public class DAO<C> implements DAOInterface<C>{
 	
 	public void beginTransaction() {
 		try{
-			em = emf.createEntityManager();			 
+			em = getEMF().createEntityManager();			 
 			em.getTransaction().begin();
 		} catch (Exception ex) {
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
