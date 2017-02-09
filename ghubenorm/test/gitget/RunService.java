@@ -160,6 +160,7 @@ class ReadCommand implements Runnable {
 				File f = new File(RunService.PATH+"start.cmd");
 				if (f.exists()) {
 					if (RunService.gitHubCrawler!=null && !RunService.gitHubCrawler.isAlive()) {
+						GitHubCrawler.stop=false;
 						RunService.startCrawler();
 						RunService.writeStatus();
 					}
@@ -172,6 +173,24 @@ class ReadCommand implements Runnable {
 							GitHubCrawler.stop=true;
 							RunService.gitHubCrawler.interrupt();
 							Log.LOG.warning("**** GitCrawler asked to stop by request ***");
+						} catch (Exception ex) {
+							ex.printStackTrace();
+						}
+					}
+					f.delete();
+				}
+				f = new File(RunService.PATH+"force.cmd");
+				if (f.exists()) {
+					if (RunService.gitHubCrawler!=null && RunService.gitHubCrawler.isAlive()) {
+						try {
+							GitHubCrawler.stop=true;
+							RunService.gitHubCrawler.interrupt();
+							Log.LOG.warning("**** GitCrawler asked to force restart by request ***");
+						
+							Thread.sleep(1000);
+							GitHubCrawler.stop=false;
+							RunService.startCrawler();
+							RunService.writeStatus();
 						} catch (Exception ex) {
 							ex.printStackTrace();
 						}

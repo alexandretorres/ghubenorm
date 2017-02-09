@@ -39,7 +39,7 @@ public class GitHubCrawler implements Runnable {
 	public static final long MAX_ERRORS=10;	
 	// The maximum number of files retrieved by github query API
 	public static final long MAX_RETRIEVE=1000;
-	public static boolean stop=false;
+	public volatile static boolean stop=false;
 	RubyCrawler ruby = new RubyCrawler();
 	JavaCrawler java = new JavaCrawler();
 	static GitHubCaller gh = GitHubCaller.instance;

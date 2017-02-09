@@ -75,7 +75,8 @@ class RubyCrawler  {
 							&& repo.getConfigPath().contains("/test/") && !path.contains("/test/")) {
 					repo.setConfigPath(path);
 				}
-				
+				if (GitHubCrawler.stop)
+					throw new RuntimeException("Asked to stop");
 			}			
 			daoRepo.beginTransaction();	
 			Integer level = repo.getErrorLevel();
@@ -135,6 +136,8 @@ class RubyCrawler  {
 				
 				URL furl = gh.newURL("github.com","/"+repo.getName()+ "/raw/"+sha+"/"+sourceDir.getPath(),null);						
 				loader.visitFile(furl);
+				if (GitHubCrawler.stop)
+					throw new RuntimeException("Asked to stop");
 			}
 			
 			loader.solveRefs();
