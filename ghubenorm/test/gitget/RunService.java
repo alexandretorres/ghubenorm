@@ -123,6 +123,16 @@ class CopyLogs implements Runnable {
 		}
 	}
 }
+class RestartService implements Runnable {
+	@Override
+	public void run() {
+		try {
+			Runtime.getRuntime().exec("restartService.bat");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+}
 class TickTack implements Runnable {
 	public static final long TICK_TIME = 60*1000;
 	public static final int TICKS_DB = 24*60; // one day
@@ -207,6 +217,14 @@ class ReadCommand implements Runnable {
 					new Thread(new BackDb()).start();
 					new Thread(new CopyLogs()).start();	
 					f.delete();
+				}
+				/**
+				 * copies all binaries from bin folder, and restart the service with the bigfixes.
+				 */
+				f = new File(RunService.PATH+"restart_service.cmd");
+				if (f.exists()) {
+					f.delete();//before since the restartservice will kill the service
+					new Thread(new RestartService()).start();						
 				}
 				
 				Thread.sleep(30000);
