@@ -634,6 +634,8 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			{
 				MClass step = root;
 				while (step.getSuperClass()!=null) {
+					if (step.getSuperClass().getSuperClass()==step)
+						throw new RuntimeException("deadlock detected at the inheritance:"+step);
 					step = step.getSuperClass();
 					if (step.isPersistent())
 						root = step;

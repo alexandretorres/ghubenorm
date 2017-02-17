@@ -20,7 +20,8 @@ public class JavaCrawlerOneTest {
 	@Test
 	public void test() {	
 		String repos[]= new String[] {
-				"kazuar/ExamDesign"
+				"alcirBarros/Projetos-Base"
+			//	"kazuar/ExamDesign"
 			//	"eclipse/eclipselink.runtime"
 				//"jaxio/generated-projects"
 				//	"hibernate/hibernate-ogm"

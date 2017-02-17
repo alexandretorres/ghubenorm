@@ -45,18 +45,25 @@ public class GitHubCrawler implements Runnable {
 	static GitHubCaller gh = GitHubCaller.instance;
 	public volatile boolean stop=false;
 	
-	public static final ThreadLocal<GitHubCrawler> instance =
+	private static final ThreadLocal<GitHubCrawler> instance_ =
 	         new ThreadLocal<GitHubCrawler>();
 	
 	RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
 	
+	public static boolean isStopped() {
+		GitHubCrawler gc = instance_.get();
+		if (gc==null) {
+			return false;
+		}
+		return gc.stop;
+	}
 	public static void main(String[] args) {	
 		ConfigDAO.config(JPA_DAO.instance);	
 		new Thread(new GitHubCrawler()).start();
 	}	
 	@Override
 	public void run() {		
-		instance.set(this);
+		instance_.set(this);
 		stop=false;
 		try {				
 			URL uauth = new URL("https://api.github.com/?access_token="+gh.getOAuth());
