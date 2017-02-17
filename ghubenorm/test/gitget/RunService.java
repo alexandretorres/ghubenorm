@@ -51,7 +51,7 @@ public class RunService {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Service Started at "+new Date());
+		System.out.println("GitCrawler Service Started at "+new Date());
 		
 	}
 	public static void writeStatus() {
@@ -127,7 +127,7 @@ class RestartService implements Runnable {
 	@Override
 	public void run() {
 		try {
-			Runtime.getRuntime().exec("restartService.bat");
+			Runtime.getRuntime().exec("cmd /C start cmd /C restartService.bat");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
@@ -219,7 +219,7 @@ class ReadCommand implements Runnable {
 					f.delete();
 				}
 				/**
-				 * copies all binaries from bin folder, and restart the service with the bigfixes.
+				 * copies all binaries from bin folder, and restart the service with the bin fixes.
 				 */
 				f = new File(RunService.PATH+"restart_service.cmd");
 				if (f.exists()) {
