@@ -7,7 +7,9 @@ import java.util.Date;
 import java.util.logging.Level;
 
 import dao.ConfigDAO;
+import db.daos.RepoDAO;
 import db.jpa.JPA_DAO;
+import model.Repo;
 
 
 /**
@@ -31,6 +33,17 @@ public class RunService {
 	static Thread gitHubCrawler;
 	static Thread copyStuff;
 	static Thread readCommand;
+	public static void beforeRun() {	
+		/*try {
+			RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
+			repoDao.beginTransaction();
+			int result = repoDao.deleteFromToLast(15032035);
+			repoDao.commitAndCloseTransaction();
+			System.out.println("removed "+result +" repos");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}*/
+	}
 	public static void main(String[] params) {
 		ConfigDAO.config(JPA_DAO.instance);	
 		Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook()));
@@ -40,8 +53,8 @@ public class RunService {
 			FileWriter fw = new FileWriter(bla);
 			fw.write("date:"+new Date());
 			fw.flush();
-			fw.close();
-			
+			fw.close();			
+			beforeRun();
 			startCrawler();
 			copyStuff = new Thread(new TickTack());
 			copyStuff.start();

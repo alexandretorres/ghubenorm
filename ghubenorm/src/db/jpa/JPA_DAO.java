@@ -75,6 +75,9 @@ class RepoDaoImpl extends DAO<Repo> implements RepoDAO {
 	public List<Repo> findByPublicId(int pid) {
 		return getEm().createNamedQuery(FindByPublicId,Repo.class).setParameter("pid", pid).getResultList();
 	}
+	public int deleteFromToLast(int publicId) {
+		return getEm().createNativeQuery("delete from repo where publicid>="+publicId).executeUpdate();	
+	}
 	public void cleanRepo(int publicId) {
 		//getEm().createNamedStoredProcedureQuery("CleanRepo").setParameter(1, publicId).execute();
 		getEm().createNativeQuery("select count(*) from \"CleanRepo\"("+publicId+")").getResultList();	

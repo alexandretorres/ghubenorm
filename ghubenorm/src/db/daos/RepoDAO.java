@@ -15,6 +15,7 @@ public interface RepoDAO extends DAOInterface<Repo> {
 	public Repo merge(Repo repo);
 	public Repo reattachOrSave(Repo repo);
 	public void cleanRepo(int publicId);
+	public int deleteFromToLast(int publicId);
 }
 
 

@@ -65,6 +65,12 @@ class RepoDAONop extends DAONop<Repo> implements RepoDAO {
 		throw new RuntimeException("not implemented in NOP");
 		
 	}
+
+	@Override
+	public int deleteFromToLast(int publicId) {
+		throw new RuntimeException("not implemented in NOP");
+		
+	}
 }
 }
 
