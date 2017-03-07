@@ -33,17 +33,7 @@ public class RunService {
 	static Thread gitHubCrawler;
 	static Thread copyStuff;
 	static Thread readCommand;
-	public static void beforeRun() {	
-		/*try {
-			RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
-			repoDao.beginTransaction();
-			int result = repoDao.deleteFromToLast(15032035);
-			repoDao.commitAndCloseTransaction();
-			System.out.println("removed "+result +" repos");
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}*/
-	}
+	
 	public static void main(String[] params) {
 		ConfigDAO.config(JPA_DAO.instance);	
 		Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook()));
@@ -52,10 +42,12 @@ public class RunService {
 			File bla = new File(PATH+"Crawler Service Init.txt");
 			FileWriter fw = new FileWriter(bla);
 			fw.write("date:"+new Date());
+			fw.write("version: 7/03/2017");
 			fw.flush();
 			fw.close();			
-			beforeRun();
-			startCrawler();
+			//
+			new Thread(new CorrectDB());
+			//startCrawler();
 			copyStuff = new Thread(new TickTack());
 			copyStuff.start();
 			readCommand =  new Thread(new ReadCommand());
@@ -106,12 +98,13 @@ public class RunService {
 	}
 
 	public static void startCrawler() {
+		/*
 		RunService.ghCrawler = new GitHubCrawler();
 		synchronized (RunService.ghCrawler) {
 			gitHubCrawler=new Thread(RunService.ghCrawler);
 			//gitHubCrawler=new Thread(new TestRun());
 			gitHubCrawler.start();
-		}		
+		}*/		
 	}
 		 
 }
@@ -231,6 +224,12 @@ class ReadCommand implements Runnable {
 					new Thread(new CopyLogs()).start();	
 					f.delete();
 				}
+				f = new File(RunService.PATH+"logs.cmd");
+				if (f.exists()) {
+				
+					new Thread(new CopyLogs()).start();	
+					f.delete();
+				}
 				/**
 				 * copies all binaries from bin folder, and restart the service with the bin fixes.
 				 */
@@ -259,6 +258,23 @@ class TestRun implements Runnable {
 			// TODO Auto-generated catch block
 			System.out.println("TestRun interrupted");
 		}
+	}
+}
+class CorrectDB implements Runnable {
+	public void run() {
+		try {
+			Log.LOG.severe("Running DB patch");
+			
+			RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
+			repoDao.beginTransaction(); 
+			int result = repoDao.deleteFromToLast(17791683);//17442945
+			repoDao.commitAndCloseTransaction();
+			Log.LOG.severe("removed "+result +" repos");
+		} catch (Exception ex) {
+			Log.LOG.log(Level.SEVERE, ex.getMessage(), ex);
+			ex.printStackTrace();
+		}
+		
 	}
 }
 /*
