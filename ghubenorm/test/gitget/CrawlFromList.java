@@ -10,8 +10,12 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Level;
 
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
 
 import dao.ConfigDAO;
 import dao.jpa.CascadeDeleteVisitor;
@@ -23,7 +27,7 @@ import model.SkipReason;
 import sjava.Prof;
 
 public class CrawlFromList extends GitHubCrawler {
-	
+	public static boolean RELOAD_INFO=true;
 	public static void main(String[] args) {	
 		ConfigDAO.config(JPA_DAO.instance);
 		new Thread(new CrawlFromList()).start();
@@ -67,6 +71,41 @@ public class CrawlFromList extends GitHubCrawler {
 			dao.commitAndCloseTransaction();
 		}		
 	}
+	public SkipReason reloadInfo(Repo repo) {
+		String fullName = repo.getName();
+		JsonObject result = gh.getRepoInfo(repo.getName());
+		if (result==null) {			
+			return SkipReason.NULL_INFO;
+		}
+	
+		JsonValue parent = result.get("parent");
+		if (parent==JsonValue.NULL) {
+			LOG.severe("repo "+fullName+" has a parent but is not FORKED. Skipping");
+			return SkipReason.HAS_PARENT;
+			
+		}					
+		JsonValue lang_obj = result.get("language");
+		Language lang =Language.UNKNOWN;
+		if (lang_obj.getValueType()==ValueType.STRING) {
+			lang = Language.getLanguage(((JsonString) lang_obj).getString());
+		} else if (lang_obj.getValueType()==ValueType.ARRAY) {
+			JsonArray array = (JsonArray)lang_obj;
+			lang = Language.getLanguage(array.getString(0));
+		} else if (lang_obj.getValueType()==ValueType.NULL) {
+			return SkipReason.NO_LANGUAGE;
+									
+		} else {
+			return SkipReason.NO_LANGUAGE;
+		}
+		repo.setLanguage(lang);
+		if (lang!=Language.JAVA && lang!=Language.RUBY) {
+			return SkipReason.OTHER_LANGUAGE;
+		}
+		
+		
+		repo.setSkipReason(null);
+		return null;
+	}
 	public void reloadFromList(RepoDAO dao) {		
 		
 		for (int pid:this.publicIds) {
@@ -87,6 +126,21 @@ public class CrawlFromList extends GitHubCrawler {
 				throw new RuntimeException("reload repos cannot process repositories that are already loaded");
 			}
 			SkipReason skip=null;
+			if (RELOAD_INFO) {
+				skip = reloadInfo(repo);
+				if (skip!=null) {
+					Repo old = repo;
+					dao.beginTransaction();	
+					repo=dao.findByPublicId(pid).get(0);	
+					repo.setSkipReason(skip);
+					repo.setLanguage(old.getLanguage());
+					dao.commitAndCloseTransaction();
+					LOG.warning(repo.getName()+"("+repo.getPublicId()+") SKIPED! "+skip);
+					continue;
+				}
+				
+			}
+			
 			if (repo.getLanguage()==Language.JAVA) {
 				repo.overrideErrorLevel(null);
 				repo.setSkipReason(SkipReason.NONE);

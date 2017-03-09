@@ -42,12 +42,12 @@ public class RunService {
 			File bla = new File(PATH+"Crawler Service Init.txt");
 			FileWriter fw = new FileWriter(bla);
 			fw.write("date:"+new Date());
-			fw.write("version: 7/03/2017");
+			fw.write("version: 9/03/2017");
 			fw.flush();
 			fw.close();			
 			//
 			new Thread(new CorrectDB());
-			//startCrawler();
+			startCrawler();
 			copyStuff = new Thread(new TickTack());
 			copyStuff.start();
 			readCommand =  new Thread(new ReadCommand());
@@ -262,6 +262,7 @@ class TestRun implements Runnable {
 }
 class CorrectDB implements Runnable {
 	public void run() {
+		/*
 		try {
 			Log.LOG.severe("Running DB patch");
 			
@@ -273,7 +274,7 @@ class CorrectDB implements Runnable {
 		} catch (Exception ex) {
 			Log.LOG.log(Level.SEVERE, ex.getMessage(), ex);
 			ex.printStackTrace();
-		}
+		}*/
 		
 	}
 }
