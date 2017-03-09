@@ -98,13 +98,13 @@ public class RunService {
 	}
 
 	public static void startCrawler() {
-		/*
+		
 		RunService.ghCrawler = new GitHubCrawler();
 		synchronized (RunService.ghCrawler) {
 			gitHubCrawler=new Thread(RunService.ghCrawler);
 			//gitHubCrawler=new Thread(new TestRun());
 			gitHubCrawler.start();
-		}*/		
+		}	
 	}
 		 
 }
