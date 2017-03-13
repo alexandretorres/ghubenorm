@@ -42,11 +42,11 @@ public class RunService {
 			File bla = new File(PATH+"Crawler Service Init.txt");
 			FileWriter fw = new FileWriter(bla);
 			fw.write("date:"+new Date());
-			fw.write("version: 9/03/2017");
+			fw.write("version: 12/03/2017 III");
 			fw.flush();
 			fw.close();			
 			//
-			new Thread(new CorrectDB());
+			new Thread(new CorrectDB()).start();
 			startCrawler();
 			copyStuff = new Thread(new TickTack());
 			copyStuff.start();
@@ -264,13 +264,15 @@ class CorrectDB implements Runnable {
 	public void run() {
 		/*
 		try {
+			//System.err.println("*Running DB patch");
 			Log.LOG.severe("Running DB patch");
 			
 			RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
 			repoDao.beginTransaction(); 
-			int result = repoDao.deleteFromToLast(17791683);//17442945
+			int result = repoDao.deleteFromToLast(19073049);
 			repoDao.commitAndCloseTransaction();
 			Log.LOG.severe("removed "+result +" repos");
+			System.err.println("removed "+result +" repos");
 		} catch (Exception ex) {
 			Log.LOG.log(Level.SEVERE, ex.getMessage(), ex);
 			ex.printStackTrace();
