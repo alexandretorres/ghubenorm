@@ -29,6 +29,7 @@ import model.Repo;
 //SC CREATE GitCrawler Displayname= "GitCrawler" binpath= "srvstart.exe GitCrawler -c C:\eclipse\eclipse_mars2_64\workspace\git\ghubenorm\svstart.ini" start= auto
 public class RunService {
 	public static final String PATH="C:\\Users\\user\\Dropbox\\ufrgs\\GitCrawlerService\\";
+	static final boolean CORRECT_DB=true;
 	static GitHubCrawler ghCrawler;
 	static Thread gitHubCrawler;
 	static Thread copyStuff;
@@ -42,11 +43,12 @@ public class RunService {
 			File bla = new File(PATH+"Crawler Service Init.txt");
 			FileWriter fw = new FileWriter(bla);
 			fw.write("date:"+new Date());
-			fw.write("version: 12/03/2017 III");
+			fw.write("version: 19/03/2017 I");
 			fw.flush();
 			fw.close();			
 			//
-			new Thread(new CorrectDB()).start();
+			if (CORRECT_DB)
+				new Thread(new CorrectDB()).start();
 			startCrawler();
 			copyStuff = new Thread(new TickTack());
 			copyStuff.start();
@@ -103,7 +105,8 @@ public class RunService {
 		synchronized (RunService.ghCrawler) {
 			gitHubCrawler=new Thread(RunService.ghCrawler);
 			//gitHubCrawler=new Thread(new TestRun());
-			gitHubCrawler.start();
+			if (!CORRECT_DB)
+				gitHubCrawler.start();
 		}	
 	}
 		 
@@ -244,6 +247,10 @@ class ReadCommand implements Runnable {
 			
 		} catch (InterruptedException ie) {
 			System.out.println("ReadCommand interrupted");
+		} catch (Exception ex) {
+			System.out.println("ReadCommand interrupted by exception: "+ex.getMessage());
+			Log.LOG.log(Level.SEVERE, ex.getMessage(), ex);
+			ex.printStackTrace();
 		}
 	}
 }
@@ -262,21 +269,21 @@ class TestRun implements Runnable {
 }
 class CorrectDB implements Runnable {
 	public void run() {
-		/*
+		
 		try {
 			//System.err.println("*Running DB patch");
 			Log.LOG.severe("Running DB patch");
 			
 			RepoDAO repoDao = ConfigDAO.getDAO(Repo.class);
 			repoDao.beginTransaction(); 
-			int result = repoDao.deleteFromToLast(19073049);
+			int result = repoDao.deleteFromToLast(20857712);
 			repoDao.commitAndCloseTransaction();
 			Log.LOG.severe("removed "+result +" repos");
 			System.err.println("removed "+result +" repos");
 		} catch (Exception ex) {
 			Log.LOG.log(Level.SEVERE, ex.getMessage(), ex);
 			ex.printStackTrace();
-		}*/
+		}
 		
 	}
 }
