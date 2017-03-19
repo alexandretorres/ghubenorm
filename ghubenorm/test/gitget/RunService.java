@@ -29,7 +29,7 @@ import model.Repo;
 //SC CREATE GitCrawler Displayname= "GitCrawler" binpath= "srvstart.exe GitCrawler -c C:\eclipse\eclipse_mars2_64\workspace\git\ghubenorm\svstart.ini" start= auto
 public class RunService {
 	public static final String PATH="C:\\Users\\user\\Dropbox\\ufrgs\\GitCrawlerService\\";
-	static final boolean CORRECT_DB=true;
+	static final boolean CORRECT_DB=false;
 	static GitHubCrawler ghCrawler;
 	static Thread gitHubCrawler;
 	static Thread copyStuff;
@@ -43,7 +43,7 @@ public class RunService {
 			File bla = new File(PATH+"Crawler Service Init.txt");
 			FileWriter fw = new FileWriter(bla);
 			fw.write("date:"+new Date());
-			fw.write("version: 19/03/2017 I");
+			fw.write("version: 19/03/2017 II");
 			fw.flush();
 			fw.close();			
 			//
