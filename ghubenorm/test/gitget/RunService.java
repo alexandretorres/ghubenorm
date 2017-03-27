@@ -170,6 +170,7 @@ class TickTack implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		Log.LOG.log(Level.SEVERE, "Tick tack thread ended");
 		
 	}
 	
@@ -252,6 +253,7 @@ class ReadCommand implements Runnable {
 			Log.LOG.log(Level.SEVERE, ex.getMessage(), ex);
 			ex.printStackTrace();
 		}
+		Log.LOG.log(Level.SEVERE, "Read Command thread ended");
 	}
 }
 class TestRun implements Runnable {
