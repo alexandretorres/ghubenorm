@@ -2,10 +2,12 @@ package gitget;
 
 import static gitget.Log.LOG;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -21,7 +23,7 @@ public class IssueGitCheckouts {
 	final int MAX_ID=13363980;//21;//1278;
 	
 	public static String repos[] = new String[] {
-			/* "efficiency20/ops_middleware.git"
+			 "efficiency20/ops_middleware.git"
 			, "naoty/stlgen.git"
 			, "murphy99/rails-bootstrap.git"
 			, "opf/openproject-auth_plugins.git"
@@ -122,7 +124,7 @@ public class IssueGitCheckouts {
 			, "rschultheis/Penny-Auction-Observer.git"
 			, "mmgaggle/ceph-solo.git"
 			//JAVA
-			,*//* "FuryGames/FuryBall.git"
+			, "FuryGames/FuryBall.git"
 			, "zhoucong1020/cartman.git"
 			, "kacso/NASP_lab1_AVL_Tree.git"
 			, "gpeFC/seminario_prog_uno.git"
@@ -155,7 +157,7 @@ public class IssueGitCheckouts {
 			, "strangerss/test.git"
 			, "mseclab/aksdemo-step2.git"
 			, "flyfei/SwipeLeftRightMenuListView.git"
-			,*/ "jl987-Jie/Information-Retrieval.git"
+			, "jl987-Jie/Information-Retrieval.git"
 			, "instaclick/PDI-Plugin-Step-Riak.git"
 			, "Runsafe/InfiniteSeaGenerator.git"
 			, "echozdog/HelloWorld.git"
@@ -223,11 +225,27 @@ public class IssueGitCheckouts {
 			, "TaladeRimus/LP2_4M.git"
 			, "adrienperonnet/java-elevator.git"	
 	};
+	public static List<String> repoList = new ArrayList<String>();
 	static Thread thread;
 	
 	public static void main(String args[]) {
-		thread= new Thread(new CallBat());
-		thread.start();
+		//
+		try {
+		try (Scanner sc = new Scanner(new File("picks.txt"))) {				
+	        while (sc.hasNextLine()) {		        				        
+	            String line = sc.nextLine();
+	            repoList.add(line);
+	        }
+		
+		}
+			//
+			thread= new Thread(new CallBat());
+			thread.start();
+		} catch (Exception ex)
+		{ 
+			ex.printStackTrace();
+		}
+		
 	}
 	
 
@@ -236,7 +254,7 @@ class CallBat implements Runnable {
 	@Override
 	public void run() {
 		try {
-			for (String r:IssueGitCheckouts.repos) {
+			for (String r:IssueGitCheckouts.repoList) {
 				//git clone https://github.com/mikhail-pn/Map_osm.git
 				String cmd = "gitClone.bat https://github.com/"+r;
 				System.out.println("cmd:"+cmd);
