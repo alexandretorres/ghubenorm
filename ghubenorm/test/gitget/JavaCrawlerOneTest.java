@@ -7,6 +7,8 @@ import dao.ConfigDAO;
 import dao.nop.ConfigNop;
 import db.daos.MyConfigNop;
 import db.jpa.JPA_DAO;
+import model.Repo;
+import model.SkipReason;
 import sjava.Prof;
 
 public class JavaCrawlerOneTest {
@@ -20,7 +22,8 @@ public class JavaCrawlerOneTest {
 	@Test
 	public void test() {	
 		String repos[]= new String[] {
-				"alcirBarros/Projetos-Base"
+						"EricDuminil/picolena"
+			//	"alcirBarros/Projetos-Base"
 			//	"kazuar/ExamDesign"
 			//	"eclipse/eclipselink.runtime"
 				//"jaxio/generated-projects"
@@ -56,7 +59,9 @@ public class JavaCrawlerOneTest {
 		try {
 			for (String repo:repos) {
 				JavaCrawler jc = new JavaCrawler(); 
-				jc.processRepo(jc.createRepo(GitHubCaller.instance.getRepoInfo(repo) ,repo));	
+				Repo mrepo=jc.createRepo(GitHubCaller.instance.getRepoInfo(repo),repo);
+				SkipReason result = jc.processRepo(mrepo);	
+				System.err.println(repo+" RESULT:"+result+" or "+mrepo.getSkipReason());
 			}
 			Prof.print();
 		} finally {

@@ -234,7 +234,7 @@ public class IssueGitCheckouts {
 		try (Scanner sc = new Scanner(new File("picks.txt"))) {				
 	        while (sc.hasNextLine()) {		        				        
 	            String line = sc.nextLine();
-	            repoList.add(line);
+	            repoList.add(line.trim());
 	        }
 		
 		}
@@ -250,13 +250,15 @@ public class IssueGitCheckouts {
 	
 
 }
+
 class CallBat implements Runnable {
 	@Override
 	public void run() {
 		try {
 			for (String r:IssueGitCheckouts.repoList) {
+				String path = r.split("/")[0];
 				//git clone https://github.com/mikhail-pn/Map_osm.git
-				String cmd = "gitClone.bat https://github.com/"+r;
+				String cmd = "gitClone.bat https://github.com/"+r+" "+path;
 				System.out.println("cmd:"+cmd);
 				Process proc = Runtime.getRuntime().exec(cmd);
 				

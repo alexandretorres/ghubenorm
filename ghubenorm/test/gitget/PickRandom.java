@@ -36,11 +36,11 @@ public class PickRandom {
 			
 			System.out.println("*******RUBY***************");
 			for (Repo repo:ruby) {
-				System.out.println("repo id:"+repo.getId()+" , pid:"+repo.getPublicId()+", "+repo.getName());
+				System.out.println(/*"repo id:"+repo.getId()+" , pid:"+repo.getPublicId()+", "+*/repo.getName());
 			}
 			System.out.println("*******JAVA***************");
 			for (Repo repo:java) {
-				System.out.println("repo id:"+repo.getId()+" , pid:"+repo.getPublicId()+", "+repo.getName());
+				System.out.println(/*"repo id:"+repo.getId()+" , pid:"+repo.getPublicId()+", "+*/repo.getName());
 				//git clone https://github.com/mikhail-pn/Map_osm.git
 				//repo id:\d* , pid:\d*, 
 			}
@@ -63,10 +63,10 @@ public class PickRandom {
 					has=Boolean.FALSE;				
 				
 				if (!has && repo.getConfigPath()==null) {						
-					if (repo.getLanguage()==Language.JAVA && java.size()<100 && !java.contains(repo)) {
+					if (repo.getLanguage()==Language.JAVA && java.size()<400 && !java.contains(repo) && !repeated(repo.getName())) {
 						java.add(repo);
 						
-					} else if (repo.getLanguage()==Language.RUBY && ruby.size()<100 && !ruby.contains(repo) ) {
+					} else if (repo.getLanguage()==Language.RUBY && ruby.size()<400 && !ruby.contains(repo)  && !repeated(repo.getName()) ) {
 						ruby.add(repo);
 						
 					}						
@@ -75,9 +75,16 @@ public class PickRandom {
 			} catch (Exception ex) {
 				System.err.println("     invalid id, trying another...");
 			}
-		} while (java.size()<100 || ruby.size()<100);
+		} while (java.size()<400 || ruby.size()<400);
 	
 	
 	}
-
+	public boolean repeated(String name) {
+		String[] repos = IssueGitCheckouts.repos;
+		for (String r:repos) {
+			if (r.equals(name)) 
+				return true;
+		}
+		return false;
+	}
 }
