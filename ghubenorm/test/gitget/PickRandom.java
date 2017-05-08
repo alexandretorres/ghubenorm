@@ -19,11 +19,13 @@ import model.Repo;
 
 public class PickRandom {
 	final int MAX_ID=13363980;//21;//1278;
-	
+	final static int SIZE_NORM=400;
+	final static int SIZE_ORM=100;
 	static RepoDAO dao;
 	static Random rnd = new Random();
 	Set<Repo> java = new HashSet<>();
 	Set<Repo> ruby = new HashSet<>();
+	
 	@Test	
 	public void pickTests() {
 		try {
@@ -31,7 +33,7 @@ public class PickRandom {
 			dao = ConfigDAO.getDAO(Repo.class);
 			//3
 			
-			print100();
+			pickRandomNoORM();
 			
 			
 			System.out.println("*******RUBY***************");
@@ -52,7 +54,7 @@ public class PickRandom {
 			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 		}
 	}
-	public void print100() {		
+	public void pickRandomNoORM() {		
 		do {
 			try {
 				int id = rnd.nextInt(MAX_ID+1);
@@ -63,10 +65,10 @@ public class PickRandom {
 					has=Boolean.FALSE;				
 				
 				if (!has && repo.getConfigPath()==null) {						
-					if (repo.getLanguage()==Language.JAVA && java.size()<400 && !java.contains(repo) && !repeated(repo.getName())) {
+					if (repo.getLanguage()==Language.JAVA && java.size()<SIZE_NORM && !java.contains(repo) && !repeated(repo.getName())) {
 						java.add(repo);
 						
-					} else if (repo.getLanguage()==Language.RUBY && ruby.size()<400 && !ruby.contains(repo)  && !repeated(repo.getName()) ) {
+					} else if (repo.getLanguage()==Language.RUBY && ruby.size()<SIZE_NORM && !ruby.contains(repo)  && !repeated(repo.getName()) ) {
 						ruby.add(repo);
 						
 					}						
@@ -75,10 +77,39 @@ public class PickRandom {
 			} catch (Exception ex) {
 				System.err.println("     invalid id, trying another...");
 			}
-		} while (java.size()<400 || ruby.size()<400);
+		} while (java.size()<SIZE_NORM || ruby.size()<SIZE_NORM);
 	
 	
 	}
+	
+	public void pickRandomORM() {		
+		do {
+			try {
+				int id = rnd.nextInt(MAX_ID+1);
+				dao.beginTransaction();
+				Repo repo = dao.find(id);
+				Boolean has =  repo.getHasClasses();
+				if (has==null)
+					has=Boolean.FALSE;				
+				
+				if (has) {						
+					if (repo.getLanguage()==Language.JAVA && java.size()<SIZE_ORM && !java.contains(repo) && !repeated(repo.getName())) {
+						java.add(repo);
+						
+					} else if (repo.getLanguage()==Language.RUBY && ruby.size()<SIZE_ORM && !ruby.contains(repo)  && !repeated(repo.getName()) ) {
+						ruby.add(repo);
+						
+					}						
+				}
+				dao.rollbackAndCloseTransaction();
+			} catch (Exception ex) {
+				System.err.println("     invalid id, trying another...");
+			}
+		} while (java.size()<SIZE_ORM || ruby.size()<SIZE_ORM);
+	
+	
+	}
+	
 	public boolean repeated(String name) {
 		String[] repos = IssueGitCheckouts.repos;
 		for (String r:repos) {
