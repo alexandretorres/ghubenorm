@@ -207,10 +207,11 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 			
 		
 			if (c.isPersistent()) {			
+				
 				Annotation atab = annots.stream().filter(a->Table.isType(a,comp)).findFirst().orElse(null);
 				List<Annotation> asecTabs = annots.stream().
 						filter(a->SecondaryTable.isType(a,comp)).collect(Collectors.toList());
-				annots.stream().filter(a->SecondaryTables.isType(a,comp)).findFirst().map(s->s.getListValue()).orElse(Collections.EMPTY_LIST)
+				annots.stream().filter(a->SecondaryTables.isType(a,comp)).findFirst().map(s->s.getListValue()).orElse(Collections.<ElementValue>emptyList())
 						.stream().map(v->v.annotation).forEachOrdered(asecTabs::add);//toArray(Annotation[]::new);
 				
 				if (!asecTabs.isEmpty()) {	
