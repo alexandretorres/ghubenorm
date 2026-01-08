@@ -212,8 +212,7 @@ public class JavaVisitor extends VoidVisitorAdapter<Object>  {
 				List<Annotation> asecTabs = annots.stream().
 						filter(a->SecondaryTable.isType(a,comp)).collect(Collectors.toList());
 				annots.stream().filter(a->SecondaryTables.isType(a,comp)).findFirst().map(s->s.getListValue()).orElse(Collections.<ElementValue>emptyList())
-						.stream().map(v->v.annotation).forEachOrdered(asecTabs::add);//toArray(Annotation[]::new);
-				
+						.stream().map(v->v.annotation).forEachOrdered(asecTabs::add);//toArray(Annotation[]::new);				
 				if (!asecTabs.isEmpty()) {	
 					DAOInterface<MJoinedSource> DAOJoined = ConfigDAO.getDAO(MJoinedSource.class);
 					DAOJoined.persist(c.setJoinedSource());
