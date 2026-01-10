@@ -18,6 +18,7 @@ import java.util.logging.Level;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.net.ssl.HttpsURLConnection;
 
 public class GitHubCaller {
 	public boolean forceTooManyFiles=false;
@@ -133,7 +134,8 @@ public class GitHubCaller {
 				}
 				limits.core--;
 			}
-			connection = (HttpURLConnection)url.openConnection();			
+			connection = (HttpURLConnection)url.openConnection();	
+			setAuthOnConnection(connection);
 			InputStream is = connection.getInputStream();
 			JsonReader rdr = Json.createReader(is);
 			tries=0;
@@ -205,11 +207,21 @@ public class GitHubCaller {
 		} catch (Exception ex) {}
 		return null;
 	}
+	public InputStream openAuthStream(URL url) throws IOException {		
+		HttpURLConnection con = (HttpURLConnection) url.openConnection();			
+		setAuthOnConnection(con);
+		return con.getInputStream();
+	}
+	public void setAuthOnConnection(HttpURLConnection con) {
+		con.setRequestProperty("X-GitHub-Api-Version", "2022-11-28");
+		con.setRequestProperty("Accept","application/json");	
+		con.setRequestProperty("Authorization","Bearer "+getOAuth());
+	}
 	public APILimit retrieveLimits() {
 		APILimit ret = null;
 		try {
 			URL url = new URL("https://api.github.com/rate_limit?access_token="+getOAuth());
-			try (JsonReader rdr = Json.createReader(url.openStream())) {
+			try (JsonReader rdr = Json.createReader(openAuthStream(url))) {
 				ret = new APILimit(rdr);
 				//JsonObject obj = rdr.readObject();
 				//JsonObject res = obj.getJsonObject("resources");

@@ -70,7 +70,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		return null;
 	}
 	private String decodeName(INameNode n) {
-		String name = n.getName();
+		String name = n.getName().asJavaString();
 		if (n instanceof Colon2Node) {
 			Colon2Node c2 = (Colon2Node) n;
 			if (c2.getLeftNode() instanceof INameNode) {
@@ -80,7 +80,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		return name;
 	}
 	private String decodeName(String context,INameNode n) {
-		String name = n.getName();
+		String name = n.getName().asJavaString();
 		if (n instanceof Colon2Node) {
 			Colon2Node c2 = (Colon2Node) n;
 			if (c2.getLeftNode() instanceof INameNode) {
@@ -88,7 +88,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			}
 		} else if (n instanceof Colon3Node) {
 			//Colon3Node c3 = (Colon3Node)n;
-			return n.getName();
+			return n.getName().asJavaString();
 		} else if (context!=null && context.length()>0) {
 			name = context+"::"+name;
 		}
@@ -104,7 +104,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 			path = dname.replace("::",".");
 			path = path.substring(0, path.lastIndexOf("."));			
 		}		
-		String name = n.getCPath().getName();
+		String name = n.getCPath().getName().asJavaString();
 		MClass clazz = daoMClass.persist(MClass.newMClass(currentURL,repo.getRepo()).setName(name));
 		clazz.setPackageName(path);
 		repo.getClasses().add(clazz);
@@ -206,7 +206,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 	@Override
 	public Object visitClassNode(ClassNode n) {
 		MClass ret=null;
-		String name = n.getCPath().getName();
+		String name = n.getCPath().getName().asJavaString();
 		String sname="";
 		ret = createClass(n);
 		if (n.getSuperNode() instanceof INameNode) {
@@ -247,7 +247,7 @@ public class RubyVisitor extends AbstractNodeVisitor<Object> {
 		//{"belongs_to","has_and_belongs_to_many","has_one","has_many"};
 		if (!stack.isEmpty() && stack.peek() instanceof MClass) {
 			MClass clazz = (MClass) stack.peek();
-			switch (n.getName()) {
+			switch (n.getName().asJavaString()) {
 				case "has_one":
 					repo.visitors.push(new VisitHasOne(repo,clazz,n));	
 					break;

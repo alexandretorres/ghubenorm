@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
+import org.jruby.RubySymbol;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
 import org.jruby.ast.CallNode;
@@ -43,8 +44,8 @@ public class Helper {
 	}
 	static public String getName(Node node) {		
 		if (node instanceof INameNode) {
-			return ((INameNode)node).getName();
-		}
+			return ((INameNode)node).getName().asJavaString();
+		}		
 		return null;
 	}
 	static String decode(ByteList str) {
@@ -57,7 +58,7 @@ public class Helper {
 	static String getValue(Node node) {	
 		
 		if (node instanceof SymbolNode) {
-			return ((SymbolNode)node).getName();	
+			return ((SymbolNode)node).getName().asJavaString();	
 		} else if (node instanceof NilNode) {
 			return null;
 		} else if (node instanceof KeywordArgNode) {
@@ -114,7 +115,7 @@ public class Helper {
 			LiteralNode nn = (LiteralNode) node;
 			return nn.getName();  
 		} else if (node instanceof INameNode) {
-			return ((INameNode) node).getName();
+			return ((INameNode) node).getName().asJavaString();
 		} else if (node instanceof HashNode) {// this is not correct. GetName strips a lot of info. 
 			HashNode hn = (HashNode) node; 
 			StringBuffer ret = new StringBuffer();
@@ -181,7 +182,7 @@ public class Helper {
 	static public AttrAssignNode getAttrAssignNode(Node n,String varname) {
 		if (n instanceof AttrAssignNode) {
 			AttrAssignNode an = (AttrAssignNode) n;
-			String aname = an.getName();
+			String aname = an.getName().asJavaString();
 			CharMatcher matcher = CharMatcher.is('=');
 			aname = matcher.trimFrom(aname);
 			if (varname.equals(aname)) {

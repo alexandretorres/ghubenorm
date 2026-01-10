@@ -99,6 +99,28 @@ where skipreason is not null
 and skipreason>0
 group by skipreason
 order by skipreason;
+--ENG
+create or replace view repo_skip as
+select 
+(case skipreason 
+	when 1 then 'Fork' 
+	when 2 then 'HAS_PARENT'
+	when 3 then 'PRIVATE'
+	when 4 then 'Another Error'
+	when 5 then 'UNKNOWN'					
+	when 6 then 'Undefined Language'				
+	when 7 then 'Not Java or Ruby'				
+	when 8 then 'No files in the main branch'			
+	when 9 then 'Null information'					
+	when 10 then 'Write off during selection'		
+	when 11 then 'Too many files (Java)'
+end) as reason,
+count(*),skipreason
+from repo
+where skipreason is not null
+and skipreason>0
+group by skipreason
+order by skipreason;
 
 ALTER TABLE repo_skip
   OWNER TO pdoc;

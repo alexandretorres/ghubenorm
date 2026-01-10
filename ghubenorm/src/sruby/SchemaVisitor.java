@@ -57,7 +57,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 		return null;
 	}
 	private String decodeName(INameNode n) {
-		String name = n.getName();
+		String name = n.getName().asJavaString();
 		if (n instanceof Colon2Node) {
 			Colon2Node c2 = (Colon2Node) n;
 			if (c2.getLeftNode() instanceof INameNode) {
@@ -226,7 +226,7 @@ public class SchemaVisitor extends AbstractNodeVisitor<Object> {
 	public Object visitCallNode(CallNode n) {
 		//t.references ou t.belongs_to, da no mesmo
 		//System.out.println("call node:"+n.getName());
-		String name = n.getName();
+		String name = n.getName().asJavaString();
 		Object top=null;
 		if (!stack.isEmpty()) {
 			top = stack.peek();

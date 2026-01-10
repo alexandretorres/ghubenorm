@@ -70,8 +70,8 @@ public class TesteJRuby2 {
 	        	if (f.isFile()) {
 	        		try {
 	        			read(f);
-	        		} catch (SyntaxException ex) {
-	        			LOG.warning("Syntax exception on file "+f.getName()+" position "+ex.getPosition());
+	        		} catch (SyntaxException ex) {	        			
+	        			LOG.warning("Syntax exception on file "+f.getName()+" position "+ex.getLine());
 	        	
 	        			LOG.log(Level.SEVERE,ex.getMessage(),ex);	
 	        		}

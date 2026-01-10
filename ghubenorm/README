@@ -1,0 +1,1 @@
+This is a github crawler that searches for Java JPA and Ruby projects with Object Relational Mapping, loading the code and creating internal model of its mappings. 
