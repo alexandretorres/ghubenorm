@@ -1,8 +1,8 @@
 package servlet;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
 import dao.ConfigDAO;
 import db.daos.MyConfigNop;

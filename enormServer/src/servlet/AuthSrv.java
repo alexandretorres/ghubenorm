@@ -6,19 +6,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.net.ssl.HttpsURLConnection;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import dao.ConfigDAO;
 import db.daos.MyConfigNop;
@@ -41,7 +42,7 @@ public class AuthSrv extends HttpServlet {
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public AuthSrv() {
+    public AuthSrv() {    	
         super();
         // TODO Auto-generated constructor stub
     }
@@ -113,12 +114,16 @@ public class AuthSrv extends HttpServlet {
 						
 			}
 			// get data...
-			if (token!=null) {
+			if (token!=null) {			
 				//https://api.github.com/user?access_token=...
-				obj = new URL("https://api.github.com/user?access_token="+token);
-				con = (HttpsURLConnection) obj.openConnection();
-				con.setRequestMethod("GET");				
-				con.setRequestProperty("Accept","application/json");				
+				//URI.create("https://api.github.com/user?access_token="+token).toURL();
+				obj = new URL("https://api.github.com/user?access_token="+token);				
+				con = (HttpsURLConnection) obj.openConnection();			
+				System.out.println("v4 ");			
+				con.setRequestProperty("X-GitHub-Api-Version", "2022-11-28");
+				con.setRequestProperty("Accept","application/json");	
+				con.setRequestProperty("Authorization","Bearer "+token);
+				con.setRequestMethod("GET");	
 				is = con.getInputStream();
 				try (JsonReader rdr= Json.createReader(is)) {
 					JsonObject result = rdr.readObject();
