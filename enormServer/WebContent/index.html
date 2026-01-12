@@ -329,7 +329,8 @@ function processRepo() {
 		//setStorage("repo",txt);
 		n_repo = JSOG.parse(txt);		
 		loadRepo(n_repo);
-		setStorage("model",model);
+		saveModel();
+		//setStorage("model",txt);
 	});
 }
 function retrieveRepo() {
