@@ -4,9 +4,9 @@ This Java Web Project draws ENORM models from source code (and the JPA example M
 Configure the OAUTH for local use:
 	http://localhost:8080/enorm/Auth
 
-of use the server address
+or use the server address.
 
-example repositories (first click on <auth> to login on github and them the "..." to inform the repository path)
+Example repositories (first click on <auth> to login on github and them the "..." to inform the repository path)
 
 alexandretorres/ghubenorm
 pkainulainen/spring-data-jpa-examples
