@@ -1,4 +1,4 @@
-ENORM Model crawler and visualizer for Object Relational Mapping
+#ENORM Model crawler and visualizer for Object Relational Mapping
 
 Personal project that implements my doctoral notation for Oject Relational Mapping (ENORM).
 The enormServer is an web project to draw ENORM models from Java or Ruby source codes.
