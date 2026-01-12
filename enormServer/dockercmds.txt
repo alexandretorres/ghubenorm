@@ -1,17 +1,14 @@
 tudo isso dentro da pasta tomcat onde deixei o conf Dockerfile
 
 wsl docker build -t at2112/enorm .
-wsl docker run -p 8080:8080 at2112/enorme
+wsl docker run -p 8080:8080 at2112/enorm
 ou
 wsl docker run -p 80:8080 at2112/enorm
 
-wsl docker run -p 8080:8080 --rm -it --entrypoint=/bin/sh at2112/enorme
+wsl docker run -p 8080:8080 --rm -it --entrypoint=/bin/sh at2112/enorm
 
 enviar
 
 wsl docker push at2112/enorm
 
-http://enorm.onrender.com/enorm/Auth
-
-
-azinder1/shoe_app
+http://enorm.onrender.com/enorm/

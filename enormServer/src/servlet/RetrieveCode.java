@@ -38,7 +38,7 @@ public class RetrieveCode extends HttpServlet {
             String real = getServletContext().getRealPath("sources/"+pathInfo);
             File file = new File(real);
             if (!file.exists()) {
-            	response.getWriter().println("File Not Found<BR>"+data);
+            	response.getWriter().println("File Not Found\n"+real+"\n"+data);
             	return;
             }           
             Renderer renderer = XhtmlRendererFactory.getRenderer("java");
