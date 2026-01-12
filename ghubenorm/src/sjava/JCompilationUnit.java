@@ -467,11 +467,12 @@ class ExprEval {
 		return types[types.length-1];
 	}
 	private static ScriptEngineManager mgr = new ScriptEngineManager();
-	private static ScriptEngine jsEngine = mgr.getEngineByName("JavaScript");
+	//private static ScriptEngine jsEngine = mgr.getEngineByName("JavaScript");
+	private static ScriptEngine jsEngine = mgr.getEngineByName("nashorn");
 	public static Object evaluate(String expr)  {
 		Prof.open("ExprEval.eval");
 		try {		
-			Object ret = jsEngine.eval(expr);
+			Object ret = jsEngine.eval(expr);			
 			if (ret!=null && !(ret instanceof String) && !(ret instanceof Number) && !(ret instanceof Boolean) && !(ret instanceof Class)) {
 				if (ret.getClass().getSimpleName().equals("ScriptObjectMirror"))
 					return expr;

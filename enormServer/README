@@ -1,1 +1,7 @@
-This Java Web Project draws ENORM models from source code (and the JPA example Model)
+This Java Web Project draws ENORM models from source code (and the JPA example Model).
+
+
+Configure the OAUTH for local use:
+	http://localhost:8080/enorm/Auth
+
+of use the server address
