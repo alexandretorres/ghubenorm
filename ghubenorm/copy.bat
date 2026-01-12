@@ -1,0 +1,1 @@
+copy logs\java0.0.log %1TESTE\
