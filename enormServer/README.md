@@ -15,4 +15,6 @@ iliebabcenco/micro-reddit
 alexandretorres/analysispatterns
 
 <img width="1872" height="691" alt="image" src="https://github.com/user-attachments/assets/da3d0f9a-0e34-4835-b43c-d2a1317849e9" />
+<img width="1732" height="876" alt="image" src="https://github.com/user-attachments/assets/70d5d493-e567-4e74-b5d6-7361cd9dc516" />
+
 
